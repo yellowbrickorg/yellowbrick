@@ -1,5 +1,5 @@
 from django.shortcuts import render
-
+from .models import Brick
 
 # Create your views here.
 
@@ -18,3 +18,7 @@ def finder(request):
 
 def docs(request):
     return render(request, 'bsf/docs.html')
+
+def brick_list(request):
+    bricks = Brick.objects.all()
+    return render(request, 'brick_list.html', {'bricks': bricks})

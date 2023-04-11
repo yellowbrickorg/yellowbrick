@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .views import brick_list
 
 urlpatterns = [
     # /
@@ -14,4 +15,6 @@ urlpatterns = [
 
     # /help/
     path('docs/', views.docs, name='docs'),
+
+    path('bricks/', brick_list, name='brick-list'),
 ]
