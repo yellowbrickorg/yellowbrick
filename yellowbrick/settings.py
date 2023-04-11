@@ -78,10 +78,11 @@ WSGI_APPLICATION = 'yellowbrick.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'OPTIONS': {
-            'service': 'yellowbrick_db',
-            'passfile': '.my_pgpass',
-        },
+        'NAME': 'yellowbrick_db',
+        'USER': 'postgres',
+        'PASSWORD': '123', # <-- add this line
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 

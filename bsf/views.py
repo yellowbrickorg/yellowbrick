@@ -21,4 +21,5 @@ def docs(request):
 
 def brick_list(request):
     bricks = Brick.objects.all()
-    return render(request, 'brick_list.html', {'bricks': bricks})
+    context = {'bricks': bricks}
+    return render(request, 'bsf/brick_list.html', context)

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block page_meta %}
+    <title>Bricks</title>
+{% endblock %}
+
+{% block page_content %}
+  <h1>Brick List</h1>
+  <ul>
+    {% for brick in bricks %}
+      <li>{{ brick.brick_id }} - {{ brick.color.name }}</li>
+    {% empty %}
+      <li>No bricks found.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
