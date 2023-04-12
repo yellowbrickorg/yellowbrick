@@ -1,6 +1,9 @@
 from django.shortcuts import render
 from .models import Brick
 
+from django.views.generic import ListView
+
+
 # Create your views here.
 
 
@@ -19,7 +22,13 @@ def finder(request):
 def docs(request):
     return render(request, 'bsf/docs.html')
 
+
 def brick_list(request):
     bricks = Brick.objects.all()
     context = {'bricks': bricks}
     return render(request, 'bsf/brick_list.html', context)
+
+
+class BrickListView(ListView):
+    paginate_by = 15
+    model = Brick
