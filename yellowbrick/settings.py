@@ -80,7 +80,6 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'OPTIONS': {
             'service': 'yellowbrick_db',
-            'passfile': '.my_pgpass',
         },
     }
 }
