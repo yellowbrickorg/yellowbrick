@@ -78,14 +78,12 @@ WSGI_APPLICATION = 'yellowbrick.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'yellowbrick_db',
-        'USER': 'postgres',
-        'PASSWORD': '123', # <-- add this line
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'OPTIONS': {
+            'service': 'yellowbrick_db',
+            'passfile': '.my_pgpass',
+        },
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
