@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .views import BrickListView
 
 urlpatterns = [
     # /
@@ -15,5 +16,6 @@ urlpatterns = [
     # /help/
     path('docs/', views.docs, name='docs'),
 
-    path('brick_list/', views.brick_list, name='brick_list'),
+    # /bricks/
+    path('bricks/', BrickListView.as_view(), name='brick_list'),
 ]

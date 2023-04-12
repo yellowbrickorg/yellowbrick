@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
 class Color(models.Model):
     color_id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=60)
