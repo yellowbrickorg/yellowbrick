@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block page_meta %}
+    <title>My bricks</title>
+{% endblock %}
+
+{% block page_content %}
+    <div class="my_sets">
+        <h1>My sets</h1>
+    </div>
+
+    {% if user_sets %}
+    <ul>
+    {% for set in user_sets %}
+    <li>{{ set.brickset.name }}, quantity: {{ set.quantity }}</li>
+    <br>
+    <form action="{% url 'add_set' set.brickset.set_id %}" method="post">
+    {% csrf_token %}
+    <input type="number" name="quantity" id="setquantity{{ set.brickset.set_id }}">
+    <input type="submit" value="Add">
+    </form>
+    <form action="{% url 'del_set' set.brickset.set_id %}" method="post">
+        {% csrf_token %}
+        <input type="number" name="quantity" id="setdelquantity{{ set.brickset.set_id }}">
+        <input type="submit" value="Delete">
+    </form>
+    {% endfor %}
+    </ul>
+    {% else %}
+    <p>You don't have any sets.</p>
+    {% endif %}
+
+    <div class="my_bricks">
+        <h1>My loose bricks</h1>
+
+    {% if user_bricks %}
+    <ul>
+    {% for brick in user_bricks %}
+    <li>{{ brick.brick.partnum }}, quantity: {{ brick.quantity }}</li>
+    <br>
+    <form action="{% url 'add_brick' brick.brick.brick_id %}" method="post">
+    {% csrf_token %}
+    <input type="number" name="quantity" id="brickquantity{{ brick.brick.brick_id }}">
+    <input type="submit" value="Add">
+    </form>
+    <form action="{% url 'del_brick' brick.brick.brick_id %}" method="post">
+        {% csrf_token %}
+        <input type="number" name="quantity" id="brickdelquantity{{ set.brick.brick_id }}">
+        <input type="submit" value="Delete">
+    </form>
+    {% endfor %}
+    </ul>
+    {% else %}
+    <p>You don't have any loose bricks.</p>
+    {% endif %}
+    </div>
+{% endblock %}
