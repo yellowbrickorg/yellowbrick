@@ -75,10 +75,14 @@ class CollectionFilterTestCase(TestCase):
         self.assertEqual(bricks_in_set2.get(brick=brick1).quantity, 2)
         self.assertEqual(bricks_in_set2.get(brick=brick2).quantity, 5)
 
-    def test_user1_has_set2_doesnt_have_set1(self):
-        lego_set1 = LegoSet.objects.get(number='11111')
+    def test_user1_can_build_set2_but_not_set1(self):
         lego_set2 = LegoSet.objects.get(number='22222')
 
         user1 = User.objects.get(username='Janusz')
 
-        self.assertEqual(CollectionFilter.get_viable_sets(user1), {lego_set1})
+        self.assertEqual(CollectionFilter.get_viable_sets(user1), {lego_set2})
+
+    def test_user2_cant_build_anything(self):
+        user2 = User.objects.get(username='Mariusz')
+
+        self.assertEqual(CollectionFilter.get_viable_sets(user2), {})
