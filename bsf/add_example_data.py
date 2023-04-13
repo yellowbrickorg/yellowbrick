@@ -21,7 +21,7 @@ def add_example_data():
 
     # Example UserCollection object
     user = User.objects.create(username='example_user')
-    user_collection = UserCollection.objects.create(userid=user)
+    user_collection = UserCollection.objects.create(user=user)
     user_collection.bricks.add(brick1, through_defaults={'quantity': 20})
     user_collection.bricks.add(brick2, through_defaults={'quantity': 10})
     user_collection.sets.add(lego_set, through_defaults={'quantity': 1})

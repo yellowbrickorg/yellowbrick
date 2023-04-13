@@ -46,12 +46,12 @@ Użytkownik ma określone ilości klocków i zestawów.
 
 
 class UserCollection(models.Model):
-    userid = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     bricks = models.ManyToManyField(Brick, through="BrickInCollectionQuantity")
     sets = models.ManyToManyField(LegoSet, through="SetInCollectionQuantity")
 
     def __str__(self):
-        return self.userid
+        return f'Collection of {self.user.username}'
 
 
 """
@@ -64,11 +64,17 @@ class BrickInSetQuantity(models.Model):
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     quantity = models.PositiveSmallIntegerField()
 
+    def __str__(self):
+        return f'{self.quantity} x {self.brick} in set {self.brick_set.number}'
+
 
 class BrickInCollectionQuantity(models.Model):
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
     quantity = models.PositiveSmallIntegerField()
+
+    def __str__(self):
+        return f"{self.quantity} x {self.brick} in {self.collection.user.username}'s collection"
 
 
 class SetInCollectionQuantity(models.Model):
@@ -76,20 +82,22 @@ class SetInCollectionQuantity(models.Model):
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
     quantity = models.PositiveSmallIntegerField()
 
+    def __str__(self):
+        return f"{self.quantity} x {self.brick_set} in {self.collection.user.username}'s collection"
+
 
 class CollectionFilter(models.Model):
     class Meta:
         abstract = True
 
-    """
-        --- UŻYWANE ZMIENNE DO OBSŁUGI FUNKCJI POMOCNICZYCH
-        single_diff - roznica mowiaca ile klockow kazdego rodzaju moze nam brakowac w danym zestawie
-        general_diff - roznica mowiaca ile klockow w sumie moze nam brakowac w danym zestawie
-        TODO - może ignorowanie kolorów klocków? trzebaby mocno przenalizowac dane pod względem podobnych nazw / id
-    """
-
     @staticmethod
     def get_viable_sets(user_id, single_diff=0, general_diff=0):
+        """
+        Args:
+            user_id: id użytkownika
+            single_diff: różnica mówiąca, ile klocków każdego rodzaju może nam brakować w danym zestawie
+            general_diff: różnica mówiąca, ile klocków w sumie może nam brakować w danym zestawie
+        """
         all_users_bricks = {}
         all_users_bricks = CollectionFilter.get_dict_of_users_bricks(user_id, all_users_bricks)
         all_users_bricks = CollectionFilter.get_dict_of_users_bricks_from_sets(user_id, all_users_bricks)
