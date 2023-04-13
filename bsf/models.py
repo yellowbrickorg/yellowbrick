@@ -9,7 +9,7 @@ class Color(models.Model):
     is_transparent = models.BooleanField(default=False)
 
     def __str__(self):
-        return str(self.color_id)
+        return f"{self.color_id} - {self.name}"
 
 
 class Brick(models.Model):
@@ -18,7 +18,7 @@ class Brick(models.Model):
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
 
     def __str__(self):
-        return str(self.brick_id)
+        return f"{self.brick_id}"
 
 
 """
@@ -53,6 +53,7 @@ class UserCollection(models.Model):
     def __str__(self):
         return f'Collection of {self.user.username}'
 
+
 """
 Klasy realizujące zależność wiele-do-wielu.
 """
@@ -61,8 +62,7 @@ Klasy realizujące zależność wiele-do-wielu.
 class BrickInSetQuantity(models.Model):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
-
+    quantity = models.PositiveSmallIntegerField()
 
     def __str__(self):
         return f'{self.quantity} x {self.brick} in set {self.brick_set.number}'
@@ -71,8 +71,7 @@ class BrickInSetQuantity(models.Model):
 class BrickInCollectionQuantity(models.Model):
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
-
+    quantity = models.PositiveSmallIntegerField()
 
     def __str__(self):
         return f"{self.quantity} x {self.brick} in {self.collection.user.username}'s collection"
@@ -81,7 +80,7 @@ class BrickInCollectionQuantity(models.Model):
 class SetInCollectionQuantity(models.Model):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveSmallIntegerField()
 
     def __str__(self):
         return f"{self.quantity} x {self.brick_set} in {self.collection.user.username}'s collection"
@@ -92,16 +91,17 @@ class CollectionFilter(models.Model):
         abstract = True
 
     @staticmethod
-    def get_viable_sets(user_id, single_diff=0, general_diff=0):
+    def get_viable_sets(user : User, single_diff=0, general_diff=0):
         """
         Args:
-            user_id: id użytkownika
+            user: nazwa uzytkowanika
             single_diff: różnica mówiąca, ile klocków każdego rodzaju może nam brakować w danym zestawie
             general_diff: różnica mówiąca, ile klocków w sumie może nam brakować w danym zestawie
         """
+
         all_users_bricks = {}
-        all_users_bricks = CollectionFilter.get_dict_of_users_bricks(user_id, all_users_bricks)
-        all_users_bricks = CollectionFilter.get_dict_of_users_bricks_from_sets(user_id, all_users_bricks)
+        all_users_bricks = CollectionFilter.get_dict_of_users_bricks(user, all_users_bricks)
+        all_users_bricks = CollectionFilter.get_dict_of_users_bricks_from_sets(user, all_users_bricks)
 
         viable_sets = []
         for lego_set in LegoSet.objects.all():
@@ -112,9 +112,9 @@ class CollectionFilter(models.Model):
 
     @staticmethod
     def check_set(all_users_bricks, lego_set: LegoSet, single_diff=0, general_diff=0):
-        for brick in lego_set.bricks.all():
-            q_needed = BrickInSetQuantity.objects.get(brick_set=lego_set, brick=brick).quantity
-            q_collected = all_users_bricks[brick]
+        for brick_data in BrickInSetQuantity.objects.filter(brick_set = lego_set):
+            q_needed = brick_data.quantity
+            q_collected = all_users_bricks[brick_data.brick]
             diff = q_needed - q_collected
 
             if diff > single_diff:
@@ -126,27 +126,27 @@ class CollectionFilter(models.Model):
         return True
 
     @staticmethod
-    def get_dict_of_users_bricks(user_id, all_users_bricks=None):
-        users_collection = UserCollection.objects.get(userid=user_id)
-
-        for users_brick in UserCollection.objects.get(user_id=user_id).bricks:
-            q = BrickInCollectionQuantity.objects.get(collection=users_collection, brick=users_brick).quantity
-            if users_brick in all_users_bricks:
-                all_users_bricks[users_brick] += q
+    def get_dict_of_users_bricks(user : User, all_users_bricks=None):
+        users_collection = UserCollection.objects.get(user = user)
+        
+        for brick_data in BrickInCollectionQuantity.objects.filter(collection = users_collection):
+            q = brick_data.quantity
+            if brick_data.brick in all_users_bricks:
+                all_users_bricks[brick_data.brick] += q
             else:
-                all_users_bricks[users_brick] = q
+                all_users_bricks[brick_data.brick] = q
         return all_users_bricks
 
     @staticmethod
-    def get_dict_of_users_bricks_from_sets(user_id, all_users_bricks=None):
-        users_collection = UserCollection.objects.create(userid=user_id)
+    def get_dict_of_users_bricks_from_sets(user : User, all_users_bricks=None):
+        users_collection = UserCollection.objects.get(user = user)
 
-        for set_id in users_collection.sets.all():
-            users_set = LegoSet.objects.get(number=set_id)
-            for users_brick in users_set.bricks.all():
-                q = BrickInSetQuantity.objects.get(brick_set=users_set, brick=users_brick).quantity
-                if users_brick in all_users_bricks:
-                    all_users_bricks[users_brick] += q
+        for set_data in SetInCollectionQuantity.objects.filter(collection = users_collection):
+            users_set = set_data.brick_set
+            for brick_data in BrickInSetQuantity.objects.filter(brick_set = users_set):
+                q = brick_data.quantity
+                if brick_data.brick in all_users_bricks:
+                    all_users_bricks[brick_data.brick] += q
                 else:
-                    all_users_bricks[users_brick] = q
+                    all_users_bricks[brick_data.brick] = q
         return all_users_bricks
