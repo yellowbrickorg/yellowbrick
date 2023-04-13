@@ -8,7 +8,7 @@
     <h1>Brick List</h1>
     <ul>
         {% for brick in page_obj %}
-            <li>{{ brick.brick_id }} - {{ brick.color.name }}
+            <li><a href="{% url 'brick_detail' brick.brick_id %}">{{ brick.brick_id }} - {{ brick.color.name }}</a>
                 {% if request.user.is_authenticated %}
                     <br>
                     <form action="{% url 'add_brick' brick.brick_id %}" method="post">
