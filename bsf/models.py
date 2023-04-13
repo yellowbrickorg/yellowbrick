@@ -9,7 +9,7 @@ class Color(models.Model):
     is_transparent = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.color_id} - {self.name}"
+        return str(self.color_id)
 
 
 class Brick(models.Model):
@@ -18,7 +18,7 @@ class Brick(models.Model):
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.brick_id}"
+        return str(self.brick_id)
 
 
 """
@@ -53,7 +53,6 @@ class UserCollection(models.Model):
     def __str__(self):
         return f'Collection of {self.user.username}'
 
-
 """
 Klasy realizujące zależność wiele-do-wielu.
 """
@@ -62,7 +61,8 @@ Klasy realizujące zależność wiele-do-wielu.
 class BrickInSetQuantity(models.Model):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
-    quantity = models.PositiveSmallIntegerField()
+    quantity = models.PositiveIntegerField()
+
 
     def __str__(self):
         return f'{self.quantity} x {self.brick} in set {self.brick_set.number}'
@@ -71,7 +71,8 @@ class BrickInSetQuantity(models.Model):
 class BrickInCollectionQuantity(models.Model):
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
-    quantity = models.PositiveSmallIntegerField()
+    quantity = models.PositiveIntegerField()
+
 
     def __str__(self):
         return f"{self.quantity} x {self.brick} in {self.collection.user.username}'s collection"
@@ -80,7 +81,7 @@ class BrickInCollectionQuantity(models.Model):
 class SetInCollectionQuantity(models.Model):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
-    quantity = models.PositiveSmallIntegerField()
+    quantity = models.PositiveIntegerField()
 
     def __str__(self):
         return f"{self.quantity} x {self.brick_set} in {self.collection.user.username}'s collection"
