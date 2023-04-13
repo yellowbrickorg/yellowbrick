@@ -2,11 +2,11 @@ import csv
 
 from django.core.management.base import BaseCommand
 
-from bsf.models import Brick
+from bsf.models import LegoSet, Brick
 
 
 class Command(BaseCommand):
-    help = "Imports Brick models from CSV file"
+    help = "Imports LegoSet models from CSV file (step 2/3)"
 
     def add_arguments(self, parser):
         parser.add_argument("csv_path", nargs="+")
@@ -17,14 +17,12 @@ class Command(BaseCommand):
             next(reader, None)  # skip csv header
             for row in reader:
                 try:
-                    _, created = Brick.objects.get_or_create(
-                        brick_id=row[0],
-                        part_num=row[1],
-                        color_id=row[2],
-                    )
+                    lego_set = LegoSet.objects.get(inventory_id=row[0])
+                    brick = Brick.objects.get(number=row[1])
+                    lego_set.bricks.add(brick, through_defaults={'quantity': row[3]})
                 except ValueError:
                     self.stdout.write('Something broke but could not care less')
 
         self.stdout.write(
-            self.style.SUCCESS('Successfully created Bricks')
+            self.style.SUCCESS('Successfully done step 2/3')
         )

@@ -8,9 +8,16 @@
     <h1>Brick List</h1>
     <ul>
         {% for brick in page_obj %}
-            <li><a href="{% url 'brick_detail' brick.brick_id %}"
-                   style="text-decoration:none; color:black;">{{ brick.brick_id }} -
-                {{ brick.part_num }}{% if brick.color %} - {{ brick.color.name }}{% endif %}</a></li>
+            <li>{{ brick.brick_id }} - {{ brick.color.name }}
+                {% if request.user.is_authenticated %}
+                    <br>
+                    <form action="{% url 'add_brick' brick.brick_id %}" method="post">
+                        {% csrf_token %}
+                        <input type="number" name="quantity" id="quantity{{ brick.brick_id }}">
+                        <input type="submit" value="Add">
+                    </form>
+                {% endif %}
+            </li>
         {% empty %}
             <li>No bricks found.</li>
         {% endfor %}

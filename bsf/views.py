@@ -66,7 +66,7 @@ def add_brick(request, brick_id):
     collection = UserCollection.objects.get(user=logged_user)
     if qty > 0:
         try:
-            brick_through = collection.bricks.through.objects.get(brick=brick_id)
+            brick_through = collection.bricks.through.objects.get(brick_id=brick_id)
         except (KeyError, BrickInCollectionQuantity.DoesNotExist):
             collection.bricks.add(brick, through_defaults={"quantity": qty})
         else:
@@ -75,18 +75,18 @@ def add_brick(request, brick_id):
     return HttpResponseRedirect(reverse('collection', args=()))
 
 
-def del_set(request, set_id):
-    lego_set = get_object_or_404(LegoSet, id=set_id)
+def del_set(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
     try:
         qty = int(request.POST.get('quantity', False))
     except:
         return HttpResponseRedirect(reverse('collection', args=()))
     else:
         logged_user = request.user
-        collection = UserCollection.objects.get(userid=logged_user.id)
+        collection = UserCollection.objects.get(user=logged_user)
         if qty > 0:
             try:
-                set_through = collection.sets.through.objects.get(id=set_id)
+                set_through = collection.sets.through.objects.get(brick_set_id=id)
             except (KeyError, SetInCollectionQuantity.DoesNotExist):
                 collection.sets.add(lego_set, through_defaults={"quantity": qty})
             else:
@@ -102,10 +102,10 @@ def del_brick(request, brick_id):
     brick = get_object_or_404(Brick, brick_id=brick_id)
     qty = int(request.POST.get('quantity', False))
     logged_user = request.user
-    collection = UserCollection.objects.get(userid=logged_user.id)
+    collection = UserCollection.objects.get(user=logged_user)
     if qty > 0:
         try:
-            brick_through = collection.bricks.through.objects.get(brickset_id=brick_id)
+            brick_through = collection.bricks.through.objects.get(brick_set_id=brick_id)
         except (KeyError, BrickInCollectionQuantity.DoesNotExist):
             collection.bricks.add(brick, through_defaults={"quantity": qty})
         else:
@@ -117,14 +117,14 @@ def del_brick(request, brick_id):
     return HttpResponseRedirect(reverse('collection', args=()))
 
 
-def convert(request, set_id):
-    brickset = get_object_or_404(LegoSet, id=set_id)
+def convert(request, id):
+    brickset = get_object_or_404(LegoSet, id=id)
     qty = int(request.POST.get('quantity', False))
     logged_user = request.user
-    collection = UserCollection.objects.get(userid=logged_user.id)
+    collection = UserCollection.objects.get(user=logged_user)
     if qty > 0:
         try:
-            set_through = collection.sets.through.objects.get(brickset_id=set_id)
+            set_through = collection.sets.through.objects.get(brick_set_id=id)
         except (KeyError, SetInCollectionQuantity.DoesNotExist):
             return HttpResponseRedirect(reverse('collection', args=()))
         else:
@@ -151,7 +151,7 @@ def index(request):
 
 
 def finder(request):
-    return render(request, 'bsf/finder.html')
+    return render(request, 'bsf/filter.html')
 
 
 def docs(request):

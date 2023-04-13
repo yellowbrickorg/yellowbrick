@@ -34,18 +34,17 @@ class LegoSet(models.Model):
     name = models.CharField(max_length=256)
     image_link = models.CharField(max_length=256)
     bricks = models.ManyToManyField(Brick, through="BrickInSetQuantity")
+    inventory_id = models.IntegerField(unique=True)
 
     def __str__(self):
         return f"{self.number} - {self.name}"
 
 
-"""
-Klasa reprezentująca kolekcję użytkownika.
-Użytkownik ma określone ilości klocków i zestawów.
-"""
-
-
 class UserCollection(models.Model):
+    """
+    Klasa reprezentująca kolekcję użytkownika.
+    Użytkownik ma określone ilości klocków i zestawów.
+    """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bricks = models.ManyToManyField(Brick, through="BrickInCollectionQuantity")
     sets = models.ManyToManyField(LegoSet, through="SetInCollectionQuantity")
@@ -54,15 +53,10 @@ class UserCollection(models.Model):
         return f'Collection of {self.user.username}'
 
 
-"""
-Klasy realizujące zależność wiele-do-wielu.
-"""
-
-
 class BrickInSetQuantity(models.Model):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
-    quantity = models.PositiveSmallIntegerField()
+    quantity = models.PositiveIntegerField()
 
     def __str__(self):
         return f'{self.quantity} x {self.brick} in set {self.brick_set.number}'
@@ -71,7 +65,7 @@ class BrickInSetQuantity(models.Model):
 class BrickInCollectionQuantity(models.Model):
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
-    quantity = models.PositiveSmallIntegerField()
+    quantity = models.PositiveIntegerField()
 
     def __str__(self):
         return f"{self.quantity} x {self.brick} in {self.collection.user.username}'s collection"
@@ -80,7 +74,7 @@ class BrickInCollectionQuantity(models.Model):
 class SetInCollectionQuantity(models.Model):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
-    quantity = models.PositiveSmallIntegerField()
+    quantity = models.PositiveIntegerField()
 
     def __str__(self):
         return f"{self.quantity} x {self.brick_set} in {self.collection.user.username}'s collection"
@@ -128,7 +122,7 @@ class CollectionFilter(models.Model):
     @staticmethod
     def get_dict_of_users_bricks(user : User, all_users_bricks=None):
         users_collection = UserCollection.objects.get(user = user)
-        
+
         for brick_data in BrickInCollectionQuantity.objects.filter(collection = users_collection):
             q = brick_data.quantity
             if brick_data.brick in all_users_bricks:
