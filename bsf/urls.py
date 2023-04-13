@@ -19,6 +19,6 @@ urlpatterns = [
     # /bricks/
     path('bricks/', BrickListView.as_view(), name='brick_list'),
 
-    path('bricks/<int:pk>/', BrickDetailView.as_view(), name='brick-detail'),
+    path('bricks/<int:pk>/', BrickDetailView.as_view(), name='brick_detail'),
 
 ]
