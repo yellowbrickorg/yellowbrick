@@ -1,12 +1,25 @@
 {% extends "base.html" %}
+{% load subtraction %}
 
 {% block page_meta %}
     <title>My bricks</title>
 {% endblock %}
 
 {% block page_content %}
+    <h1>My collection</h1>
+    <p>
+        Listed below are your sets and loose bricks.
+        To add or delete your entire sets or bricks, insert a value and hit the button.
+        You can't delete a single brick from an entire set.
+        However, you can convert your set to loose bricks and then delete those.
+        Note that this cannot be undone.
+        Warning: you can have only 100 sets and 10.000 bricks of a type.
+        If you exceed that limit (e.g. by converting a set), your set or brick quantity will
+        be capped to these limits.
+    </p>
+
     <div class="my_sets">
-        <h1>My sets</h1>
+        <h2>My sets</h2>
     </div>
 
     {% if user_sets %}
@@ -16,14 +29,19 @@
     <br>
     <form action="{% url 'add_set' set.brickset.set_id %}" method="post">
     {% csrf_token %}
-    <input type="number" name="quantity" id="setquantity{{ set.brickset.set_id }}">
+    <input type="number" name="quantity" value="0" id="setquantity{{ set.brickset.set_id }}" min="0" max="{{ 100|subtract:set.quantity }}">
     <input type="submit" value="Add">
     </form>
     <form action="{% url 'del_set' set.brickset.set_id %}" method="post">
         {% csrf_token %}
-        <input type="number" name="quantity" id="setdelquantity{{ set.brickset.set_id }}">
+        <input type="number" name="quantity" value="0" id="setdelquantity{{ set.brickset.set_id }}" min="0" max="{{ set.quantity }}">
         <input type="submit" value="Delete">
     </form>
+    <form action="{% url 'convert' set.brickset.set_id %}" method="post">
+        {% csrf_token %}
+        <input type="number" name="quantity" value="0" id="convertquantity{{ set.brickset.set_id }}" min="0" max="{{ set.quantity }}">
+        <input type="submit" value="Convert">
+        </form>
     {% endfor %}
     </ul>
     {% else %}
@@ -31,7 +49,7 @@
     {% endif %}
 
     <div class="my_bricks">
-        <h1>My loose bricks</h1>
+        <h2>My loose bricks</h2>
 
     {% if user_bricks %}
     <ul>
@@ -40,12 +58,12 @@
     <br>
     <form action="{% url 'add_brick' brick.brick.brick_id %}" method="post">
     {% csrf_token %}
-    <input type="number" name="quantity" id="brickquantity{{ brick.brick.brick_id }}">
+    <input type="number" name="quantity" value="0" id="brickquantity{{ brick.brick.brick_id }}" min="0" max="{{ 10000|subtract:brick.quantity }}">
     <input type="submit" value="Add">
     </form>
     <form action="{% url 'del_brick' brick.brick.brick_id %}" method="post">
         {% csrf_token %}
-        <input type="number" name="quantity" id="brickdelquantity{{ set.brick.brick_id }}">
+        <input type="number" name="quantity" value="0" id="brickdelquantity{{ set.brick.brick_id }}" min="0" max="{{ brick.quantity }}">
         <input type="submit" value="Delete">
     </form>
     {% endfor %}
