@@ -5,39 +5,38 @@
 {% endblock %}
 
 {% block page_content %}
-  <div class="container">
     <div class="row">
         <h1>LEGO Brick: {{ brick.brick_id }}</h1>
-      <div class="col-md-5">
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th class="text-center" colspan="2"><h3>Brick Details</h3></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>Brick ID</th>
-              <td>{{ brick.brick_id }}</td>
-            </tr>
-            <tr>
-              <th>Part Number</th>
-              <td>{{ brick.part_num }}</td>
-            </tr>
-            <tr>
-              <th>Color</th>
-              <td>{{ brick.color.name }}</td>
-            </tr>
-            <tr>
-              <th>RGB</th>
-              <td>{{ brick.color.rgb }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <div class="col-md-5">
+            <table class="table table-bordered">
+                <thead>
+                <tr>
+                    <th class="text-center" colspan="2"><h3>Brick Details</h3></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <th>Brick ID</th>
+                    <td>{{ brick.brick_id }}</td>
+                </tr>
+                <tr>
+                    <th>Part Number</th>
+                    <td>{{ brick.part_num }}</td>
+                </tr>
+                <tr>
+                    <th>Color</th>
+                    <td>{{ brick.color.name }}</td>
+                </tr>
+                <tr>
+                    <th>RGB</th>
+                    <td>{{ brick.color.rgb }}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
     <div class="col-md-6">
-        <img src=https://live.staticflickr.com/3914/14502387038_90985b3e78_b.jpg alt="{{ brick.part_num }}" width="550" height="400"> <!--na razie przykładowy obrazek-->
-      </div>
-  </div>
+        <img src=https://live.staticflickr.com/3914/14502387038_90985b3e78_b.jpg alt="{{ brick.part_num }}"
+             width="550" height="400"> <!--na razie przykładowy obrazek-->
+    </div>
 {% endblock %}
