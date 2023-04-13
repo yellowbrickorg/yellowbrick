@@ -9,7 +9,7 @@
         <h1>Brick List</h1>
         <ul>
             {% for brick in page_obj %}
-                <li>{{ brick.brick_id }} - {{ brick.color.name }}</li>
+               <li>{{ brick.brick_id }} - {{ brick.part_num }} - {{ brick.color.name }}</li>
             {% empty %}
                 <li>No bricks found.</li>
             {% endfor %}

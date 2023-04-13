@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from .models import Brick
 
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 
 
 # Create your views here.
@@ -28,7 +28,9 @@ def brick_list(request):
     context = {'bricks': bricks}
     return render(request, 'bsf/brick_list.html', context)
 
-
+class BrickDetailView(DetailView):
+    model = Brick
+    template_name = 'bsf/brick_detail.html'
 class BrickListView(ListView):
     paginate_by = 15
     model = Brick
