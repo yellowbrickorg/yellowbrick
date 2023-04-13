@@ -50,14 +50,14 @@ Klasy realizujące zależność wiele-do-wielu.
 class BrickInSetQuantity(models.Model):
     brickset = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
-    quantity = models.PositiveSmallIntegerField()
+    quantity = models.PositiveIntegerField()
 
 class BrickInCollectionQuantity(models.Model):
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
-    quantity = models.PositiveSmallIntegerField()
+    quantity = models.PositiveIntegerField()
 
 class SetInCollectionQuantity(models.Model):
     brickset = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
-    quantity = models.PositiveSmallIntegerField()
+    quantity = models.PositiveIntegerField()

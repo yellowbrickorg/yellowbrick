@@ -28,5 +28,5 @@ urlpatterns = [
     path('<int:set_id>/add_set', views.add_set, name='add_set'),
     path('<int:brick_id>/del_brick', views.del_brick, name='del_brick'),
     path('<int:set_id>/del_set', views.del_set, name='del_set'),
-
+    path('<int:set_id>/convert', views.convert, name='convert'),
 ]

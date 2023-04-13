@@ -4,7 +4,7 @@ import django.contrib.auth
 from .models import UserCollection
 from django.template import loader
 from django.views.generic import ListView
-from .models import Brick, LegoSet, BrickInCollectionQuantity, SetInCollectionQuantity
+from .models import Brick, LegoSet, BrickInCollectionQuantity, SetInCollectionQuantity, BrickInSetQuantity
 from django.urls import reverse
 
 
@@ -63,7 +63,7 @@ def add_set(request, set_id):
             except (KeyError, SetInCollectionQuantity.DoesNotExist):
                 collection.sets.add(lego_set, through_defaults={"quantity": qty})
             else:
-                set_through.quantity += qty
+                set_through.quantity = min(set_through.quantity + qty, 100)
                 set_through.save()
         return HttpResponseRedirect(reverse('my_bricks', args=()))
 
@@ -76,9 +76,9 @@ def add_brick(request, brick_id):
         try:
             brick_through = collection.bricks.through.objects.get(brick=brick_id)
         except (KeyError, BrickInCollectionQuantity.DoesNotExist):
-            collection.sets.add(brick, through_defaults={"quantity": qty})
+            collection.bricks.add(brick, through_defaults={"quantity": qty})
         else:
-            brick_through.quantity += qty
+            brick_through.quantity = min(brick_through.quantity + qty, 10000)
             brick_through.save()
     return HttpResponseRedirect(reverse('my_bricks', args=()))
 
@@ -113,13 +113,41 @@ def del_brick(request, brick_id):
         try:
             brick_through = collection.bricks.through.objects.get(brick=brick_id)
         except (KeyError, BrickInCollectionQuantity.DoesNotExist):
-            collection.sets.add(brick, through_defaults={"quantity": qty})
+            collection.bricks.add(brick, through_defaults={"quantity": qty})
         else:
             if brick_through.quantity <= qty:
                 collection.bricks.remove(brick)
             else:
                 brick_through.quantity -= qty
                 brick_through.save()
+    return HttpResponseRedirect(reverse('my_bricks', args=()))
+
+def convert(request, set_id):
+    brickset = get_object_or_404(LegoSet, set_id=set_id)
+    qty = int(request.POST.get('quantity', False))
+    logged_user = request.user
+    collection = UserCollection.objects.get(userid=logged_user.id)
+    if qty > 0:
+        try:
+            set_through = collection.sets.through.objects.get(brickset_id=set_id)
+        except (KeyError, SetInCollectionQuantity.DoesNotExist):
+            return HttpResponseRedirect(reverse('my_bricks', args=()))
+        else:
+            real_qty = min(set_through.quantity, qty)
+            brickinset_through = brickset.bricks.through.objects.all()
+            for brickth in brickinset_through:
+                try:
+                    brick_through = collection.bricks.through.objects.get(brick_id=brickth.brick.brick_id)
+                except (KeyError, BrickInCollectionQuantity.DoesNotExist):
+                    collection.bricks.add(brickth.brick, through_defaults={"quantity": real_qty * brickth.quantity})
+                else:
+                    brick_through.quantity = min(brick_through.quantity + real_qty * brickth.quantity, 10000)
+                    brick_through.save()
+            if set_through.quantity <= qty:
+                collection.sets.remove(brickset)
+            else:
+                set_through.quantity -= qty
+                set_through.save()
     return HttpResponseRedirect(reverse('my_bricks', args=()))
 
 def index(request):
