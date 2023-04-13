@@ -54,7 +54,7 @@
     {% if user_bricks %}
     <ul>
     {% for brick in user_bricks %}
-    <li>{{ brick.brick.partnum }}, quantity: {{ brick.quantity }}</li>
+    <li>{{ brick.brick.part_num }}, quantity: {{ brick.quantity }}</li>
     <br>
     <form action="{% url 'add_brick' brick.brick.brick_id %}" method="post">
     {% csrf_token %}
