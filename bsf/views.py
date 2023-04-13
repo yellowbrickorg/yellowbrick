@@ -145,6 +145,16 @@ def convert(request, id):
                 set_through.save()
     return HttpResponseRedirect(reverse('collection', args=()))
 
+def filter_collection(request):
+    try:
+        logged_user = request.user
+        single_diff = int(request.POST.get('single_diff', False))
+        general_diff = int(request.POST.get('general_diff', False))
+    except:
+        return HttpResponseRedirect(reverse('filter', args=()))
+    else:
+        viable_sets = CollectionFilter.get_viable_sets(logged_user, single_diff, general_diff)
+        return HttpResponseRedirect(reverse('filter', args=({viable_sets: viable_sets})))
 
 def index(request):
     return render(request, 'bsf/index.html')
@@ -172,3 +182,9 @@ class BrickDetailView(DetailView):
 class BrickListView(ListView):
     paginate_by = 15
     model = Brick
+    
+class FilterListView(ListView):
+    paginate_by = 15
+    model = LegoSet
+
+ 
