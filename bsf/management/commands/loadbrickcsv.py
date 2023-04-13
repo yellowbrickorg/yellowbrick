@@ -22,8 +22,8 @@ class Command(BaseCommand):
                         part_num=row[1],
                         color_id=row[2],
                     )
-                except ValueError:
-                    self.stdout.write('Something broke but could not care less')
+                except ValueError as e:
+                    self.stdout.write(f'Something broke: {e}')
 
         self.stdout.write(
             self.style.SUCCESS('Successfully created Bricks')

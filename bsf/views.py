@@ -5,6 +5,7 @@ from django.template import loader
 from django.views.generic import ListView, DetailView
 from .models import Brick, LegoSet, BrickInCollectionQuantity, SetInCollectionQuantity
 from django.urls import reverse
+from django.db import transaction
 
 
 def collection(request):
@@ -28,15 +29,12 @@ def collection(request):
         return render(request, 'admin/index.html')
 
 
-def legoset_list(request):
-    sets = LegoSet.objects.all()
-    context = {'sets': sets}
-    return render(request, 'bsf/set_list.html', context)
-
-
 class SetListView(ListView):
     paginate_by = 15
     model = LegoSet
+
+    def get_queryset(self):
+        return self.model.objects.all().filter(bricks__isnull=True).distinct()
 
 
 def add_set(request, id):
@@ -105,7 +103,7 @@ def del_brick(request, brick_id):
     collection = UserCollection.objects.get(user=logged_user)
     if qty > 0:
         try:
-            brick_through = collection.bricks.through.objects.get(brick_set_id=brick_id)
+            brick_through = collection.bricks.through.objects.get(brick_id=brick_id)
         except (KeyError, BrickInCollectionQuantity.DoesNotExist):
             collection.bricks.add(brick, through_defaults={"quantity": qty})
         else:
