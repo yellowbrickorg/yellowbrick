@@ -80,11 +80,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'OPTIONS': {
             'service': 'yellowbrick_db',
-            'passfile': '.my_pgpass',
         },
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
