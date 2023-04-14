@@ -1,16 +1,33 @@
 #!/bin/sh
-echo "::: pre-commit hook :::"
+Green='\033[0;32m'
+Red='\033[0;31m'
+Color_Off='\033[0m'
+White='\033[0;37m'
+BWhite='\033[1;37m'       # White
+
+echo -e "${BWhite}::: pre-commit hook :::${Color_Off}"
 
 # Run Django tests
-echo "Running Django tests..."
+echo -e "${White}Running Django tests with coverage...${Color_Off}"
 
-source env/bin/activate && python manage.py test
+source env/bin/activate
+
+coverage run --source="." manage.py test bsf
 
 if [ $? -ne 0 ]; then
-  echo "Commit aborted. Please fix your code first"
+  echo -e "${Red}Commit aborted. Please fix your code first!${Color_Off}"
   exit 1
 else
-  echo "Tests passed, all good."
+  echo -e "${Green}Tests passed, all good.${Color_Off}"
+fi
+
+echo -e "${White}Showing coverage report for bsf...${Color_Off}"
+
+coverage report --include='bsf/*' --skip-covered -m --fail-under 85
+if [ $? -ne 0 ]; then
+  echo -e "${Red}Coverage is under reasonable 85%. Please write some tests next.${Color_Off}"
+else
+  echo -e "${Green}Great coverage!${Color_Off}"
 fi
 
 exit 0
