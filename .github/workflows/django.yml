@@ -37,7 +37,7 @@ jobs:
         # Note that you have to activate the virtualenv in every step
         # because GitHub actions doesn't preserve the environment
       - name: Activate virtualenv
-      - run: . ./.venv/bin/activate
+        run: . ./.venv/bin/activate
       - name: Run Tests
         run: |
           python manage.py test
