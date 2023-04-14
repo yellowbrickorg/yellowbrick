@@ -21,11 +21,11 @@ from .models import UserCollection, User, CollectionFilter
 def collection(request):
     logged_user = request.user
     if logged_user.is_authenticated:
-        user_collection = UserCollection.objects.get(user=logged_user.id)
+        user_collection = UserCollection.objects.get(user=logged_user)
         if user_collection:
             context = {
-                'user_sets': user_collection.sets.through.objects.all(),
-                'user_bricks': user_collection.bricks.through.objects.all(),
+                'user_sets': user_collection.sets.through.objects.all().filter(collection=user_collection),
+                'user_bricks': user_collection.bricks.through.objects.all().filter(collection=user_collection),
             }
         else:
             context = {
@@ -71,7 +71,7 @@ def add_brick(request, brick_id):
     collection = UserCollection.objects.get(user=logged_user)
     if qty > 0:
         try:
-            brick_through = collection.bricks.through.objects.get(brick_id=brick_id)
+            brick_through = collection.bricks.through.objects.get(collection=collection, brick_id=brick_id)
         except (KeyError, BrickInCollectionQuantity.DoesNotExist):
             collection.bricks.add(brick, through_defaults={"quantity": qty})
         else:

@@ -16,6 +16,7 @@ class Brick(models.Model):
     brick_id = models.IntegerField(primary_key=True)
     part_num = models.CharField(max_length=30)
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
+    image_link = models.CharField(max_length=256)
 
     def __str__(self):
         return f"{self.brick_id}"
@@ -85,7 +86,7 @@ class CollectionFilter(models.Model):
         abstract = True
 
     @staticmethod
-    def get_viable_sets(user : User, single_diff=0, general_diff=0):
+    def get_viable_sets(user: User, single_diff=0, general_diff=0):
         """
         Args:
             user: nazwa uzytkowanika
@@ -106,7 +107,7 @@ class CollectionFilter(models.Model):
 
     @staticmethod
     def check_set(all_users_bricks, lego_set: LegoSet, single_diff=0, general_diff=0):
-        for brick_data in BrickInSetQuantity.objects.filter(brick_set = lego_set):
+        for brick_data in BrickInSetQuantity.objects.filter(brick_set=lego_set):
             q_needed = brick_data.quantity
             q_collected = all_users_bricks[brick_data.brick]
             diff = q_needed - q_collected
@@ -120,10 +121,10 @@ class CollectionFilter(models.Model):
         return True
 
     @staticmethod
-    def get_dict_of_users_bricks(user : User, all_users_bricks=None):
-        users_collection = UserCollection.objects.get(user = user)
+    def get_dict_of_users_bricks(user: User, all_users_bricks=None):
+        users_collection = UserCollection.objects.get(user=user)
 
-        for brick_data in BrickInCollectionQuantity.objects.filter(collection = users_collection):
+        for brick_data in BrickInCollectionQuantity.objects.filter(collection=users_collection):
             q = brick_data.quantity
             if brick_data.brick in all_users_bricks:
                 all_users_bricks[brick_data.brick] += q
@@ -132,12 +133,12 @@ class CollectionFilter(models.Model):
         return all_users_bricks
 
     @staticmethod
-    def get_dict_of_users_bricks_from_sets(user : User, all_users_bricks=None):
-        users_collection = UserCollection.objects.get(user = user)
+    def get_dict_of_users_bricks_from_sets(user: User, all_users_bricks=None):
+        users_collection = UserCollection.objects.get(user=user)
 
-        for set_data in SetInCollectionQuantity.objects.filter(collection = users_collection):
+        for set_data in SetInCollectionQuantity.objects.filter(collection=users_collection):
             users_set = set_data.brick_set
-            for brick_data in BrickInSetQuantity.objects.filter(brick_set = users_set):
+            for brick_data in BrickInSetQuantity.objects.filter(brick_set=users_set):
                 q = brick_data.quantity
                 if brick_data.brick in all_users_bricks:
                     all_users_bricks[brick_data.brick] += q
