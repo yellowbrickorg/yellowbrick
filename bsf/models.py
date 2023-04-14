@@ -34,7 +34,7 @@ class LegoSet(models.Model):
     name = models.CharField(max_length=256)
     image_link = models.CharField(max_length=256)
     bricks = models.ManyToManyField(Brick, through="BrickInSetQuantity")
-    inventory_id = models.IntegerField(unique=True)
+    inventory_id = models.IntegerField()
 
     def __str__(self):
         return f"{self.number} - {self.name}"

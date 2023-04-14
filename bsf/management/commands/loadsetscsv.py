@@ -25,10 +25,10 @@ class Command(BaseCommand):
                         inventory_id=row[3],
                     )
                     self.stdout.write(f'{row[3]} --> {row[0]}')
-                except ValueError:
-                    self.stdout.write('Something broke but could not care less')
-                except django.db.utils.IntegrityError:
-                    self.stdout.write('Something really broke but could not care less')
+                except ValueError as e:
+                    self.stdout.write(f'Something broke: {e}')
+                except django.db.utils.IntegrityError as e:
+                    self.stdout.write(f'Something really broke: {e}')
 
         self.stdout.write(
             self.style.SUCCESS('Successfully created LegoSets')
