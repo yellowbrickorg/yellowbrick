@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% block page_meta %}{% endblock %}
+
+    {# Load the tag library #}
+    {% load bootstrap5 %}
+
+    {# Load CSS and JavaScript #}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+
+    {# Display django.contrib.messages as Bootstrap alerts #}
+    {% bootstrap_messages %}
+</head>
+<body>
+{% include "snippets/nav.html" %}
+<div class="container my-3">
+{% block page_content %}{% endblock %}
+</div>
+</body>
+</html>

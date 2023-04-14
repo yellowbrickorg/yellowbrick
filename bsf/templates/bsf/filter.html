@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block page_meta %}
+    <title>Filter</title>
+{% endblock %}
+
+{% block page_content %}
+    <h1>Filter page</h1>
+    <p>
+        Here you can see which sets you can currently build using bricks you aready have marked in your collection.
+        Select how many bricks your collection can lack of a single type by inputing a number in "Single brick
+        difference" input slot.
+        Select how many bricks your collection can lack in total by inputing a number in "Total brick difference" input
+        slot.
+    </p>
+
+    <form action="{% url 'filter_run' %}" method="post">
+        {% csrf_token %}
+        <label for="single_diff">Single brick difference:</label>
+        <input type="number" name="single_diff" id="single_diff" value="{{ single_diff }}" min="0" max="10">
+
+        <label for="general_diff">Total brick difference:</label>
+        <input type="number" name="general_diff" id="general_diff" value="{{ general_diff }}" min="0" max="1000">
+
+        <button type="submit">Submit</button>
+    </form>
+
+
+    <ul class="list-group mt-2">
+        {% for set in viable_sets %}
+            <li class="list-group-item">
+                <div class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        <img class="img-thumbnail" src="{{ set.image_link }}" width="120">
+                    </div>
+                    <div class="col-auto me-auto">
+                        <a href="{% url 'set_detail' set.id %}">{{ set.number }} - {{ set.name }}</a>
+                    </div>
+                </div>
+            </li>
+        {% empty %}
+            <li class="list-group-item">
+                No sets found.
+            </ul>
+        {% endfor %}
+    </ul>
+
+{% endblock %}
+
+
