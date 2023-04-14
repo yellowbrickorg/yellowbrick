@@ -1,10 +1,10 @@
 import django.db.utils
-import psycopg.errors
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from bsf.models import Color, Brick, LegoSet, UserCollection, BrickInSetQuantity, BrickInCollectionQuantity, \
-    CollectionFilter
+from bsf.models import Color, Brick, LegoSet, UserCollection, BrickInSetQuantity, BrickInCollectionQuantity
+
+from . import views
 
 
 class CollectionFilterTestCase(TestCase):
@@ -80,9 +80,9 @@ class CollectionFilterTestCase(TestCase):
 
         user1 = User.objects.get(username='Janusz')
 
-        self.assertEqual(CollectionFilter.get_viable_sets(user1), [lego_set2])
+        self.assertEqual(views.get_viable_sets(user1), [lego_set2])
 
     def test_user2_cant_build_anything(self):
         user2 = User.objects.get(username='Mariusz')
 
-        self.assertEqual(CollectionFilter.get_viable_sets(user2), [])
+        self.assertEqual(views.get_viable_sets(user2), [])

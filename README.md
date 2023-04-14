@@ -24,11 +24,13 @@ dbname=yellowbrick
 port=5432
 ```
 
-oraz `~/.my_pgpass`:
+oraz `.pgpass` w korzeniu projektu:
+```
+localhost:5432:yellowbrick:postgres:<pass>
+```
 
-```
-localhost:5432:yellowbrick:postgres:bricks
-```
+Hasło użytkownika `postgres` można utworzyć za pomocą poleceń
+`sudo -u postgres psql` i `\password` po wiejściu w konsolę Postgresa.
 
 ### 2. Instalacja Django
 

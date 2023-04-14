@@ -74,12 +74,16 @@ WSGI_APPLICATION = 'yellowbrick.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
+# In case of connection/auth issues, consult:
+# https://stackoverflow.com/q/71337173
+# https://stackoverflow.com/q/2942485
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'OPTIONS': {
             'service': 'yellowbrick_db',
+            'passfile': '.pgpass',
         },
     }
 }
