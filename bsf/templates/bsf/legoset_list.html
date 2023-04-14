@@ -9,12 +9,12 @@
     <h1>Set List</h1>
     <ul>
         {% for set in page_obj %}
-            <li>{{ set.name }}
+            <li>{{ set.number }} - {{ set.name }}
                 {% if request.user.is_authenticated %}
                     <br>
                     <form action="{% url 'add_set' set.id %}" method="post">
                         {% csrf_token %}
-                        <input type="number" name="quantity" value="0" id="setquantity{{ set.brickset.id }}"
+                        <input type="number" name="quantity" value="0" id="setquantity{{ set.brick_set.id }}"
                                min="0" max="100">
                         <input type="submit" value="Add">
                     </form>

@@ -6,7 +6,7 @@ from bsf.models import Brick
 
 
 class Command(BaseCommand):
-    help = "Imports Brick models from CSV file"
+    help = "Imports Brick images from CSV file"
 
     def add_arguments(self, parser):
         parser.add_argument("csv_path", nargs="+")
@@ -17,12 +17,12 @@ class Command(BaseCommand):
             next(reader, None)  # skip csv header
             for row in reader:
                 try:
-                    _, created = Brick.objects.get_or_create(
-                        brick_id=row[0],
-                        part_num=row[1],
-                        color_id=row[2],
-                        image_link=row[3],
-                    )
+                    bricks = Brick.objects.filter(part_num=row[1])
+                    for brick in bricks:
+                        brick.image_link = row[5]
+                        self.stdout.write(f'{brick.brick_id} <- {brick.image_link}')
+                        brick.save()
+
                 except ValueError as e:
                     self.stdout.write(f'Something broke: {e}')
 

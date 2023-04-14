@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from .views import BrickListView, BrickDetailView, SetListView
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     # /
@@ -27,4 +28,12 @@ urlpatterns = [
     path('set/add/<int:id>/', views.add_set, name='add_set'),
     path('set/del/<int:id>', views.del_set, name='del_set'),
     path('set/convert/<int:id>', views.convert, name='convert'),
+
+    # Account management
+    path('login/', views.login, name='login'),
+    path('signup/', views.signup, name='signup'),
+    path('password_reset/', views.password_reset, name='password_reset'),
+    path('logout/', views.logout, name='logout'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name="registration/password_reset_confirm.html"), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'), 
 ]
