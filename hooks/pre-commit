@@ -1,0 +1,16 @@
+#!/bin/sh
+echo "::: pre-commit hook :::"
+
+# Run Django tests
+echo "Running Django tests..."
+
+source env/bin/activate && python manage.py test
+
+if [ $? -ne 0 ]; then
+  echo "Commit aborted. Please fix your code first"
+  exit 1
+else
+  echo "Tests passed, all good."
+fi
+
+exit 0

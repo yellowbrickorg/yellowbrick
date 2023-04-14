@@ -10,6 +10,15 @@ python-pip
 postgresql
 ```
 
+### 0. Konfiguracja Gita
+
+Aby korzystać ze wspólnej konfiguracji repozytorium, w korzeniu projektu należy
+wykonać polecenie
+
+```
+git config --local include.path ../.gitconfig
+```
+
 ### 1. Konfiguracja PostgreSQL
 
 Aplikacja wymaga działającego Postgresa oraz utworzonej bazy `yellowbrick`.
