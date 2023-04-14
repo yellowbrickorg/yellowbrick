@@ -23,6 +23,7 @@ urlpatterns = [
     # /sets/
     path('sets/', SetListView.as_view(), name='sets'),
     path('sets/<int:pk>/', SetDetailView.as_view(), name='set_detail'),
+    path('filter/run', views.filter_collection, name='filter_run'),
 
     path('bricks/add/<int:brick_id>', views.add_brick, name='add_brick'),
     path('bricks/del/<int:brick_id>', views.del_brick, name='del_brick'),

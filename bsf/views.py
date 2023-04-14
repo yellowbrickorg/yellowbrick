@@ -222,8 +222,9 @@ def filter_collection(request):
     except:
         return HttpResponseRedirect(reverse('filter', args=()))
     else:
-        viable_sets = get_viable_sets(logged_user, single_diff, general_diff)
-        return HttpResponseRedirect(reverse('filter', kwargs={"viable_sets": viable_sets}))
+        template = loader.get_template('bsf/filter.html')
+        context = {'viable_sets': get_viable_sets(logged_user, single_diff, general_diff)}
+        return HttpResponse(template.render(context, request))
 
 
 def index(request):

@@ -13,20 +13,22 @@
 
     </span>
 
-    <form method="get">
+    <form action="{% url 'filter_run' %}" method="post">
+        {% csrf_token %}
         <label for="single_diff">Single brick difference:</label>
         <input type="number" name="single_diff" id="single_diff" value="{{ single_diff }}" min="0" max="10">
-         
+
         <label for="general_diff">Total brick difference:</label>
         <input type="number" name="general_diff" id="general_diff" value="{{ general_diff }}" min="0" max="1000">
-        
+
         <button type="submit">Submit</button>
     </form>
 
 
     <ul>
         {% for set in viable_sets %}
-            <li>{{ set.number }} - {{ set.name }} </li>
+            <li><a href="{% url 'set_detail' set.id %}">{{ set.number }} - {{ set.name }}</a>
+            </li>
         {% empty %}
             <li>No sets found.</li>
         {% endfor %}
