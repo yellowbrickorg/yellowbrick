@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import BrickListView, BrickDetailView, SetListView
+from .views import BrickListView, BrickDetailView, SetListView, SetDetailView
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
@@ -22,6 +22,7 @@ urlpatterns = [
 
     # /sets/
     path('sets/', SetListView.as_view(), name='sets'),
+    path('sets/<int:pk>/', SetDetailView.as_view(), name='set_detail'),
 
     path('bricks/add/<int:brick_id>', views.add_brick, name='add_brick'),
     path('bricks/del/<int:brick_id>', views.del_brick, name='del_brick'),

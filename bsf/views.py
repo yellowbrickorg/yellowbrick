@@ -14,8 +14,8 @@ from django.utils.http import urlsafe_base64_encode
 from django.views.generic import ListView, DetailView
 
 from .forms import NewUserForm
-from .models import Brick, LegoSet, BrickInCollectionQuantity, SetInCollectionQuantity
-from .models import UserCollection, User, CollectionFilter
+from .models import Brick, LegoSet, BrickInCollectionQuantity, SetInCollectionQuantity, BrickInSetQuantity
+from .models import UserCollection, User
 
 
 def collection(request):
@@ -127,9 +127,11 @@ def convert(request, id):
     qty = int(request.POST.get('quantity', False))
     logged_user = request.user
     collection = UserCollection.objects.get(user=logged_user)
+    sets_of_user = SetInCollectionQuantity.objects.filter(collection=collection)
+    bricks_of_user = BrickInCollectionQuantity.objects.filter(collection=collection)
     if qty > 0:
         try:
-            set_through = collection.sets.through.objects.get(brick_set_id=id)
+            set_through = sets_of_user.get(brick_set_id=id)
         except (KeyError, SetInCollectionQuantity.DoesNotExist):
             return HttpResponseRedirect(reverse('collection', args=()))
         else:
@@ -137,7 +139,7 @@ def convert(request, id):
             brickinset_through = brickset.bricks.through.objects.all()
             for brickth in brickinset_through:
                 try:
-                    brick_through = collection.bricks.through.objects.get(brick_id=brickth.brick.brick_id)
+                    brick_through = bricks_of_user.get(brick_id=brickth.brick.brick_id)
                 except (KeyError, BrickInCollectionQuantity.DoesNotExist):
                     collection.bricks.add(brickth.brick, through_defaults={"quantity": real_qty * brickth.quantity})
                 else:
@@ -151,6 +153,67 @@ def convert(request, id):
     return HttpResponseRedirect(reverse('collection', args=()))
 
 
+def check_set(all_users_bricks, lego_set: LegoSet, single_diff=0, general_diff=0):
+    for brick_data in BrickInSetQuantity.objects.filter(brick_set=lego_set):
+        q_needed = brick_data.quantity
+        q_collected = all_users_bricks[brick_data.brick]
+        diff = q_needed - q_collected
+
+        if diff > single_diff:
+            return False
+
+        general_diff -= max(0, diff)
+        if general_diff < 0:
+            return False
+    return True
+
+
+def get_dict_of_users_bricks(user: User, all_users_bricks=None):
+    users_collection = UserCollection.objects.get(user=user)
+
+    for brick_data in BrickInCollectionQuantity.objects.filter(collection=users_collection):
+        q = brick_data.quantity
+        if brick_data.brick in all_users_bricks:
+            all_users_bricks[brick_data.brick] += q
+        else:
+            all_users_bricks[brick_data.brick] = q
+    return all_users_bricks
+
+
+def get_dict_of_users_bricks_from_sets(user: User, all_users_bricks=None):
+    users_collection = UserCollection.objects.get(user=user)
+
+    for set_data in SetInCollectionQuantity.objects.filter(collection=users_collection):
+        users_set = set_data.brick_set
+        for brick_data in BrickInSetQuantity.objects.filter(brick_set=users_set):
+            q = brick_data.quantity
+            if brick_data.brick in all_users_bricks:
+                all_users_bricks[brick_data.brick] += q
+            else:
+                all_users_bricks[brick_data.brick] = q
+    return all_users_bricks
+
+
+def get_viable_sets(user: User, single_diff=0, general_diff=0):
+    """
+    Args:
+        user: nazwa uzytkowanika
+        single_diff: różnica mówiąca, ile klocków każdego rodzaju może nam brakować w danym zestawie
+        general_diff: różnica mówiąca, ile klocków w sumie może nam brakować w danym zestawie
+    """
+
+    all_users_bricks = {}
+    all_users_bricks = get_dict_of_users_bricks(user, all_users_bricks)
+    all_users_bricks = get_dict_of_users_bricks_from_sets(user, all_users_bricks)
+
+    viable_sets = []
+    for lego_set in LegoSet.objects.all():
+        if check_set(all_users_bricks, lego_set, single_diff, general_diff):
+            viable_sets.append(lego_set)
+
+    return viable_sets
+
+
 def filter_collection(request):
     try:
         logged_user = request.user
@@ -159,8 +222,8 @@ def filter_collection(request):
     except:
         return HttpResponseRedirect(reverse('filter', args=()))
     else:
-        viable_sets = CollectionFilter.get_viable_sets(logged_user, single_diff, general_diff)
-        return HttpResponseRedirect(reverse('filter', args=({viable_sets: viable_sets})))
+        viable_sets = get_viable_sets(logged_user, single_diff, general_diff)
+        return HttpResponseRedirect(reverse('filter', kwargs={"viable_sets": viable_sets}))
 
 
 def index(request):
@@ -194,6 +257,16 @@ class BrickListView(ListView):
 class FilterListView(ListView):
     paginate_by = 15
     model = LegoSet
+
+
+class SetDetailView(DetailView):
+    model = LegoSet
+    template_name = 'bsf/legoset_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['bricks_in_set'] = BrickInSetQuantity.objects.filter(brick_set_id=self.kwargs['pk'])
+        return context
 
 
 def login(request):

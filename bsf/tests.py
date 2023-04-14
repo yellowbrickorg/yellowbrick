@@ -16,12 +16,12 @@ class CollectionFilterTestCase(TestCase):
         brick2 = Brick.objects.create(brick_id=2, part_num='0002', color_id=1)
 
         lego_set1 = LegoSet.objects.create(number='11111', name='Lego Set 1',
-                                           image_link='https://example.com/image.png')
+                                           image_link='https://example.com/image.png', inventory_id=1)
         lego_set1.bricks.add(brick1, through_defaults={'quantity': 10})
         lego_set1.bricks.add(brick2, through_defaults={'quantity': 5})
 
         lego_set2 = LegoSet.objects.create(number='22222', name='Lego Set 2',
-                                           image_link='https://example.com/image.png')
+                                           image_link='https://example.com/image.png', inventory_id=2)
         lego_set2.bricks.add(brick1, through_defaults={'quantity': 2})
         lego_set2.bricks.add(brick2, through_defaults={'quantity': 5})
 
