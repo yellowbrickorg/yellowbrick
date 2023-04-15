@@ -7,131 +7,159 @@
 
 {% block page_content %}
     <h1>My collection</h1>
-    <p>
+    <p class="col-8">
         Listed below are your sets and loose bricks.
         To add or delete your entire sets or bricks, insert a value and hit the button.
         You can't delete a single brick from an entire set.
         However, you can convert your set to loose bricks and then delete those.
         Note that this cannot be undone.
         Warning: you can have only 100 sets and 10.000 bricks of a type.
-        If you exceed that limit (e.g. by converting a set), your set or brick quantity will
+        If you exceed that limit (e.g. by converting a set), your set or brick quantity
+        will
         be capped to these limits.
     </p>
 
-    <div class="my_sets">
-        <h2>My sets</h2>
+    <h2>Sets</h2>
 
-        {% if user_sets %}
-            <ul class="list-group">
-                {% for set in user_sets %}
-                    <li class="list-group-item">
-                    <div class="row g-3 align-items-center">
-                    <div class="col-auto">
-                        <img class="img-thumbnail" src="{{ set.brick_set.image_link }}" width="120">
-                    </div>
-                    <div class="col-auto me-auto">
-                        <a href="{% url 'set_detail' set.id %}">
-                            {{ set.brick_set.name }}, quantity: {{ set.quantity }}
-                        </a>
-                    </div>
-                    <div class="col-auto">
-                    <form action="{% url 'add_set' set.brick_set.id %}" method="post">
-                        {% csrf_token %}
-                        <div class="row g-2 align-items-center">
-                            <div class="col-auto">
-                                <input type="number" name="quantity" value="0" id="setquantity{{ set.brick_set.id }}"
-                                       min="0"
-                                       max="{{ 100|subtract:set.quantity }}" class="form-control">
-                            </div>
-                            <div class="col-auto">
-                                <button type="submit" class="btn btn-outline-secondary">Add</button>
-                            </div>
-                        </div>
-                    </form>
-                    <form action="{% url 'del_set' set.brick_set.id %}" method="post">
-                        {% csrf_token %}
-                        <div class="row g-2 align-items-center">
-                            <div class="col-auto">
-                                <input type="number" name="quantity" value="0" id="setdelquantity{{ set.brick_set.id }}"
-                                       min="0"
-                                       max="{{ set.quantity }}" class="form-control">
-                            </div>
-                            <div class="col-auto">
-                                <button type="submit" class="btn btn-outline-secondary">Delete</button>
-                            </div>
-                        </div>
-                    </form>
-                    <form action="{% url 'convert' set.brick_set.id %}" method="post">
-                        <div class="row g-2 align-items-center">
-                            <div class="col-auto">
-                                {% csrf_token %}
-                                <input type="number" name="quantity" value="0"
-                                       id="convertquantity{{ set.brick_set.id }}" min="0"
-                                       max="{{ set.quantity }}" class="form-control">
-                            </div>
-                            <div class="col-auto">
-                                <button type="submit" class="btn btn-outline-secondary">Convert</button>
-                            </div>
-                        </div>
-                    </form>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>You don't have any sets.</p>
-        {% endif %}
-    </div>
-
-    <div class="my_bricks my-3">
-        <h2>My loose bricks</h2>
-
-        {% if user_bricks %}
-            <ul class="list-group">
-                {% for brick in user_bricks %}
+    {% if user_sets %}
+        <ul class="list-group">
+            {% for set_in_collection in user_sets %}
+                {% with brick_set=set_in_collection.brick_set %}
                     <li class="list-group-item">
                         <div class="row g-3 align-items-center">
                             <div class="col-auto">
-                                <img class="img-thumbnail" src="{{ brick.brick.image_link }}" width="80">
+                                <img class="img-thumbnail"
+                                     src="{{ brick_set.image_link }}"
+                                     width="120">
                             </div>
                             <div class="col-auto me-auto">
-                                <a href="{% url 'brick_detail' brick.brick %}">
-                                    {{ brick.brick.part_num }}, quantity: {{ brick.quantity }}</a>
-                            </div>
-                            <div class="col-auto">
-                                <form action="{% url 'add_brick' brick.brick.brick_id %}" method="post">
-                                    {% csrf_token %}
-                                    <div class="row g-2 align-items-center">
-                                        <div class="col-auto">
-                                            <input type="number" name="quantity" value="0"
-                                                   id="brickquantity{{ brick.brick.brick_id }}"
-                                                   min="0" max="{{ 10000|subtract:brick.quantity }}"
-                                                   class="form-control">
+                                <div class="mb-2">
+                                    <a href="{% url 'set_detail' brick_set.id %}">
+                                        {{ brick_set.id }}</a>
+                                    {{ brick_set.name }} x
+                                    {{ set_in_collection.quantity }}
+                                    </a>
+                                </div>
+                                <div class="d-flex">
+                                    <form action="{% url 'add_set' brick_set.id %}"
+                                          method="post" class="me-2">
+                                        {% csrf_token %}
+                                        <div class="input-group">
+                                            <input type="number" name="quantity"
+                                                   value="0"
+                                                   id="setquantity{{ brick_set.id }}"
+                                                   min="0"
+                                                   max="{{ 100|subtract:set_in_collection.quantity }}"
+                                                   class="form-control border-secondary">
+                                            <button type="submit"
+                                                    class="btn btn-outline-secondary">
+                                                Add
+                                            </button>
                                         </div>
-                                        <div class="col-auto">
-                                            <button type="submit" class="btn btn-outline-secondary">Add</button>
+                                    </form>
+                                    <form action="{% url 'del_set' brick_set.id %}"
+                                          method="post" class="me-2">
+                                        {% csrf_token %}
+                                        <div class="input-group">
+                                            <input type="number" name="quantity"
+                                                   value="0"
+                                                   id="setdelquantity{{ brick_set.id }}"
+                                                   min="0"
+                                                   max="{{ set_in_collection.quantity }}"
+                                                   class="form-control border-secondary">
+                                            <button type="submit"
+                                                    class="btn btn-outline-secondary">
+                                                Remove
+                                            </button>
                                         </div>
-                                    </div>
-                                </form>
-                                <form action="{% url 'del_brick' brick.brick.brick_id %}" method="post" class="mt-2">
-                                    {% csrf_token %}
-                                    <div class="row g-2 align-items-center">
-                                        <div class="col-auto">
-                                            <input type="number" name="quantity" value="0"
-                                                   id="brickdelquantity{{ set.brick.brick_id }}"
-                                                   min="0" max="{{ brick.quantity }}"
-                                                   class="form-control">
+                                    </form>
+                                    <form action="{% url 'convert' brick_set.id %}"
+                                          method="post">
+                                        <div class="input-group">
+                                            {% csrf_token %}
+                                            <input type="number" name="quantity"
+                                                   value="0"
+                                                   id="convertquantity{{ brick_set.id }}"
+                                                   min="0"
+                                                   max="{{ set.quantity }}"
+                                                   class="form-control border-secondary">
+                                            <button type="submit"
+                                                    class="btn btn-outline-secondary">
+                                                Convert
+                                            </button>
                                         </div>
-                                        <div class="col-auto">
-                                            <button type="submit" class="btn btn-outline-secondary">Delete</button>
-                                        </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>You don't have any loose bricks.</p>
-        {% endif %}
-    </div>
+                {% endwith %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>You don't have any sets.</p>
+    {% endif %}
+
+    <h2 class="mt-3">Bricks</h2>
+
+    {% if user_bricks %}
+        <ul class="list-group">
+            {% for brick_in_collection in user_bricks %}
+                {% with brick=brick_in_collection.brick %}
+                    <li class="list-group-item">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-auto">
+                                <img class="img-thumbnail"
+                                     src="{{ brick.image_link }}" width="80">
+                            </div>
+                            <div class="col-auto me-auto">
+                                <div class="mb-2">
+                                    <a href="{% url 'brick_detail' brick %}">
+                                        {{ brick.part_num }}</a>
+                                    - {{ brick.color.name }} x
+                                    {{ brick_in_collection.quantity }}
+                                </div>
+                                <div class="d-flex">
+                                    <form action="{% url 'add_brick' brick.brick_id %}"
+                                          method="post" class="me-2">
+                                        {% csrf_token %}
+                                        <div class="input-group">
+                                            <input type="number" name="quantity"
+                                                   value="0"
+                                                   id="brickquantity{{ brick.brick_id }}"
+                                                   min="0"
+                                                   max="{{ 10000|subtract:brick_in_collection.quantity }}"
+                                                   class="form-control border-secondary">
+                                            <button type="submit"
+                                                    class="btn btn-outline-secondary">
+                                                Add
+                                            </button>
+                                        </div>
+                                    </form>
+                                    <form action="{% url 'del_brick' brick.brick_id %}"
+                                          method="post">
+                                        {% csrf_token %}
+                                        <div class="input-group">
+                                            <input type="number" name="quantity"
+                                                   value="0"
+                                                   id="brickdelquantity{{ set.brick_id }}"
+                                                   min="0"
+                                                   max="{{ brick_in_collection.quantity }}"
+                                                   class="form-control border-secondary">
+                                            <button type="submit"
+                                                    class="btn btn-outline-secondary">
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {% endwith %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>You don't have any loose bricks.</p>
+    {% endif %}
 {% endblock %}

@@ -2,7 +2,8 @@ import django.db.utils
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from bsf.models import Color, Brick, LegoSet, UserCollection, BrickInSetQuantity, BrickInCollectionQuantity
+from bsf.models import Color, Brick, LegoSet, UserCollection, BrickInSetQuantity, \
+    BrickInCollectionQuantity
 
 from . import views
 
@@ -16,12 +17,14 @@ class CollectionFilterTestCase(TestCase):
         brick2 = Brick.objects.create(brick_id=2, part_num='0002', color_id=1)
 
         lego_set1 = LegoSet.objects.create(number='11111', name='Lego Set 1',
-                                           image_link='https://example.com/image.png', inventory_id=1)
+                                           image_link='https://example.com/image.png',
+                                           inventory_id=1)
         lego_set1.bricks.add(brick1, through_defaults={'quantity': 10})
         lego_set1.bricks.add(brick2, through_defaults={'quantity': 5})
 
         lego_set2 = LegoSet.objects.create(number='22222', name='Lego Set 2',
-                                           image_link='https://example.com/image.png', inventory_id=2)
+                                           image_link='https://example.com/image.png',
+                                           inventory_id=2)
         lego_set2.bricks.add(brick1, through_defaults={'quantity': 2})
         lego_set2.bricks.add(brick2, through_defaults={'quantity': 5})
 
@@ -38,14 +41,16 @@ class CollectionFilterTestCase(TestCase):
     def test_user_can_have_only_one_collection(self):
         user1 = User.objects.get(username='Janusz')
         print(UserCollection.objects.all())
-        self.assertRaises(django.db.utils.IntegrityError, UserCollection.objects.create, user=user1)
+        self.assertRaises(django.db.utils.IntegrityError, UserCollection.objects.create,
+                          user=user1)
 
     def test_users_bricks_collections(self):
         user1 = User.objects.get(username='Janusz')
         user2 = User.objects.get(username='Mariusz')
 
         user1_collection = UserCollection.objects.get(user=user1)
-        bricks_of_user1 = BrickInCollectionQuantity.objects.filter(collection=user1_collection)
+        bricks_of_user1 = BrickInCollectionQuantity.objects.filter(
+            collection=user1_collection)
 
         brick1 = Brick.objects.get(brick_id=1)
         brick2 = Brick.objects.get(brick_id=2)
@@ -54,7 +59,8 @@ class CollectionFilterTestCase(TestCase):
         self.assertEqual(bricks_of_user1.get(brick=brick2).quantity, 5)
 
         user2_collection = UserCollection.objects.get(user=user2)
-        bricks_of_user2 = BrickInCollectionQuantity.objects.filter(collection=user2_collection)
+        bricks_of_user2 = BrickInCollectionQuantity.objects.filter(
+            collection=user2_collection)
 
         self.assertEqual(bricks_of_user2.get(brick=brick1).quantity, 1)
         self.assertEqual(bricks_of_user2.get(brick=brick2).quantity, 1)
@@ -80,7 +86,9 @@ class CollectionFilterTestCase(TestCase):
 
         user1 = User.objects.get(username='Janusz')
 
-        self.assertEqual(views.get_viable_sets(user1), [lego_set2])
+        self.assertEqual(views.get_viable_sets(user1), [{'lego_set': lego_set2,
+                                                         'single_diff': 0,
+                                                         'general_diff': 0}])
 
     def test_user2_cant_build_anything(self):
         user2 = User.objects.get(username='Mariusz')

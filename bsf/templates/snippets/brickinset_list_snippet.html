@@ -1,0 +1,42 @@
+<div class="my-3">
+    {% for brick_in_set in bricks_in_set %}
+        {% with brick=brick_in_set.brick %}
+            <div class="mb-3">
+                <div class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        <img class="img-thumbnail" src="{{ brick.image_link }}"
+                             width="80">
+                    </div>
+                    <div class="col-auto me-auto">
+                        <a href="{% url 'brick_detail' brick.brick_id %}">
+                            {{ brick.part_num }}</a>
+                        - {{ brick.color.name }} x
+                        {{ brick_in_set.quantity }}
+                    </div>
+                    <div class="col-auto">
+                        {% if request.user.is_authenticated %}
+                            <form action="{% url 'add_brick' brick.brick_id %}"
+                                  method="post">
+                                {% csrf_token %}
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-auto">
+                                        <input class="form-control" type="number"
+                                               name="quantity"
+                                               id="quantity{{ brick.brick_id }}">
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit"
+                                                class="btn btn-outline-secondary">Add
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                            </div>
+                            </div>
+                        {% endif %}
+            </div>
+        {% endwith %}
+    {% empty %}
+        <li>No bricks found.</li>
+    {% endfor %}
+</div>

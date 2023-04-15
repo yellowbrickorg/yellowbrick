@@ -6,35 +6,53 @@
 
 {% block page_content %}
     <h1>Filter page</h1>
-    <p>
-        Here you can see which sets you can currently build using bricks you aready have marked in your collection.
-        Select how many bricks your collection can lack of a single type by inputing a number in "Single brick
-        difference" input slot.
-        Select how many bricks your collection can lack in total by inputing a number in "Total brick difference" input
-        slot.
+    <p class="col-8">
+        Here you can see which sets you can currently build using bricks you aready have
+        marked in your collection. Select how many bricks your collection can lack of a
+        single type by inputting a
+        number in "Single brick difference" input slot. Select how many bricks your
+        collection can lack in total by inputting a number in
+        "Total brick difference" input slot.
     </p>
 
-    <form action="{% url 'filter_run' %}" method="post">
+    <form action="{% url 'filter_run' %}" method="post" class="col-lg-6">
         {% csrf_token %}
-        <label for="single_diff">Single brick difference:</label>
-        <input type="number" name="single_diff" id="single_diff" value="{{ single_diff }}" min="0" max="10">
+        <div class="input-group mb-3">
+            <input type="number" name="single_diff" id="single_diff"
+                   value="{{ single_diff }}" min="0" max="10"
+                   placeholder="Single brick difference"
+                   aria-label="Single brick difference"
+                   class="form-control">
 
-        <label for="general_diff">Total brick difference:</label>
-        <input type="number" name="general_diff" id="general_diff" value="{{ general_diff }}" min="0" max="1000">
+            <input type="number" name="general_diff" id="general_diff"
+                   value="{{ general_diff }}" min="0" max="1000"
+                   placeholder="Total brick difference"
+                   aria-label="Total brick difference"
+                   class="form-control">
 
-        <button type="submit">Submit</button>
+            <button class="btn btn-outline-secondary" type="submit">Submit</button>
+        </div>
     </form>
 
 
     <ul class="list-group mt-2">
-        {% for set in viable_sets %}
+        {% for viable in viable_sets %}
             <li class="list-group-item">
                 <div class="row g-3 align-items-center">
                     <div class="col-auto">
-                        <img class="img-thumbnail" src="{{ set.image_link }}" width="120">
+                        <img class="img-thumbnail"
+                             src="{{ viable.lego_set.image_link }}"
+                             width="120">
                     </div>
                     <div class="col-auto me-auto">
-                        <a href="{% url 'set_detail' set.id %}">{{ set.number }} - {{ set.name }}</a>
+                        <a href="{% url 'set_detail' viable.lego_set.id %}"
+                        >{{ viable.lego_set.number }}</a>
+                        {{ viable.lego_set.name }}
+                    </div>
+                    <div class="col-auto">
+                        {{ viable.single_diff }}
+                        /
+                        {{ viable.general_diff }}
                     </div>
                 </div>
             </li>
