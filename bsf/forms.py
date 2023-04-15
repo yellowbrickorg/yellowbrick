@@ -1,6 +1,7 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, PasswordResetForm, SetPasswordForm
+from django.contrib.auth.forms import UserCreationForm, PasswordResetForm
 from .models import User
+
 
 class NewUserForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -15,6 +16,7 @@ class NewUserForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
 
 class PassResetForm(PasswordResetForm):
     class Meta:

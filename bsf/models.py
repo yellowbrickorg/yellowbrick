@@ -3,6 +3,15 @@ from django.contrib.auth.models import User
 
 
 class Color(models.Model):
+    """
+    Represents a color of LEGO bricks.
+
+    Attributes:
+        color_id : color ID number, compliant with LEGO's color numeric identification
+        name : color's name
+        rgb : color's RGB value
+        is_transparent : indication whether color is transparent
+    """
     color_id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=60)
     rgb = models.CharField(max_length=6)
@@ -13,6 +22,15 @@ class Color(models.Model):
 
 
 class Brick(models.Model):
+    """
+    Represents a LEGO brick.
+
+    Attributes:
+        brick_id : internal brick ID
+        part_num : part number compliant with LEGO's numeric identification
+        color : brick color
+        image_link : link to brick's image
+    """
     brick_id = models.IntegerField(primary_key=True)
     part_num = models.CharField(max_length=30)
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
@@ -22,15 +40,18 @@ class Brick(models.Model):
         return f"{self.brick_id}"
 
 
-"""
-Klasa reprezentująca zestaw.
-Zestaw ma swój numer, nazwę i składa się z określonych klocków
-w określonych ilościach.
-Ponadto ma link do obrazka, na którym jest pokazany.
-"""
-
-
 class LegoSet(models.Model):
+    """
+    Represents a LEGO set.
+
+    Attributes:
+        number : set number compliant with LEGO set identification
+        name : set name
+        image_link : link to an image of set
+        bricks : set of bricks that forms a LEGO set
+        inventory_id : id of corresponding Rebrickable's inventory
+    """
+
     number = models.CharField(max_length=20)
     name = models.CharField(max_length=256)
     image_link = models.CharField(max_length=256)
@@ -43,15 +64,15 @@ class LegoSet(models.Model):
 
 class UserCollection(models.Model):
     """
-    Klasa reprezentująca kolekcję użytkownika.
-    Użytkownik ma określone ilości klocków i zestawów.
+    Represents User's LEGO collection. Can contain whole sets or individual bricks.
     """
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bricks = models.ManyToManyField(Brick, through="BrickInCollectionQuantity")
     sets = models.ManyToManyField(LegoSet, through="SetInCollectionQuantity")
 
     def __str__(self):
-        return f'Collection of {self.user.username}'
+        return f"Collection of {self.user.username}"
 
 
 class BrickInSetQuantity(models.Model):
@@ -60,7 +81,7 @@ class BrickInSetQuantity(models.Model):
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        return f'{self.quantity} x {self.brick} in set {self.brick_set.number}'
+        return f"{self.quantity} x {self.brick} in set {self.brick_set.number}"
 
 
 class BrickInCollectionQuantity(models.Model):
@@ -69,7 +90,8 @@ class BrickInCollectionQuantity(models.Model):
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"{self.quantity} x {self.brick} in {self.collection.user.username}'s collection"
+        return f"{self.quantity} x {self.brick} " \
+               f"in {self.collection.user.username}'s collection"
 
 
 class SetInCollectionQuantity(models.Model):
@@ -78,4 +100,5 @@ class SetInCollectionQuantity(models.Model):
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"{self.quantity} x {self.brick_set} in {self.collection.user.username}'s collection"
+        return f"{self.quantity} x {self.brick_set} " \
+               f"in {self.collection.user.username}'s collection"
