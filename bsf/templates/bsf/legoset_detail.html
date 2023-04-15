@@ -1,24 +1,26 @@
 {% extends "base.html" %}
 
 {% block page_meta %}
-    <title>Set: {{ legoset.id }}</title>
+    <title>{{ legoset.name }} ({{ legoset.id }})</title>
 {% endblock %}
 
 {% block page_content %}
-    <div class="row">
-        <h1>{{ legoset.id }} - {{ legoset.name }}</h1>
-    </div>
-    <div class="col-md-6">
-        <img src="{{ legoset.image_link }}" width="550" height="400">
-    </div>
+    <h2>{{ legoset.name }} <span class="text-secondary">({{ legoset.id }})</span></h2>
 
-    {% if legoset.bricks %}
-        <ul>
-            {% for brick in bricks_in_set %}
-                <li>{{ brick.brick.part_num }}, quantity: {{ brick.quantity }}</li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>You don't have any loose bricks.</p>
-    {% endif %}
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <img class="img-thumbnail shadow" src="{{ legoset.image_link }}" width="550"
+                 height="400">
+        </div>
+        <div class="col-md-6">
+            <h3>Contains</h3>
+
+            {% if legoset.bricks %}
+                {% include "snippets/brickinset_list_snippet.html" with bricks_in_set=bricks_in_set %}
+            {% else %}
+                <p>Set doesn't contain any bricks. Strange, since that's what sets are
+                    for, right?</p>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

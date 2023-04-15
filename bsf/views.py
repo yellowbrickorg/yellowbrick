@@ -14,7 +14,8 @@ from django.utils.http import urlsafe_base64_encode
 from django.views.generic import ListView, DetailView
 
 from .forms import NewUserForm
-from .models import Brick, LegoSet, BrickInCollectionQuantity, SetInCollectionQuantity, BrickInSetQuantity
+from .models import Brick, LegoSet, BrickInCollectionQuantity, SetInCollectionQuantity, \
+    BrickInSetQuantity
 from .models import UserCollection, User
 
 
@@ -24,8 +25,10 @@ def collection(request):
         user_collection = UserCollection.objects.get(user=logged_user)
         if user_collection:
             context = {
-                'user_sets': user_collection.sets.through.objects.all().filter(collection=user_collection),
-                'user_bricks': user_collection.bricks.through.objects.all().filter(collection=user_collection),
+                'user_sets': user_collection.sets.through.objects.all().filter(
+                    collection=user_collection),
+                'user_bricks': user_collection.bricks.through.objects.all().filter(
+                    collection=user_collection),
             }
         else:
             context = {
@@ -61,6 +64,9 @@ def add_set(request, id):
             else:
                 set_through.quantity = min(set_through.quantity + qty, 100)
                 set_through.save()
+        messages.success(request,
+                         f"Added {qty} set(s) with set number {lego_set.id} to "
+                         f"collection.")
         return HttpResponseRedirect(reverse('collection', args=()))
 
 
@@ -71,12 +77,15 @@ def add_brick(request, brick_id):
     collection = UserCollection.objects.get(user=logged_user)
     if qty > 0:
         try:
-            brick_through = collection.bricks.through.objects.get(collection=collection, brick_id=brick_id)
+            brick_through = collection.bricks.through.objects.get(collection=collection,
+                                                                  brick_id=brick_id)
         except (KeyError, BrickInCollectionQuantity.DoesNotExist):
             collection.bricks.add(brick, through_defaults={"quantity": qty})
         else:
             brick_through.quantity = min(brick_through.quantity + qty, 10000)
             brick_through.save()
+    messages.success(request, f"Added {qty} brick(s) with part number {brick.part_num} "
+                              f"to collection.")
     return HttpResponseRedirect(reverse('collection', args=()))
 
 
@@ -100,6 +109,9 @@ def del_set(request, id):
                 else:
                     set_through.quantity -= qty
                     set_through.save()
+        messages.success(request,
+                         f"Removed {qty} set(s) with set number {lego_set.id} from "
+                         f"collection.")
         return HttpResponseRedirect(reverse('collection', args=()))
 
 
@@ -119,6 +131,8 @@ def del_brick(request, brick_id):
             else:
                 brick_through.quantity -= qty
                 brick_through.save()
+    messages.success(request, f"Removed {qty} brick(s) with part number"
+                              f" {brick.part_num} from collection.")
     return HttpResponseRedirect(reverse('collection', args=()))
 
 
@@ -141,37 +155,39 @@ def convert(request, id):
                 try:
                     brick_through = bricks_of_user.get(brick_id=brickth.brick.brick_id)
                 except (KeyError, BrickInCollectionQuantity.DoesNotExist):
-                    collection.bricks.add(brickth.brick, through_defaults={"quantity": real_qty * brickth.quantity})
+                    collection.bricks.add(brickth.brick, through_defaults={
+                        "quantity": real_qty * brickth.quantity})
                 else:
-                    brick_through.quantity = min(brick_through.quantity + real_qty * brickth.quantity, 10000)
+                    brick_through.quantity = min(
+                        brick_through.quantity + real_qty * brickth.quantity, 10000)
                     brick_through.save()
             if set_through.quantity <= qty:
                 collection.sets.remove(brickset)
             else:
                 set_through.quantity -= qty
                 set_through.save()
+    messages.success(request, f"Successfully converted {qty} set(s) with part number"
+                              f" {brickset.id} to loose bricks.")
     return HttpResponseRedirect(reverse('collection', args=()))
 
 
 def check_set(all_users_bricks, lego_set: LegoSet, single_diff=0, general_diff=0):
+    diff = 0
+
     for brick_data in BrickInSetQuantity.objects.filter(brick_set=lego_set):
         q_needed = brick_data.quantity
         q_collected = all_users_bricks[brick_data.brick]
         diff = q_needed - q_collected
-
-        if diff > single_diff:
-            return False
-
         general_diff -= max(0, diff)
-        if general_diff < 0:
-            return False
-    return True
+
+    return diff, general_diff
 
 
 def get_dict_of_users_bricks(user: User, all_users_bricks=None):
     users_collection = UserCollection.objects.get(user=user)
 
-    for brick_data in BrickInCollectionQuantity.objects.filter(collection=users_collection):
+    for brick_data in BrickInCollectionQuantity.objects.filter(
+            collection=users_collection):
         q = brick_data.quantity
         if brick_data.brick in all_users_bricks:
             all_users_bricks[brick_data.brick] += q
@@ -208,8 +224,10 @@ def get_viable_sets(user: User, single_diff=0, general_diff=0):
 
     viable_sets = []
     for lego_set in LegoSet.objects.all():
-        if check_set(all_users_bricks, lego_set, single_diff, general_diff):
-            viable_sets.append(lego_set)
+        diff, gdiff = check_set(all_users_bricks, lego_set, single_diff, general_diff)
+        if diff <= single_diff and gdiff >= 0:
+            viable_sets.append({'lego_set': lego_set, 'single_diff': diff,
+                                'general_diff': gdiff})
 
     return viable_sets
 
@@ -223,7 +241,8 @@ def filter_collection(request):
         return HttpResponseRedirect(reverse('filter', args=()))
     else:
         template = loader.get_template('bsf/filter.html')
-        context = {'viable_sets': get_viable_sets(logged_user, single_diff, general_diff)}
+        context = {
+            'viable_sets': get_viable_sets(logged_user, single_diff, general_diff)}
         return HttpResponse(template.render(context, request))
 
 
@@ -249,6 +268,12 @@ class BrickDetailView(DetailView):
     model = Brick
     template_name = 'bsf/brick_detail.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['related_sets'] = BrickInSetQuantity.objects.filter(
+            brick=self.kwargs['pk'])
+        return context
+
 
 class BrickListView(ListView):
     paginate_by = 15
@@ -266,7 +291,8 @@ class SetDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['bricks_in_set'] = BrickInSetQuantity.objects.filter(brick_set_id=self.kwargs['pk'])
+        context['bricks_in_set'] = BrickInSetQuantity.objects.filter(
+            brick_set_id=self.kwargs['pk'])
         return context
 
 
@@ -289,7 +315,8 @@ def login(request):
         else:
             messages.error(request, "Username or password is incorrect.")
     form = AuthenticationForm()
-    return render(request=request, template_name="registration/login.html", context={"login_form": form})
+    return render(request=request, template_name="registration/login.html",
+                  context={"login_form": form})
 
 
 def logout(request):
@@ -310,7 +337,8 @@ def signup(request):
             return redirect("index")
         messages.error(request, "Unsuccessful registration. Invalid information.")
     form = NewUserForm()
-    return render(request=request, template_name="registration/signup.html", context={"register_form": form})
+    return render(request=request, template_name="registration/signup.html",
+                  context={"register_form": form})
 
 
 def password_reset(request):
@@ -334,11 +362,13 @@ def password_reset(request):
                     }
                     email = render_to_string(email_template_name, c)
                     try:
-                        send_mail(subject, email, 'password_reset@yellowbrick.com', [user.email], fail_silently=False)
+                        send_mail(subject, email, 'password_reset@yellowbrick.com',
+                                  [user.email], fail_silently=False)
                     except BadHeaderError:
                         messages.error(request, "Invalid header found.")
                         return redirect("index")
-                    messages.info(request, "An email with reset password link has been sent.")
+                    messages.info(request,
+                                  "An email with reset password link has been sent.")
                     return redirect("index")
             messages.error(request, "An account with such email does not exist.")
     password_reset_form = PasswordResetForm()
