@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load bootstrap_icons %}
 {% load subtraction %}
 
 {% block page_meta %}
@@ -37,7 +36,7 @@
                                 <div class="mb-2">
                                     <a href="{% url 'set_detail' brick_set.id %}">
                                         {{ brick_set.id }}</a>
-                                    {{ brick_set.name }} {% bs_icon 'x' %}
+                                    {{ brick_set.name }} x
                                     {{ set_in_collection.quantity }}
                                     </a>
                                 </div>
@@ -54,7 +53,7 @@
                                                    class="form-control border-secondary">
                                             <button type="submit"
                                                     class="btn btn-outline-secondary">
-                                                {% bs_icon 'plus-lg' %}
+                                                Add
                                             </button>
                                         </div>
                                     </form>
@@ -70,7 +69,7 @@
                                                    class="form-control border-secondary">
                                             <button type="submit"
                                                     class="btn btn-outline-secondary">
-                                                {% bs_icon 'dash-lg' %}
+                                                Remove
                                             </button>
                                         </div>
                                     </form>
@@ -86,7 +85,7 @@
                                                    class="form-control border-secondary">
                                             <button type="submit"
                                                     class="btn btn-outline-secondary">
-                                                {% bs_icon 'hammer' %}
+                                                Convert
                                             </button>
                                         </div>
                                     </form>
@@ -117,7 +116,7 @@
                                 <div class="mb-2">
                                     <a href="{% url 'brick_detail' brick %}">
                                         {{ brick.part_num }}</a>
-                                    - {{ brick.color.name }} {% bs_icon 'x' %}
+                                    - {{ brick.color.name }} x
                                     {{ brick_in_collection.quantity }}
                                 </div>
                                 <div class="d-flex">
@@ -133,7 +132,7 @@
                                                    class="form-control border-secondary">
                                             <button type="submit"
                                                     class="btn btn-outline-secondary">
-                                                {% bs_icon 'plus-lg' %}
+                                                Add
                                             </button>
                                         </div>
                                     </form>
@@ -149,7 +148,7 @@
                                                    class="form-control border-secondary">
                                             <button type="submit"
                                                     class="btn btn-outline-secondary">
-                                                {% bs_icon 'dash-lg' %}
+                                                Remove
                                             </button>
                                         </div>
                                     </form>

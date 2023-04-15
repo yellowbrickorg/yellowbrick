@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load bootstrap_icons %}
 
 {% block page_meta %}
     <title>Brick {{ brick.part_num }} ({{ brick.color.name }})</title>
@@ -36,10 +35,10 @@
                             {% with brick_set=brick_in_set.brick_set %}
                                 <li class="list-group-item">
                                     {{ brick_in_set.quantity }}
-                                    {% bs_icon 'x' %}
+                                    of
                                     {{ brick.part_num }}
-                                    {% bs_icon 'arrow-right' %}
-                                    <img class="img-thumbnail"
+                                    in
+                                    <img class="mx-1 img-thumbnail"
                                          src="{{ brick_set.image_link }}"
                                          width="50">
                                     <a href="{% url 'set_detail' brick_set.id %}">

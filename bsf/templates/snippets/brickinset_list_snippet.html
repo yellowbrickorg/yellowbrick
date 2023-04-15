@@ -1,4 +1,3 @@
-{% load bootstrap_icons %}
 <div class="my-3">
     {% for brick_in_set in bricks_in_set %}
         {% with brick=brick_in_set.brick %}
@@ -11,7 +10,7 @@
                     <div class="col-auto me-auto">
                         <a href="{% url 'brick_detail' brick.brick_id %}">
                             {{ brick.part_num }}</a>
-                        - {{ brick.color.name }} {% bs_icon 'x' %}
+                        - {{ brick.color.name }} x
                         {{ brick_in_set.quantity }}
                     </div>
                     <div class="col-auto">
