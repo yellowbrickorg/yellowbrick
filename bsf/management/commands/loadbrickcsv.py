@@ -24,8 +24,6 @@ class Command(BaseCommand):
                         image_link=row[3],
                     )
                 except ValueError as e:
-                    self.stdout.write(f'Something broke: {e}')
+                    self.stdout.write(f"Something broke: {e}")
 
-        self.stdout.write(
-            self.style.SUCCESS('Successfully created Bricks')
-        )
+        self.stdout.write(self.style.SUCCESS("Successfully created Bricks"))

@@ -12,6 +12,7 @@ class Color(models.Model):
         rgb : color's RGB value
         is_transparent : indication whether color is transparent
     """
+
     color_id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=60)
     rgb = models.CharField(max_length=6)
@@ -31,6 +32,7 @@ class Brick(models.Model):
         color : brick color
         image_link : link to brick's image
     """
+
     brick_id = models.IntegerField(primary_key=True)
     part_num = models.CharField(max_length=30)
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
@@ -90,8 +92,10 @@ class BrickInCollectionQuantity(models.Model):
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"{self.quantity} x {self.brick} " \
-               f"in {self.collection.user.username}'s collection"
+        return (
+            f"{self.quantity} x {self.brick} "
+            f"in {self.collection.user.username}'s collection"
+        )
 
 
 class SetInCollectionQuantity(models.Model):
@@ -100,5 +104,7 @@ class SetInCollectionQuantity(models.Model):
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"{self.quantity} x {self.brick_set} " \
-               f"in {self.collection.user.username}'s collection"
+        return (
+            f"{self.quantity} x {self.brick_set} "
+            f"in {self.collection.user.username}'s collection"
+        )

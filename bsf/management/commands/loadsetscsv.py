@@ -24,12 +24,10 @@ class Command(BaseCommand):
                         image_link=row[2],
                         inventory_id=row[3],
                     )
-                    self.stdout.write(f'{row[3]} --> {row[0]}')
+                    self.stdout.write(f"{row[3]} --> {row[0]}")
                 except ValueError as e:
-                    self.stdout.write(f'Something broke: {e}')
+                    self.stdout.write(f"Something broke: {e}")
                 except django.db.utils.IntegrityError as e:
-                    self.stdout.write(f'Something really broke: {e}')
+                    self.stdout.write(f"Something really broke: {e}")
 
-        self.stdout.write(
-            self.style.SUCCESS('Successfully created LegoSets')
-        )
+        self.stdout.write(self.style.SUCCESS("Successfully created LegoSets"))

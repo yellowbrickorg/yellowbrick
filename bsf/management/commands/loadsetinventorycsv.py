@@ -20,10 +20,10 @@ class Command(BaseCommand):
                     lego_sets = LegoSet.objects.filter(inventory_id=row[0])
                     brick = Brick.objects.filter(part_num=row[1]).first()
                     for lego_set in lego_sets:
-                        lego_set.bricks.add(brick, through_defaults={'quantity': row[3]})
+                        lego_set.bricks.add(
+                            brick, through_defaults={"quantity": row[3]}
+                        )
                 except Exception as e:
-                    self.stdout.write(f'Something broke: {e}')
+                    self.stdout.write(f"Something broke: {e}")
 
-        self.stdout.write(
-            self.style.SUCCESS('Successfully done step 2/3')
-        )
+        self.stdout.write(self.style.SUCCESS("Successfully done step 2/3"))

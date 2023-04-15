@@ -12,7 +12,7 @@ class NewUserForm(UserCreationForm):
 
     def save(self, commit=True):
         user = super(NewUserForm, self).save(commit=False)
-        user.email = self.cleaned_data['email']
+        user.email = self.cleaned_data["email"]
         if commit:
             user.save()
         return user
@@ -21,4 +21,4 @@ class NewUserForm(UserCreationForm):
 class PassResetForm(PasswordResetForm):
     class Meta:
         model = User
-        fields = ("email")
+        fields = "email"

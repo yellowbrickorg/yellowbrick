@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('bsf', '0001_initial'),
+        ("bsf", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='legoset',
-            name='inventory_id',
+            model_name="legoset",
+            name="inventory_id",
             field=models.IntegerField(),
         ),
     ]
