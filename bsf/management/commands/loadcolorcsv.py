@@ -23,6 +23,4 @@ class Command(BaseCommand):
                     is_transparent=row[3],
                 )
 
-        self.stdout.write(
-            self.style.SUCCESS('Successfully created Colors')
-        )
+        self.stdout.write(self.style.SUCCESS("Successfully created Colors"))

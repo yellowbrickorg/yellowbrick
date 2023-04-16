@@ -20,12 +20,10 @@ class Command(BaseCommand):
                     bricks = Brick.objects.filter(part_num=row[1])
                     for brick in bricks:
                         brick.image_link = row[5]
-                        self.stdout.write(f'{brick.brick_id} <- {brick.image_link}')
+                        self.stdout.write(f"{brick.brick_id} <- {brick.image_link}")
                         brick.save()
 
                 except ValueError as e:
-                    self.stdout.write(f'Something broke: {e}')
+                    self.stdout.write(f"Something broke: {e}")
 
-        self.stdout.write(
-            self.style.SUCCESS('Successfully created Bricks')
-        )
+        self.stdout.write(self.style.SUCCESS("Successfully created Bricks"))

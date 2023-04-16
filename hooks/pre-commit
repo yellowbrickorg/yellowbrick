@@ -3,9 +3,12 @@ Green='\033[0;32m'
 Red='\033[0;31m'
 Color_Off='\033[0m'
 White='\033[0;37m'
-BWhite='\033[1;37m'       # White
+BWhite='\033[1;37m'
 
 echo -e "${BWhite}::: pre-commit hook :::${Color_Off}"
+
+echo -e "${White}Auto-formatting with Black...${Color_Off}"
+black .
 
 # Run Django tests
 echo -e "${White}Running Django tests with coverage...${Color_Off}"

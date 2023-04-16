@@ -1,5 +1,7 @@
 # yellowbrick
 
+Bricks management, set recommendation and trading platform for LEGO connoisseurs.
+
 ## Instalacja pod development
 
 Wymagane zależności
@@ -12,11 +14,12 @@ postgresql
 
 ### 0. Konfiguracja Gita
 
-Aby korzystać ze wspólnej konfiguracji repozytorium, w korzeniu projektu należy
-wykonać polecenie
+Aby korzystać ze wspólnej konfiguracji repozytorium (w tym hooków automatyzujących
+autoformatowanie, uruchamianie unit testów oraz coverage przed commitem), w korzeniu
+projektu należy wykonać polecenie:
 
 ```
-git config --local include.path ../.gitconfig
+$ git config --local include.path ../.gitconfig
 ```
 
 ### 1. Konfiguracja PostgreSQL
@@ -34,6 +37,7 @@ port=5432
 ```
 
 oraz `.pgpass` w korzeniu projektu:
+
 ```
 localhost:5432:yellowbrick:postgres:<pass>
 ```
@@ -44,29 +48,60 @@ Hasło użytkownika `postgres` można utworzyć za pomocą poleceń
 ### 2. Instalacja Django
 
 W lokalnej kopii należy utworzyć i uruchomić nowe środowisko wirtualne Pythona
-`env` za pomocą
+`env` za pomocą:
 
 ```
-git clone git@github.com:yellowbrickorg/yellowbrick.git
-cd yellowbrick
-python -m venv env
-source env/bin/activate
+$ git clone git@github.com:yellowbrickorg/yellowbrick.git
+$ cd yellowbrick
+$ python -m venv env
+$ source env/bin/activate
 ```
 
-Po czym należy zainstalować wszystkie potrzebne biblioteki przy użyciu
+Po czym należy zainstalować wszystkie potrzebne biblioteki przy użyciu:
 
 ```
-pip install -r requirements.txt
+(env) $ pip install -r requirements.txt
 ```
 
-Po wykonaniu odpowiednich migracji bazy danych poprzez
+Po wykonaniu odpowiednich migracji bazy danych poprzez:
 
 ```
-python manage.py migrate
+(env) $ python manage.py migrate
 ```
 
-Na tym etapie powinno być już możliwe uruchomienie serwera wersji development za pomocą
+oraz ewentualnego załadowania demonstracyjnej bazy danych za pośrednictwem:
 
 ```
-python manage.py runserver
+(env) $ python manage.py loaddemo
+```
+
+powinno być już możliwe uruchomienie serwera wersji development za pomocą:
+
+```
+(env) $ python manage.py runserver
+```
+
+### Troubleshooting
+
+#### Spójność bazy danych, problemy z migracją, brakujące kolumny
+
+W przypadku powyższych problemów pod wersją development najlepiej
+postawić bazę danych całkowicie od nowa. W konsoli Postgresa należy wyczyścić wszystkie
+tabele należące do bazy `yellowbrick`:
+
+```
+$ psql yellowbrick
+yellowbrick=# DROP SCHEMA public CASCADE;
+yellowbrick=# CREATE SCHEMA public;
+yellowbrick=# GRANT ALL ON SCHEMA public TO postgres;
+yellowbrick=# GRANT ALL ON SCHEMA public TO public;
+yellowbrick=# \q
+```
+
+Następnie należy wycofać licznik migracji Django do stanu początkowego i
+dokonać wszystkich migracji:
+
+```
+(env) $ python manage.py migrate --fake bsf zero
+(env) $ python manage.py migrate
 ```
