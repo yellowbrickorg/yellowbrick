@@ -1,42 +1,36 @@
-<div class="my-3">
+<ul class="list-group list-group-flush">
     {% for brick_in_set in bricks_in_set %}
         {% with brick=brick_in_set.brick %}
-            <div class="mb-3">
-                <div class="row g-3 align-items-center">
-                    <div class="col-auto">
-                        <img class="img-thumbnail" src="{{ brick.image_link }}"
-                             width="80">
-                    </div>
-                    <div class="col-auto me-auto">
+            <li class="list-group-item">
+                <div class="d-flex align-items-center">
+                    <img class="img-thumbnail" src="{{ brick.image_link }}"
+                         width="80">
+                    <div class="col-auto ms-3 me-auto">
                         <a href="{% url 'brick_detail' brick.brick_id %}">
                             {{ brick.part_num }}</a>
                         - {{ brick.color.name }} x
                         {{ brick_in_set.quantity }}
                     </div>
-                    <div class="col-auto">
+                    <div class="col-5">
                         {% if request.user.is_authenticated %}
                             <form action="{% url 'add_brick' brick.brick_id %}"
                                   method="post">
                                 {% csrf_token %}
-                                <div class="row g-2 align-items-center">
-                                    <div class="col-auto">
-                                        <input class="form-control" type="number"
-                                               name="quantity"
-                                               id="quantity{{ brick.brick_id }}">
-                                    </div>
-                                    <div class="col-auto">
-                                        <button type="submit"
-                                                class="btn btn-outline-secondary">Add
-                                        </button>
-                                    </div>
+                                <div class="input-group">
+                                    <input class="form-control" type="number"
+                                           name="quantity"
+                                           id="quantity{{ brick.brick_id }}">
+                                    <button type="submit"
+                                            class="btn btn-outline-secondary">Add
+                                    </button>
                                 </div>
                             </form>
                             </div>
                             </div>
                         {% endif %}
-            </div>
+            </li>
         {% endwith %}
     {% empty %}
         <li>No bricks found.</li>
     {% endfor %}
-</div>
+</ul>

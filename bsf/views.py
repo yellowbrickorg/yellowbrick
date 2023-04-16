@@ -29,19 +29,21 @@ def collection(request):
     if logged_user.is_authenticated:
         user_collection = UserCollection.objects.get(user=logged_user)
         if user_collection:
-            context = {
-                "user_sets": user_collection.sets.through.objects.all().filter(
-                    collection=user_collection
-                ),
-                "user_bricks": user_collection.bricks.through.objects.all().filter(
-                    collection=user_collection
-                ),
-            }
+            user_sets = user_collection.sets.through.objects.all().filter(
+                collection=user_collection
+            )
+            user_bricks = user_collection.bricks.through.objects.all().filter(
+                collection=user_collection
+            )
         else:
-            context = {
-                "user_sets": [],
-                "user_bricks": [],
-            }
+            user_sets = []
+            user_bricks = []
+
+        context = {
+            "user_sets": user_sets,
+            "user_bricks": user_bricks,
+            "logged_user": logged_user,
+        }
         template = loader.get_template("bsf/collection.html")
         return HttpResponse(template.render(context, request))
     else:
