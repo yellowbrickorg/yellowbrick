@@ -272,7 +272,7 @@ def filter_collection(request):
         template = loader.get_template('bsf/filter.html')
         context = {'viable_sets': get_viable_sets(logged_user, single_diff, general_diff)}
         return HttpResponse(template.render(context, request))
-
+    
 
 def index(request):
     return render(request, "bsf/index.html")
