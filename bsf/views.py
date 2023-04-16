@@ -219,14 +219,13 @@ def get_dict_of_users_bricks(user: User, all_users_bricks=None):
             all_users_bricks[brick_data.brick] = q
     return all_users_bricks
 
-
 def get_dict_of_users_bricks_from_sets(user: User, all_users_bricks=None):
     users_collection = UserCollection.objects.get(user=user)
 
     for set_data in SetInCollectionQuantity.objects.filter(collection=users_collection):
         users_set = set_data.brick_set
         for brick_data in BrickInSetQuantity.objects.filter(brick_set=users_set):
-            q = brick_data.quantity
+            q = brick_data.quantity * set_data.quantity
             if brick_data.brick in all_users_bricks:
                 all_users_bricks[brick_data.brick] += q
             else:
@@ -234,25 +233,28 @@ def get_dict_of_users_bricks_from_sets(user: User, all_users_bricks=None):
     return all_users_bricks
 
 
-def get_viable_sets(user: User, single_diff=0, general_diff=0):
+def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsize):
     """
     Args:
-        user: user, whose collection is analyzed
-        single_diff: upper bound on number of possible missing bricks of same type
-        general_diff: upper bound on number of possible missing bricks in total
+        user: nazwa uzytkowanika
+        single_diff: różnica mówiąca, ile klocków każdego rodzaju może nam brakować w danym zestawie
+        general_diff: różnica mówiąca, ile klocków w sumie może nam brakować w danym zestawie
     """
+    viable_sets = []
+    
+    if (single_diff == general_diff == sys.maxsize):
+        for lego_set in LegoSet.objects.all():
+            viable_sets.append(lego_set)
+        return viable_sets
 
     all_users_bricks = {}
     all_users_bricks = get_dict_of_users_bricks(user, all_users_bricks)
     all_users_bricks = get_dict_of_users_bricks_from_sets(user, all_users_bricks)
 
-    viable_sets = []
+
     for lego_set in LegoSet.objects.all():
-        diff, gdiff = check_set(all_users_bricks, lego_set, single_diff, general_diff)
-        if diff <= single_diff and gdiff >= 0:
-            viable_sets.append(
-                {"lego_set": lego_set, "single_diff": diff, "general_diff": gdiff}
-            )
+        if check_set(all_users_bricks, lego_set, single_diff, general_diff):
+            viable_sets.append(lego_set)
 
     return viable_sets
 
@@ -260,15 +262,13 @@ def get_viable_sets(user: User, single_diff=0, general_diff=0):
 def filter_collection(request):
     try:
         logged_user = request.user
-        single_diff = int(request.POST.get("single_diff", False))
-        general_diff = int(request.POST.get("general_diff", False))
+        single_diff = int(request.POST.get('single_diff', False))
+        general_diff = int(request.POST.get('general_diff', False))
     except:
-        return HttpResponseRedirect(reverse("filter", args=()))
+        return HttpResponseRedirect(reverse('filter', args=()))
     else:
-        template = loader.get_template("bsf/filter.html")
-        context = {
-            "viable_sets": get_viable_sets(logged_user, single_diff, general_diff)
-        }
+        template = loader.get_template('bsf/filter.html')
+        context = {'viable_sets': get_viable_sets(logged_user, single_diff, general_diff)}
         return HttpResponse(template.render(context, request))
 
 
