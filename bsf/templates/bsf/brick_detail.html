@@ -13,6 +13,27 @@
             <img class="img-thumbnail shadow" src="{{ brick.image_link }}">
         </div>
         <div class="col-md-6">
+            {% if request.user.is_authenticated %}
+                <div class="col-5 mb-3">
+                    <form action="{% url 'add_brick' brick.brick_id %}"
+                          method="post">
+                        {% csrf_token %}
+                        <label for="quantity{{ brick.brick_id }}">Add this brick to
+                            collection</label>
+                        <div class="input-group mt-2">
+                            <input class="form-control" type="number"
+                                   name="quantity"
+                                   id="quantity{{ brick.brick_id }}"
+                                   placeholder="Quantity"
+                            >
+                            <button type="submit"
+                                    class="btn btn-outline-secondary">Submit
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+
             <div class="card">
                 <div class="card-header">
                     Details

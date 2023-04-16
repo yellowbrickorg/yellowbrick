@@ -6,8 +6,31 @@
 {% endblock %}
 
 {% block page_content %}
-    <h1>Brick List</h1>
-    {% include "snippets/brick_list_snippet.html" with list=page_obj %}
+    <h1>LEGO bricks</h1>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Name</th>
+            <th scope="col">Color</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for brick in page_obj %}
+            <tr>
+                <th scope="row">{{ brick.brick_id }}</th>
+                <td><img class="img-thumbnail me-2" src="{{ brick.image_link }}"
+                         width="80">
+                    <a href="{% url 'brick_detail' brick.brick_id %}"
+                    >{{ brick.part_num }}</a>
+                </td>
+                <td>{{ brick.color.name }}</td>
+            </tr>
+        {% empty %}
+            No bricks found.
+        {% endfor %}
+        </tbody>
+    </table>
 
     <div class="mt-2">
         {% bootstrap_pagination page_obj %}

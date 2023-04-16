@@ -1,0 +1,21 @@
+<table class="table">
+    <thead>
+    <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Name</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for legoset in page_obj %}
+        <tr>
+            <th scope="row">{{ legoset.id }}</th>
+            <td><img class="img-thumbnail me-2" src="{{ legoset.image_link }}"
+                     width="120">
+                <a href="{% url 'set_detail' legoset.id %}">{{ legoset.name }}</a>
+            </td>
+        </tr>
+    {% empty %}
+        No sets found.
+    {% endfor %}
+    </tbody>
+</table>

@@ -6,7 +6,7 @@
 
 {% block page_content %}
     <h1>Filter page</h1>
-    <p class="col-8">
+    <p class="my-3">
         Here you can see which sets you can currently build using bricks you aready have
         marked in your collection. Select how many bricks your collection can lack of a
         single type by inputting a
@@ -34,33 +34,6 @@
         </div>
     </form>
 
-
-    <ul class="list-group mt-2">
-        {% for viable in viable_sets %}
-            <li class="list-group-item">
-                <div class="row g-3 align-items-center">
-                    <div class="col-auto">
-                        <img class="img-thumbnail"
-                             src="{{ viable.lego_set.image_link }}"
-                             width="120">
-                    </div>
-                    <div class="col-auto me-auto">
-                        <a href="{% url 'set_detail' viable.lego_set.id %}"
-                        >{{ viable.lego_set.number }}</a>
-                        {{ viable.lego_set.name }}
-                    </div>
-                    <div class="col-auto">
-                        {{ viable.single_diff }}
-                        /
-                        {{ viable.general_diff }}
-                    </div>
-                </div>
-            </li>
-        {% empty %}
-            <li class="list-group-item">
-                No sets found.
-            </ul>
-        {% endfor %}
-    </ul>
+    {% include "snippets/viable_set_table_snippet.html" with viable_sets=viable_sets %}
 
 {% endblock %}
