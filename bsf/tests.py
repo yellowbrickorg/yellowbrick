@@ -12,7 +12,7 @@ from bsf.models import (
 )
 
 from . import views
-
+from bsf.views import get_viable_sets
 
 class CollectionFilterTestCase(TestCase):
     def setUp(self):
@@ -114,7 +114,10 @@ class CollectionFilterTestCase(TestCase):
 
         user1 = User.objects.get(username='Janusz')
 
-        self.assertEqual(get_viable_sets(user1, 0, 0), [lego_set2])
+        self.assertEqual(
+            get_viable_sets(user1, 0, 0),
+            [{"lego_set": lego_set2, "single_diff": 0, "general_diff": 0}],
+        )
 
     def test_user2_cant_build_anything(self):
         user2 = User.objects.get(username='Mariusz')
@@ -128,9 +131,9 @@ class CollectionFilterTestCase(TestCase):
         lego_set2 = LegoSet.objects.get(number='22222')
         lego_set3 = LegoSet.objects.get(number='33333')
 
-        self.assertTrue(lego_set1 not in get_viable_sets(user3, 0, 0))
-        self.assertTrue(lego_set2 in get_viable_sets(user3, 0, 0))
-        self.assertTrue(lego_set3 in get_viable_sets(user3, 0, 0))
+        self.assertTrue({"lego_set": lego_set1, "single_diff": 0, "general_diff": 0} not in get_viable_sets(user3, 0, 0))
+        self.assertTrue({"lego_set": lego_set2, "single_diff": -5, "general_diff": 0} in get_viable_sets(user3, 0, 0))
+        self.assertTrue({"lego_set": lego_set3, "single_diff": 0, "general_diff": 0} in get_viable_sets(user3, 0, 0))
 
     def test_max_diffs(self):
         user2 = User.objects.get(username='Mariusz')
@@ -139,9 +142,9 @@ class CollectionFilterTestCase(TestCase):
         lego_set2 = LegoSet.objects.get(number='22222')
         lego_set3 = LegoSet.objects.get(number='33333')
 
-        self.assertTrue(lego_set1 in get_viable_sets(user2))
-        self.assertTrue(lego_set2 in get_viable_sets(user2))
-        self.assertTrue(lego_set3 in get_viable_sets(user2))
+        self.assertTrue({"lego_set": lego_set1, "single_diff": "-", "general_diff": "-"} in get_viable_sets(user2))
+        self.assertTrue({"lego_set": lego_set2, "single_diff": "-", "general_diff": "-"} in get_viable_sets(user2))
+        self.assertTrue({"lego_set": lego_set3, "single_diff": "-", "general_diff": "-"} in get_viable_sets(user2))
 
     def test_chosen_diffs(self):
         user2 = User.objects.get(username='Mariusz')
@@ -150,4 +153,7 @@ class CollectionFilterTestCase(TestCase):
 
         self.assertEqual([], get_viable_sets(user2, 4, 4))
         self.assertEqual([], get_viable_sets(user2, 5, 4))
-        self.assertEqual([lego_set2], get_viable_sets(user2, 4, 5))
+        self.assertEqual(
+            get_viable_sets(user2, 4, 5),
+            [{"lego_set": lego_set2, "single_diff": 4, "general_diff": 0}]
+        )
