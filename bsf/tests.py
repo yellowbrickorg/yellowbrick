@@ -12,7 +12,7 @@ from bsf.models import (
 )
 
 from . import views
-
+from bsf.views import get_viable_sets
 
 class CollectionFilterTestCase(TestCase):
     def setUp(self):
