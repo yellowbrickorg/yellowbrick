@@ -196,7 +196,7 @@ def convert(request, id):
     return HttpResponseRedirect(reverse("collection", args=()))
 
 
-def check_set(all_users_bricks, lego_set: LegoSet, single_diff=0, general_diff=0):
+def check_set(all_users_bricks, lego_set: LegoSet, single_diff=sys.maxsize, general_diff=sys.maxsize):
     diff = 0
 
     for brick_data in BrickInSetQuantity.objects.filter(brick_set=lego_set):
@@ -211,15 +211,14 @@ def check_set(all_users_bricks, lego_set: LegoSet, single_diff=0, general_diff=0
 def get_dict_of_users_bricks(user: User, all_users_bricks=None):
     users_collection = UserCollection.objects.get(user=user)
 
-    for brick_data in BrickInCollectionQuantity.objects.filter(
-        collection=users_collection
-    ):
+    for brick_data in BrickInCollectionQuantity.objects.filter(collection=users_collection):
         q = brick_data.quantity
         if brick_data.brick in all_users_bricks:
             all_users_bricks[brick_data.brick] += q
         else:
             all_users_bricks[brick_data.brick] = q
     return all_users_bricks
+
 
 def get_dict_of_users_bricks_from_sets(user: User, all_users_bricks=None):
     users_collection = UserCollection.objects.get(user=user)
@@ -246,17 +245,21 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
     
     if (single_diff == general_diff == sys.maxsize):
         for lego_set in LegoSet.objects.all():
-            viable_sets.append(lego_set)
+            viable_sets.append(
+                {"lego_set": lego_set, "single_diff": "-", "general_diff": "-"}
+            )
         return viable_sets
 
     all_users_bricks = {}
     all_users_bricks = get_dict_of_users_bricks(user, all_users_bricks)
     all_users_bricks = get_dict_of_users_bricks_from_sets(user, all_users_bricks)
 
-
     for lego_set in LegoSet.objects.all():
-        if check_set(all_users_bricks, lego_set, single_diff, general_diff):
-            viable_sets.append(lego_set)
+        diff, gdiff = check_set(all_users_bricks, lego_set, single_diff, general_diff)
+        if diff <= single_diff and gdiff >= 0:
+            viable_sets.append(
+                {"lego_set": lego_set, "single_diff": diff, "general_diff": gdiff}
+            )
 
     return viable_sets
 
