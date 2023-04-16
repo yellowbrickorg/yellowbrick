@@ -101,9 +101,10 @@ class CollectionFilterTestCase(TestCase):
 
         user1 = User.objects.get(username="Janusz")
 
-        self.assertEqual(views.get_viable_sets(user1), [{"lego_set": lego_set2,
-                                                         "single_diff": 0,
-                                                         "general_diff": 0}])
+        self.assertEqual(
+            views.get_viable_sets(user1),
+            [{"lego_set": lego_set2, "single_diff": 0, "general_diff": 0}],
+        )
 
     def test_user2_cant_build_anything(self):
         user2 = User.objects.get(username="Mariusz")

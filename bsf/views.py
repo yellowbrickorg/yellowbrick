@@ -71,11 +71,11 @@ def add_set(request, id):
             else:
                 set_through.quantity = min(set_through.quantity + qty, 100)
                 set_through.save()
+        messages.success(
+            request,
+            f"Added {qty} set(s) with set number {lego_set.id} to " f"collection.",
+        )
         return HttpResponseRedirect(reverse("collection", args=()))
-        messages.success(request,
-                         f"Added {qty} set(s) with set number {lego_set.id} to "
-                         f"collection.")
-        return HttpResponseRedirect(reverse('collection', args=()))
 
 
 def add_brick(request, brick_id):
@@ -93,8 +93,10 @@ def add_brick(request, brick_id):
         else:
             brick_through.quantity = min(brick_through.quantity + qty, 10000)
             brick_through.save()
-    messages.success(request, f"Added {qty} brick(s) with part number {brick.part_num} "
-                              f"to collection.")
+    messages.success(
+        request,
+        f"Added {qty} brick(s) with part number {brick.part_num} " f"to collection.",
+    )
     return HttpResponseRedirect(reverse("collection", args=()))
 
 
@@ -118,9 +120,10 @@ def del_set(request, id):
                 else:
                     set_through.quantity -= qty
                     set_through.save()
-        messages.success(request,
-                         f"Removed {qty} set(s) with set number {lego_set.id} from "
-                         f"collection.")
+        messages.success(
+            request,
+            f"Removed {qty} set(s) with set number {lego_set.id} from " f"collection.",
+        )
         return HttpResponseRedirect(reverse("collection", args=()))
 
 
@@ -140,10 +143,12 @@ def del_brick(request, brick_id):
             else:
                 brick_through.quantity -= qty
                 brick_through.save()
+    messages.success(
+        request,
+        f"Removed {qty} brick(s) with part number"
+        f" {brick.part_num} from collection.",
+    )
     return HttpResponseRedirect(reverse("collection", args=()))
-    messages.success(request, f"Removed {qty} brick(s) with part number"
-                              f" {brick.part_num} from collection.")
-    return HttpResponseRedirect(reverse('collection', args=()))
 
 
 def convert(request, id):
@@ -179,10 +184,12 @@ def convert(request, id):
             else:
                 set_through.quantity -= qty
                 set_through.save()
+    messages.success(
+        request,
+        f"Successfully converted {qty} set(s) with part number"
+        f" {brickset.id} to loose bricks.",
+    )
     return HttpResponseRedirect(reverse("collection", args=()))
-    messages.success(request, f"Successfully converted {qty} set(s) with part number"
-                              f" {brickset.id} to loose bricks.")
-    return HttpResponseRedirect(reverse('collection', args=()))
 
 
 def check_set(all_users_bricks, lego_set: LegoSet, single_diff=0, general_diff=0):
@@ -201,7 +208,7 @@ def get_dict_of_users_bricks(user: User, all_users_bricks=None):
     users_collection = UserCollection.objects.get(user=user)
 
     for brick_data in BrickInCollectionQuantity.objects.filter(
-        collection=users_collection
+            collection=users_collection
     ):
         q = brick_data.quantity
         if brick_data.brick in all_users_bricks:
@@ -241,8 +248,9 @@ def get_viable_sets(user: User, single_diff=0, general_diff=0):
     for lego_set in LegoSet.objects.all():
         diff, gdiff = check_set(all_users_bricks, lego_set, single_diff, general_diff)
         if diff <= single_diff and gdiff >= 0:
-            viable_sets.append({'lego_set': lego_set, 'single_diff': diff,
-                                'general_diff': gdiff})
+            viable_sets.append(
+                {"lego_set": lego_set, "single_diff": diff, "general_diff": gdiff}
+            )
 
     return viable_sets
 
@@ -287,7 +295,8 @@ class BrickDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["related_sets"] = BrickInSetQuantity.objects.filter(
-            brick=self.kwargs["pk"])
+            brick=self.kwargs["pk"]
+        )
         return context
 
 
