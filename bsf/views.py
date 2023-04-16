@@ -208,7 +208,7 @@ def get_dict_of_users_bricks(user: User, all_users_bricks=None):
     users_collection = UserCollection.objects.get(user=user)
 
     for brick_data in BrickInCollectionQuantity.objects.filter(
-            collection=users_collection
+        collection=users_collection
     ):
         q = brick_data.quantity
         if brick_data.brick in all_users_bricks:

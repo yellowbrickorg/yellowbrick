@@ -12,17 +12,34 @@ python-pip
 postgresql
 ```
 
-### 0. Konfiguracja Gita
+### 0. Instalacja Pythona
 
-Aby korzystać ze wspólnej konfiguracji repozytorium (w tym hooków automatyzujących
-autoformatowanie, uruchamianie unit testów oraz coverage przed commitem), w korzeniu
-projektu należy wykonać polecenie:
+W lokalnej kopii repozytorium należy utworzyć i uruchomić nowe środowisko wirtualne
+Pythona `env` za pomocą:
 
 ```
-$ git config --local include.path ../.gitconfig
+$ git clone git@github.com:yellowbrickorg/yellowbrick.git
+$ cd yellowbrick
+$ python -m venv env
+$ source env/bin/activate
 ```
 
-### 1. Konfiguracja PostgreSQL
+Po czym należy zainstalować wszystkie potrzebne biblioteki przy użyciu:
+
+```
+(env) $ pip install -r requirements.txt
+```
+
+### 1. Konfiguracja Gita
+
+Aby korzystać z projektowej konfiguracji [pre-commit](https://pre-commit.com/), w
+korzeniu projektu należy wykonać polecenie:
+
+```
+$ pre-commit install
+```
+
+### 2. Konfiguracja PostgreSQL
 
 Aplikacja wymaga działającego Postgresa oraz utworzonej bazy `yellowbrick`.
 Django łączy się z Postgresem na podstawie następującej konfiguracji plików
@@ -45,23 +62,7 @@ localhost:5432:yellowbrick:postgres:<pass>
 Hasło użytkownika `postgres` można utworzyć za pomocą poleceń
 `sudo -u postgres psql` i `\password` po wiejściu w konsolę Postgresa.
 
-### 2. Instalacja Django
-
-W lokalnej kopii należy utworzyć i uruchomić nowe środowisko wirtualne Pythona
-`env` za pomocą:
-
-```
-$ git clone git@github.com:yellowbrickorg/yellowbrick.git
-$ cd yellowbrick
-$ python -m venv env
-$ source env/bin/activate
-```
-
-Po czym należy zainstalować wszystkie potrzebne biblioteki przy użyciu:
-
-```
-(env) $ pip install -r requirements.txt
-```
+### 3. Uruchomienie serwera Django
 
 Po wykonaniu odpowiednich migracji bazy danych poprzez:
 
