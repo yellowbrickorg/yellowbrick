@@ -24,7 +24,7 @@ $ python -m venv env
 $ source env/bin/activate
 ```
 
-Po czym należy zainstalować wszystkie potrzebne biblioteki przy użyciu:
+Po czym należy zainstalować wszystkie potrzebne pakiety przy użyciu:
 
 ```
 (env) $ pip install -r requirements.txt
@@ -36,7 +36,7 @@ Aby korzystać z projektowej konfiguracji [pre-commit](https://pre-commit.com/),
 korzeniu projektu należy wykonać polecenie:
 
 ```
-$ pre-commit install
+$ (env) pre-commit install
 ```
 
 ### 2. Konfiguracja PostgreSQL
