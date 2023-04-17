@@ -69,8 +69,8 @@ def add_set(request, id):
         collection = UserCollection.objects.get(user=logged_user)
         if qty > 0:
             try:
-                set_through = collection.sets.through.objects.get(id=id)
-            except (KeyError, SetInCollectionQuantity.DoesNotExist):
+                set_through = collection.sets.through.objects.get(brick_set=lego_set, collection=collection)
+            except:
                 collection.sets.add(lego_set, through_defaults={"quantity": qty})
             else:
                 set_through.quantity = min(set_through.quantity + qty, 100)
@@ -92,7 +92,7 @@ def add_brick(request, brick_id):
             brick_through = collection.bricks.through.objects.get(
                 collection=collection, brick_id=brick_id
             )
-        except (KeyError, BrickInCollectionQuantity.DoesNotExist):
+        except:
             collection.bricks.add(brick, through_defaults={"quantity": qty})
         else:
             brick_through.quantity = min(brick_through.quantity + qty, 10000)
@@ -115,7 +115,7 @@ def del_set(request, id):
         collection = UserCollection.objects.get(user=logged_user)
         if qty > 0:
             try:
-                set_through = collection.sets.through.objects.get(brick_set_id=id)
+                set_through = collection.sets.through.objects.get(brick_set_id=id, collection=collection)
             except (KeyError, SetInCollectionQuantity.DoesNotExist):
                 collection.sets.add(lego_set, through_defaults={"quantity": qty})
             else:
@@ -138,7 +138,7 @@ def del_brick(request, brick_id):
     collection = UserCollection.objects.get(user=logged_user)
     if qty > 0:
         try:
-            brick_through = collection.bricks.through.objects.get(brick_id=brick_id)
+            brick_through = collection.bricks.through.objects.get(brick_id=brick_id, collection=collection)
         except (KeyError, BrickInCollectionQuantity.DoesNotExist):
             collection.bricks.add(brick, through_defaults={"quantity": qty})
         else:
@@ -169,10 +169,10 @@ def convert(request, id):
             return HttpResponseRedirect(reverse("collection", args=()))
         else:
             real_qty = min(set_through.quantity, qty)
-            brickinset_through = brickset.bricks.through.objects.all()
+            brickinset_through = brickset.bricks.through.objects.filter(brick_set=brickset)
             for brickth in brickinset_through:
                 try:
-                    brick_through = bricks_of_user.get(brick_id=brickth.brick.brick_id)
+                    brick_through = bricks_of_user.get(brick_id=brickth.brick.brick_id, collection=collection)
                 except (KeyError, BrickInCollectionQuantity.DoesNotExist):
                     collection.bricks.add(
                         brickth.brick,
