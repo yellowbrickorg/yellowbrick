@@ -14,6 +14,7 @@ from bsf.models import (
 from . import views
 from bsf.views import get_viable_sets
 
+
 class CollectionFilterTestCase(TestCase):
     def setUp(self):
         Color.objects.create(color_id=0, name="Black", rgb="05131D", is_transparent="f")
@@ -46,9 +47,9 @@ class CollectionFilterTestCase(TestCase):
             image_link="https://example.com/image.png",
             inventory_id=3,
         )
-        lego_set3.bricks.add(brick1, through_defaults={'quantity': 4})
-        lego_set3.bricks.add(brick2, through_defaults={'quantity': 10})        
-        
+        lego_set3.bricks.add(brick1, through_defaults={"quantity": 4})
+        lego_set3.bricks.add(brick2, through_defaults={"quantity": 10})
+
         user1 = User.objects.create(username="Janusz")
         user_collection = UserCollection.objects.create(user=user1)
         user_collection.bricks.add(brick1, through_defaults={"quantity": 2})
@@ -58,10 +59,10 @@ class CollectionFilterTestCase(TestCase):
         user_collection = UserCollection.objects.create(user=user2)
         user_collection.bricks.add(brick1, through_defaults={"quantity": 1})
         user_collection.bricks.add(brick2, through_defaults={"quantity": 1})
-        
-        user3 = User.objects.create(username='Julia')
+
+        user3 = User.objects.create(username="Julia")
         user_collection = UserCollection.objects.create(user=user3)
-        user_collection.sets.add(lego_set2, through_defaults={'quantity': 2})
+        user_collection.sets.add(lego_set2, through_defaults={"quantity": 2})
 
     def test_user_can_have_only_one_collection(self):
         user1 = User.objects.get(username="Janusz")
@@ -110,9 +111,9 @@ class CollectionFilterTestCase(TestCase):
         self.assertEqual(bricks_in_set2.get(brick=brick2).quantity, 5)
 
     def test_user1_can_build_set2_but_not_set1(self):
-        lego_set2 = LegoSet.objects.get(number='22222')
+        lego_set2 = LegoSet.objects.get(number="22222")
 
-        user1 = User.objects.get(username='Janusz')
+        user1 = User.objects.get(username="Janusz")
 
         self.assertEqual(
             get_viable_sets(user1, 0, 0),
@@ -120,40 +121,58 @@ class CollectionFilterTestCase(TestCase):
         )
 
     def test_user2_cant_build_anything(self):
-        user2 = User.objects.get(username='Mariusz')
+        user2 = User.objects.get(username="Mariusz")
 
         self.assertEqual(get_viable_sets(user2, 0, 0), [])
 
     def test_user3_has_multiple_no_of_one_set(self):
-        user3 = User.objects.get(username='Julia')
+        user3 = User.objects.get(username="Julia")
 
-        lego_set1 = LegoSet.objects.get(number='11111')
-        lego_set2 = LegoSet.objects.get(number='22222')
-        lego_set3 = LegoSet.objects.get(number='33333')
+        lego_set1 = LegoSet.objects.get(number="11111")
+        lego_set2 = LegoSet.objects.get(number="22222")
+        lego_set3 = LegoSet.objects.get(number="33333")
 
-        self.assertTrue({"lego_set": lego_set1, "single_diff": 0, "general_diff": 0} not in get_viable_sets(user3, 0, 0))
-        self.assertTrue({"lego_set": lego_set2, "single_diff": -5, "general_diff": 0} in get_viable_sets(user3, 0, 0))
-        self.assertTrue({"lego_set": lego_set3, "single_diff": 0, "general_diff": 0} in get_viable_sets(user3, 0, 0))
+        self.assertTrue(
+            {"lego_set": lego_set1, "single_diff": 0, "general_diff": 0}
+            not in get_viable_sets(user3, 0, 0)
+        )
+        self.assertTrue(
+            {"lego_set": lego_set2, "single_diff": -5, "general_diff": 0}
+            in get_viable_sets(user3, 0, 0)
+        )
+        self.assertTrue(
+            {"lego_set": lego_set3, "single_diff": 0, "general_diff": 0}
+            in get_viable_sets(user3, 0, 0)
+        )
 
     def test_max_diffs(self):
-        user2 = User.objects.get(username='Mariusz')
+        user2 = User.objects.get(username="Mariusz")
 
-        lego_set1 = LegoSet.objects.get(number='11111')
-        lego_set2 = LegoSet.objects.get(number='22222')
-        lego_set3 = LegoSet.objects.get(number='33333')
+        lego_set1 = LegoSet.objects.get(number="11111")
+        lego_set2 = LegoSet.objects.get(number="22222")
+        lego_set3 = LegoSet.objects.get(number="33333")
 
-        self.assertTrue({"lego_set": lego_set1, "single_diff": "-", "general_diff": "-"} in get_viable_sets(user2))
-        self.assertTrue({"lego_set": lego_set2, "single_diff": "-", "general_diff": "-"} in get_viable_sets(user2))
-        self.assertTrue({"lego_set": lego_set3, "single_diff": "-", "general_diff": "-"} in get_viable_sets(user2))
+        self.assertTrue(
+            {"lego_set": lego_set1, "single_diff": "-", "general_diff": "-"}
+            in get_viable_sets(user2)
+        )
+        self.assertTrue(
+            {"lego_set": lego_set2, "single_diff": "-", "general_diff": "-"}
+            in get_viable_sets(user2)
+        )
+        self.assertTrue(
+            {"lego_set": lego_set3, "single_diff": "-", "general_diff": "-"}
+            in get_viable_sets(user2)
+        )
 
     def test_chosen_diffs(self):
-        user2 = User.objects.get(username='Mariusz')
+        user2 = User.objects.get(username="Mariusz")
 
-        lego_set2 = LegoSet.objects.get(number='22222')
+        lego_set2 = LegoSet.objects.get(number="22222")
 
         self.assertEqual([], get_viable_sets(user2, 4, 4))
         self.assertEqual([], get_viable_sets(user2, 5, 4))
         self.assertEqual(
             get_viable_sets(user2, 4, 5),
-            [{"lego_set": lego_set2, "single_diff": 4, "general_diff": 0}]
+            [{"lego_set": lego_set2, "single_diff": 4, "general_diff": 0}],
         )
