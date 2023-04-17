@@ -11,7 +11,7 @@
     {% bootstrap_javascript %}
 
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
 {% include "snippets/nav.html" %}
 <div class="container my-4">
     {# Display django.contrib.messages as Bootstrap alerts #}
@@ -20,4 +20,12 @@
     {% block page_content %}{% endblock %}
 </div>
 </body>
+
+<footer class="footer mt-auto py-3 bg-light">
+    <div class="container text-center">
+   <span class="text-muted">
+     yellowbrick. Developed @ MIMUW.
+   </span>
+    </div>
+</footer>
 </html>
