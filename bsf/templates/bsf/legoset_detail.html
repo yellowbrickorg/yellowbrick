@@ -11,7 +11,7 @@
         <div class="col-md-5">
             <img class="img-thumbnail shadow" src="{{ legoset.image_link }}">
         </div>
-        <div class="col-md-5">
+        <div class="col-md-6">
             {% if request.user.is_authenticated %}
                 <div class="col-6 mb-3">
                     <form action="{% url 'add_set' legoset.id %}" method="post">
