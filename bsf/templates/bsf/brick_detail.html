@@ -1,42 +1,77 @@
 {% extends "base.html" %}
 
 {% block page_meta %}
-    <title>Brick: {{ brick.brick_id }}</title>
+    <title>Brick {{ brick.part_num }} ({{ brick.color.name }})</title>
 {% endblock %}
 
 {% block page_content %}
-    <div class="row">
-        <h1>LEGO Brick: {{ brick.brick_id }}</h1>
-        <div class="col-md-5">
-            <table class="table table-bordered">
-                <thead>
-                <tr>
-                    <th class="text-center" colspan="2"><h3>Brick Details</h3></th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <th>Brick ID</th>
-                    <td>{{ brick.brick_id }}</td>
-                </tr>
-                <tr>
-                    <th>Part Number</th>
-                    <td>{{ brick.part_num }}</td>
-                </tr>
-                <tr>
-                    <th>Color</th>
-                    <td>{{ brick.color.name }}</td>
-                </tr>
-                <tr>
-                    <th>RGB</th>
-                    <td>{{ brick.color.rgb }}</td>
-                </tr>
-                </tbody>
-            </table>
+    <h2> Brick {{ brick.part_num }} <span class="text-secondary">({{ brick.color.name }})
+    </span></h2>
+
+    <div class="row mt-3">
+        <div class="col-auto">
+            <img class="img-thumbnail shadow" src="{{ brick.image_link }}">
         </div>
-    </div>
-    <div class="col-md-6">
-        <img src="{{ brick.image_link }}"
-             width="550" height="400"> <!--na razie przykładowy obrazek-->
+        <div class="col-md-6">
+            {% if request.user.is_authenticated %}
+                <div class="col-5 mb-3">
+                    <form action="{% url 'add_brick' brick.brick_id %}"
+                          method="post">
+                        {% csrf_token %}
+                        <label for="quantity{{ brick.brick_id }}">Add this brick to
+                            collection</label>
+                        <div class="input-group mt-2">
+                            <input class="form-control" type="number"
+                                   name="quantity"
+                                   id="quantity{{ brick.brick_id }}"
+                                   placeholder="Quantity"
+                            >
+                            <button type="submit"
+                                    class="btn btn-outline-secondary">Submit
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-header">
+                    Details
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li><b>Part number:</b> {{ brick.part_num }} </li>
+                        <li><b>Color:</b> {{ brick.color.name }} </li>
+                        <li><b>RGB:</b> {{ brick.color.rgb }}</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card mt-3">
+                <div class="card-header">
+                    Contained in sets
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for brick_in_set in related_sets %}
+                            {% with brick_set=brick_in_set.brick_set %}
+                                <li class="list-group-item">
+                                    {{ brick_in_set.quantity }}
+                                    of
+                                    {{ brick.part_num }}
+                                    in
+                                    <img class="mx-1 img-thumbnail"
+                                         src="{{ brick_set.image_link }}"
+                                         width="50">
+                                    <a href="{% url 'set_detail' brick_set.id %}">
+                                        {{ brick_set.id }}</a>
+                                    {{ brick_set.name }}
+                                    </a>
+                                </li>
+                            {% endwith %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}

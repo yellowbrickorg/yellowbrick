@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('bsf', '0002_alter_legoset_inventory_id'),
+        ("bsf", "0002_alter_legoset_inventory_id"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='brick',
-            name='image_link',
+            model_name="brick",
+            name="image_link",
             field=models.CharField(default=0, max_length=256),
             preserve_default=False,
         ),

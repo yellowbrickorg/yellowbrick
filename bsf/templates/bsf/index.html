@@ -1,9 +1,36 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block page_meta %}
     <title>Home</title>
 {% endblock %}
 
 {% block page_content %}
-    <h1>Home page</h1>
+    <div class="col-md-8 mx-auto">
+        <h1>Home</h1>
+
+        <div class="col-4 col-md-2 mx-auto">
+            <img class="img-thumbnail my-3" src=
+                    "{% static "bsf/logo.jpg" %}">
+        </div>
+
+        <p>
+            Welcome to yellowbrick - an open source bricks management, set
+            recommendation
+            and trading platform for LEGO connoisseurs. Here you can:
+        <ul>
+            <li>easily track and manage your LEGO collection either of isolated
+                bricks or complete sets (or both!)
+            </li>
+            <li>filter through LEGO set database in search of new sets which you
+                can build from the bricks you possess
+            </li>
+            <li>browse details about bricks you've never heard of</li>
+            <li>and much more! (coming soon™)</li>
+        </ul>
+        Want to contribute to our project? Fork us on GitHub at
+        <a href="https://github.com/yellowbrickorg/yellowbrick">
+            yellowbrickorg/yellowbrick</a>!
+        </p>
+    </div>
 {% endblock %}
