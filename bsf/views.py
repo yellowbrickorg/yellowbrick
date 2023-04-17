@@ -209,18 +209,17 @@ def convert(request, id):
 def check_set(
     all_users_bricks,
     lego_set: LegoSet,
-    single_diff=sys.maxsize,
-    general_diff=sys.maxsize,
 ):
     diff = 0
+    gdiff = 0
 
     for brick_data in BrickInSetQuantity.objects.filter(brick_set=lego_set):
         q_needed = brick_data.quantity
-        q_collected = all_users_bricks[brick_data.brick]
-        diff = q_needed - q_collected
-        general_diff -= max(0, diff)
+        q_collected = all_users_bricks.get(brick_data.brick, 0)
+        diff = max(diff, q_needed - q_collected)
+        gdiff += max(0, diff)
 
-    return diff, general_diff
+    return diff, gdiff
 
 
 def get_dict_of_users_bricks(user: User, all_users_bricks=None):
@@ -272,8 +271,8 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
     all_users_bricks = get_dict_of_users_bricks_from_sets(user, all_users_bricks)
 
     for lego_set in LegoSet.objects.all():
-        diff, gdiff = check_set(all_users_bricks, lego_set, single_diff, general_diff)
-        if diff <= single_diff and gdiff >= 0:
+        diff, gdiff = check_set(all_users_bricks, lego_set)
+        if diff <= single_diff and gdiff <= general_diff:
             viable_sets.append(
                 {
                     "lego_set": lego_set,

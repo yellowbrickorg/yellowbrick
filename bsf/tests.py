@@ -137,7 +137,7 @@ class CollectionFilterTestCase(TestCase):
             not in get_viable_sets(user3, 0, 0)
         )
         self.assertTrue(
-            {"lego_set": lego_set2, "single_diff": -5, "general_diff": 0}
+            {"lego_set": lego_set2, "single_diff": 0, "general_diff": 0}
             in get_viable_sets(user3, 0, 0)
         )
         self.assertTrue(
@@ -174,5 +174,5 @@ class CollectionFilterTestCase(TestCase):
         self.assertEqual([], get_viable_sets(user2, 5, 4))
         self.assertEqual(
             get_viable_sets(user2, 4, 5),
-            [{"lego_set": lego_set2, "single_diff": 4, "general_diff": 0}],
+            [{"lego_set": lego_set2, "single_diff": 4, "general_diff": 5}],
         )
