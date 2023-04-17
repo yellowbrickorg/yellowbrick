@@ -6,12 +6,10 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     # /
     path("", views.index, name="index"),
+    # /collection/
+    path("collection/", views.collection, name="collection"),
     # /filter/
-    path("filter/", views.finder, name="filter"),
-    # /help/
-    path("docs/", views.docs, name="docs"),
-    # /my_bricks/
-    path("collection", views.collection, name="collection"),
+    path("filter/", views.filter_collection, name="filter"),
     # /bricks/
     path("bricks/", BrickListView.as_view(), name="brick_list"),
     path("bricks/<int:pk>/", BrickDetailView.as_view(), name="brick_detail"),
