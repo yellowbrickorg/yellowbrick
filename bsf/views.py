@@ -210,16 +210,17 @@ def check_set(
     all_users_bricks,
     lego_set: LegoSet,
 ):
-    diff = 0
+    max_diff = 0
     gdiff = 0
 
     for brick_data in BrickInSetQuantity.objects.filter(brick_set=lego_set):
         q_needed = brick_data.quantity
         q_collected = all_users_bricks.get(brick_data.brick, 0)
-        diff = max(diff, q_needed - q_collected)
+        diff = q_needed - q_collected
+        max_diff = max(max_diff, diff)
         gdiff += max(0, diff)
 
-    return diff, gdiff
+    return max_diff, gdiff
 
 
 def get_dict_of_users_bricks(user: User, all_users_bricks=None):
