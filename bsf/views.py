@@ -16,6 +16,7 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.views.generic import ListView, DetailView
+from django.db.models import Avg
 
 from .forms import NewUserForm
 from .models import (
@@ -24,6 +25,7 @@ from .models import (
     BrickInCollectionQuantity,
     SetInCollectionQuantity,
     BrickInSetQuantity,
+    BrickStats,
 )
 from .models import UserCollection, User
 
@@ -336,6 +338,14 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
             )
 
     return viable_sets
+
+def get_avg_likes(brick_set: LegoSet):
+    all_reviews = BrickStats.objects.filter(brick_set = brick_set)    
+    return all_reviews.aggregate(Avg('likes'))
+
+def get_avg_age(brick_set: LegoSet):
+    all_reviews = BrickStats.objects.filter(brick_set = brick_set)
+    return all_reviews.aggregate(Avg('min_recommended_age'))
 
 
 def maxsize_if_empty(_str):
