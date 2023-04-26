@@ -3,6 +3,8 @@
     <tr>
         <th scope="col">ID</th>
         <th scope="col">Name</th>
+        <th scope="col">theme</th>
+        <th scope="col">number of bricks</th>
     </tr>
     </thead>
     <tbody>
@@ -13,6 +15,8 @@
                      width="120">
                 <a href="{% url 'set_detail' legoset.id %}">{{ legoset.name }}</a>
             </td>
+            <th scope="row">{{ legoset.theme }}</th>
+            <th scope="row">{{ legoset.quantity_of_bricks }}</th>
         </tr>
     {% empty %}
         No sets found.

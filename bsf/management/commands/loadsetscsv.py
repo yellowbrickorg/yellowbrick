@@ -23,6 +23,8 @@ class Command(BaseCommand):
                         name=row[1],
                         image_link=row[2],
                         inventory_id=row[3],
+                        #                        theme=row[4], nie wiem czy trzeba dodać te linijki
+                        #                       quantity_of_bricks=row[5]
                     )
                     self.stdout.write(f"{row[3]} --> {row[0]}")
                 except ValueError as e:

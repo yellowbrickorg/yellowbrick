@@ -59,6 +59,8 @@ class LegoSet(models.Model):
     image_link = models.CharField(max_length=256)
     bricks = models.ManyToManyField(Brick, through="BrickInSetQuantity")
     inventory_id = models.IntegerField()
+    theme = models.CharField(max_length=256)
+    quantity_of_bricks = models.IntegerField()
 
     def __str__(self):
         return f"{self.number} - {self.name}"
@@ -108,7 +110,8 @@ class SetInCollectionQuantity(models.Model):
             f"{self.quantity} x {self.brick_set} "
             f"in {self.collection.user.username}'s collection"
         )
-    
+
+
 class BrickStats(models.Model):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -120,4 +123,3 @@ class BrickStats(models.Model):
             f"Rated {self.brick_set}: {self.likes} likes, and {self.min_recommended_age} recommended age, "
             f"by user {self.user}"
         )
-
