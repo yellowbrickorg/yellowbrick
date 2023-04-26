@@ -8,9 +8,51 @@
 
 {% block page_content %}
     <h1>LEGO sets</h1>
+
+<form method="get" action="{% url 'legoset_list_filtered' %}" class="col-lg-6">
+    {% csrf_token %}
+    <div class="input-group mb-3">
+
+
+        <input type="number" name="start_id" id="start_id" value="{{ start_id }}" min="{{ min_id }}" max="{{ max_id }}" placeholder="Start ID" class="form-control">
+        <input type="number" name="end_id" id="end_id" value="{{ end_id }}" min="{{ min_id }}" max="{{ max_id }}" placeholder="End ID" class="form-control">
+
+
+        <select class="form-select" id="multiple-select-field" data-placeholder="Choose anything" >
+          <option value="">All sets</option>
+             {% for name in set_names %}
+                <option value="{{ name }}" {% if name == selected_name %}selected{% endif %}>{{ name }}</option>
+             {% endfor %}
+        </select>
+
+
+    <button type="submit" class="btn btn-outline-secondary">Submit</button>
+    </div>
+</form>
+
+{% comment %}       <form action="{% url 'filter_run' %}" method="post" class="col-lg-6">
+        {% csrf_token %}
+        <div class="input-group mb-3">
+            <input type="number" name="single_diff" id="single_diff"
+                   value="{{ single_diff }}" min="0" max="10"
+                   placeholder="Single brick difference"
+                   aria-label="Single brick difference"
+                   class="form-control">
+
+            <input type="number" name="general_diff" id="general_diff"
+                   value="{{ general_diff }}" min="0" max="1000"
+                   placeholder="Total brick difference"
+                   aria-label="Total brick difference"
+                   class="form-control">
+
+            <button class="btn btn-outline-secondary" type="submit">Submit</button>
+        </div>
+    </form>{% endcomment %}
+
     {% include "snippets/legoset_table_snippet.html" with page_obj=page_obj %}
 
     <div class="mt-2">
+
         {% bootstrap_pagination page_obj %}
     </div>
 {% endblock %}

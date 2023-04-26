@@ -15,6 +15,7 @@ urlpatterns = [
     path("bricks/<int:pk>/", BrickDetailView.as_view(), name="brick_detail"),
     # /sets/
     path("sets/", SetListView.as_view(), name="sets"),
+    path("sets/fiter", views.legoset_list, name="legoset_list_filtered"),
     path("sets/<int:pk>/", SetDetailView.as_view(), name="set_detail"),
     path("filter/run", views.filter_collection, name="filter_run"),
     path("bricks/add/<int:brick_id>", views.add_brick, name="add_brick"),

@@ -5,6 +5,8 @@ from django.contrib.auth import login as auth_login, logout as auth_logout, auth
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail, BadHeaderError
+from django.core.paginator import Paginator
+from django.db.models import Min, Max
 from django.db.models.query_utils import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
@@ -56,6 +58,57 @@ def collection(request):
 class SetListView(ListView):
     paginate_by = 15
     model = LegoSet
+
+
+from django.db.models import Q
+
+from django.db.models import Q
+
+
+def legoset_list(request):
+    queryset = LegoSet.objects.all()
+    start_id = request.GET.get("start_id")
+    end_id = request.GET.get("end_id")
+    name = request.GET.get("name")
+
+    if start_id and end_id:
+        try:
+            start_id = int(start_id)
+            end_id = int(end_id)
+        except ValueError:
+            # Handle invalid input
+            pass
+        else:
+            if start_id <= end_id:
+                queryset = queryset.filter(id__range=(start_id, end_id))
+            else:
+                # Handle invalid range
+                pass
+
+    if name:
+        queryset = queryset.filter(name=name)
+
+    paginator = Paginator(queryset, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    min_id = LegoSet.objects.aggregate(Min("id"))["id__min"]
+    max_id = LegoSet.objects.aggregate(Max("id"))["id__max"]
+    set_names = LegoSet.objects.values_list("name", flat=True).distinct()
+
+    return render(
+        request,
+        "bsf/legoset_list.html",
+        {
+            "page_obj": page_obj,
+            "min_id": min_id,
+            "max_id": max_id,
+            "start_id": start_id,
+            "end_id": end_id,
+            "set_names": set_names,
+            "selected_name": name,
+        },
+    )
 
 
 def add_set(request, id):
