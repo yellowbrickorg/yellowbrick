@@ -373,6 +373,11 @@ def maxsize_if_empty(_str):
 def filter_collection(request):
     logged_user = request.user
 
+    set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
+    theme = request.POST.get("theme")
+    min_quantity = request.POST.get("start_quantity")
+    max_quantity = request.POST.get("end_quantity")
+
     if request.method == "POST":
         single_diff = maxsize_if_empty(request.POST.get("single_diff"))
         general_diff = maxsize_if_empty(request.POST.get("general_diff"))
@@ -380,7 +385,20 @@ def filter_collection(request):
         single_diff = general_diff = sys.maxsize
 
     template = loader.get_template("bsf/filter.html")
-    context = {"viable_sets": get_viable_sets(logged_user, single_diff, general_diff)}
+    viable_sets = get_viable_sets(logged_user, single_diff, general_diff)
+
+    if theme:
+        viable_sets = [set for set in viable_sets if set["lego_set"].theme == theme]
+    if min_quantity and max_quantity:
+        viable_sets = [
+            set
+            for set in viable_sets
+            if int(min_quantity)
+            <= set["lego_set"].quantity_of_bricks
+            <= int(max_quantity)
+        ]
+
+    context = {"viable_sets": viable_sets, "set_themes": set_themes}
     return HttpResponse(template.render(context, request))
 
 
