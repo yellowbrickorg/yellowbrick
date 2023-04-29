@@ -17,7 +17,7 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.views.generic import ListView, DetailView
 from django.db.models import Avg
-
+from django.db.models import Q
 from .forms import NewUserForm
 from .models import (
     Brick,
@@ -62,53 +62,54 @@ class SetListView(ListView):
     model = LegoSet
 
 
-from django.db.models import Q
-
-from django.db.models import Q
-
-
 def legoset_list(request):
     queryset = LegoSet.objects.all()
-    start_id = request.GET.get("start_id")
-    end_id = request.GET.get("end_id")
-    name = request.GET.get("name")
+    start_quantity = request.GET.get("start_quantity")
+    end_quantity = request.GET.get("end_quantity")
+    theme = request.GET.get("theme")
 
-    if start_id and end_id:
+    if start_quantity and end_quantity:
         try:
-            start_id = int(start_id)
-            end_id = int(end_id)
+            start_quantity = int(start_quantity)
+            end_quantity = int(end_quantity)
         except ValueError:
             # Handle invalid input
             pass
         else:
-            if start_id <= end_id:
-                queryset = queryset.filter(id__range=(start_id, end_id))
+            if start_quantity <= end_quantity:
+                queryset = queryset.filter(
+                    quantity_of_bricks__range=(start_quantity, end_quantity)
+                )
             else:
                 # Handle invalid range
                 pass
 
-    if name:
-        queryset = queryset.filter(name=name)
+    if theme:
+        queryset = queryset.filter(theme=theme)
 
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    min_id = LegoSet.objects.aggregate(Min("id"))["id__min"]
-    max_id = LegoSet.objects.aggregate(Max("id"))["id__max"]
-    set_names = LegoSet.objects.values_list("name", flat=True).distinct()
+    min_quantity = LegoSet.objects.aggregate(Min("quantity_of_bricks"))[
+        "quantity_of_bricks__min"
+    ]
+    max_quantity = LegoSet.objects.aggregate(Max("quantity_of_bricks"))[
+        "quantity_of_bricks__max"
+    ]
+    set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
 
     return render(
         request,
         "bsf/legoset_list.html",
         {
             "page_obj": page_obj,
-            "min_id": min_id,
-            "max_id": max_id,
-            "start_id": start_id,
-            "end_id": end_id,
-            "set_names": set_names,
-            "selected_name": name,
+            "min_quantity": min_quantity,
+            "max_quantity": max_quantity,
+            "start_quantity": start_quantity,
+            "end_quantity": end_quantity,
+            "set_themes": set_themes,
+            "selected_theme": theme,
         },
     )
 
@@ -339,13 +340,15 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
 
     return viable_sets
 
+
 def get_avg_likes(brick_set: LegoSet):
-    all_reviews = BrickStats.objects.filter(brick_set = brick_set)    
-    return all_reviews.aggregate(Avg('likes'))
+    all_reviews = BrickStats.objects.filter(brick_set=brick_set)
+    return all_reviews.aggregate(Avg("likes"))
+
 
 def get_avg_age(brick_set: LegoSet):
-    all_reviews = BrickStats.objects.filter(brick_set = brick_set)
-    return all_reviews.aggregate(Avg('min_recommended_age'))
+    all_reviews = BrickStats.objects.filter(brick_set=brick_set)
+    return all_reviews.aggregate(Avg("min_recommended_age"))
 
 
 def maxsize_if_empty(_str):

@@ -14,15 +14,14 @@
     <div class="input-group mb-3">
 
 
-        <input type="number" name="start_id" id="start_id" value="{{ start_id }}" min="{{ min_id }}" max="{{ max_id }}" placeholder="Start ID" class="form-control">
-        <input type="number" name="end_id" id="end_id" value="{{ end_id }}" min="{{ min_id }}" max="{{ max_id }}" placeholder="End ID" class="form-control">
+        <input type="number" name="start_quantity" id="start_quantity" value="{{ start_quantity }}" min="{{ min_quantity }}" max="{{ max_quantity }}" placeholder="Min quantity" class="form-control">
+        <input type="number" name="end_quantity" id="end_quantity" value="{{ end_quantity }}" min="{{ min_quantity }}" max="{{ max_quantity }}" placeholder="Max quantity" class="form-control">
 
-
-        <select class="form-select" id="multiple-select-field" data-placeholder="Choose anything" >
-          <option value="">All sets</option>
-             {% for name in set_names %}
-                <option value="{{ name }}" {% if name == selected_name %}selected{% endif %}>{{ name }}</option>
-             {% endfor %}
+        <select class="form-select" id="theme" class="form-control" name="theme">
+            <option value="">All themes</option>
+            {% for theme in set_themes %}
+                <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme }}</option>
+            {% endfor %}
         </select>
 
 
@@ -30,29 +29,9 @@
     </div>
 </form>
 
-{% comment %}       <form action="{% url 'filter_run' %}" method="post" class="col-lg-6">
-        {% csrf_token %}
-        <div class="input-group mb-3">
-            <input type="number" name="single_diff" id="single_diff"
-                   value="{{ single_diff }}" min="0" max="10"
-                   placeholder="Single brick difference"
-                   aria-label="Single brick difference"
-                   class="form-control">
-
-            <input type="number" name="general_diff" id="general_diff"
-                   value="{{ general_diff }}" min="0" max="1000"
-                   placeholder="Total brick difference"
-                   aria-label="Total brick difference"
-                   class="form-control">
-
-            <button class="btn btn-outline-secondary" type="submit">Submit</button>
-        </div>
-    </form>{% endcomment %}
-
     {% include "snippets/legoset_table_snippet.html" with page_obj=page_obj %}
 
     <div class="mt-2">
-
         {% bootstrap_pagination page_obj %}
     </div>
 {% endblock %}
