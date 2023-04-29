@@ -34,10 +34,23 @@ def collection(request):
     logged_user = request.user
     if logged_user.is_authenticated:
         user_collection = UserCollection.objects.get(user=logged_user)
+        set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
+
         if user_collection:
-            user_sets = user_collection.sets.through.objects.all().filter(
+            theme = request.GET.get("theme")
+            min_quantity = request.GET.get("start_quantity")
+            max_quantity = request.GET.get("end_quantity")
+
+            user_sets = user_collection.sets.through.objects.filter(
                 collection=user_collection
             )
+            if theme:
+                user_sets = user_sets.filter(brick_set__theme=theme)
+            if min_quantity and max_quantity:
+                user_sets = user_sets.filter(
+                    brick_set__quantity_of_bricks__range=(min_quantity, max_quantity)
+                )
+
             user_bricks = user_collection.bricks.through.objects.all().filter(
                 collection=user_collection
             )
@@ -49,6 +62,7 @@ def collection(request):
             "user_sets": user_sets,
             "user_bricks": user_bricks,
             "logged_user": logged_user,
+            "set_themes": set_themes,
         }
         template = loader.get_template("bsf/collection.html")
         return HttpResponse(template.render(context, request))
@@ -60,6 +74,7 @@ def collection(request):
 class SetListView(ListView):
     paginate_by = 15
     model = LegoSet
+    set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
 
 
 def legoset_list(request):
