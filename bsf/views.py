@@ -352,8 +352,10 @@ class SetDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["bricks_in_set"] = BrickInSetQuantity.objects.filter(
-            brick_set_id=self.kwargs["pk"]
+            brick_set_id=self.kwargs["pk"]  
         )
+        context["likes"] = get_avg_likes(self.get_object())['likes__avg']
+        context["age"] = get_avg_age(self.get_object())['min_recommended_age__avg']
         return context
 
 
