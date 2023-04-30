@@ -1,8 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User as User_base
-
-class User(User_base):
-    blocked_users = models.ManyToManyField("self")
+from django.contrib.auth.models import User
 
 class Color(models.Model):
     """
@@ -113,12 +110,22 @@ class SetInCollectionQuantity(models.Model):
 
 
 class Side(models.IntegerChoices):
-        OFFERED = 0
-        WANTED = 1
+    OFFERED = 0
+    WANTED = 1
 
 
 class BrickInWishlistQuantity(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    """
+    Represents a LEGO brick in a user's wishlist.
+
+    Attributes:
+        user : whose wishlist does the brick belong to
+        brick :
+        quantity :
+        side :  WANTED - user wants to receive the brick,
+                OFFERED - user offers the brick
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="wishlist_bricks")
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     side = models.IntegerField(choices=Side.choices)
@@ -140,6 +147,13 @@ class BrickInWishlistQuantity(models.Model):
 
 
 class ExchangeOffer(models.Model):
+    """
+    Represents an offer that 'offer_author' made to 'offer_receiver'
+
+    Attributes:
+        offer_author :
+        offer_receiver :
+    """
     offer_author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='authored_offers')
     offer_receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_offers')
 
@@ -157,7 +171,17 @@ class ExchangeOffer(models.Model):
         )
 
 
-class BricksInOfferQuantity(models.Model):
+class BrickInOfferQuantity(models.Model):
+    """
+    Represents a LEGO brick in an offer.
+
+    Attributes:
+        offer : offer the brick is part of
+        brick :
+        quantity :
+        side :  WANTED - 'offer_author' from 'offer' wants to receive the brick,
+                OFFERED - 'offer_author' from 'offer' offers the brick
+    """
     offer = models.ForeignKey(ExchangeOffer, on_delete=models.CASCADE)
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
