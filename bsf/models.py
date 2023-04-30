@@ -112,10 +112,25 @@ class SetInCollectionQuantity(models.Model):
         )
 
 
+class Side(models.IntegerChoices):
+        OFFERED = 0
+        WANTED = 1
+
+
 class BrickInWishlistQuantity(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
+    side = models.IntegerField(choices=Side.choices)
+
+    class Meta:
+        unique_together = ("user", "brick"),
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(quantity__gt=0),
+                name="check_quantity_positive_wishlist",
+            )
+        ]
 
     def __str__(self):
         return (
@@ -128,6 +143,14 @@ class ExchangeOffer(models.Model):
     offer_author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='authored_offers')
     offer_receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_offers')
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(offer_author=models.F('offer_receiver')),
+                name="check_author_receiver_different",
+            )
+        ]
+
     def __str__(self):
         return (
             f"Offer of {self.offer_author.username} to {self.offer_receiver.username}"
@@ -135,13 +158,19 @@ class ExchangeOffer(models.Model):
 
 
 class BricksInOfferQuantity(models.Model):
-    class Side(models.IntegerChoices):
-        OFFERED = 0
-        WANTED = 1
     offer = models.ForeignKey(ExchangeOffer, on_delete=models.CASCADE)
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     side = models.IntegerField(choices=Side.choices)
+
+    class Meta:
+        unique_together = ("offer", "brick"),
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(quantity__gt=0),
+                name="check_quantity_positive_offer",
+            )
+        ]
 
     def __str__(self):
         return (
