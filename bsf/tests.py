@@ -1,5 +1,5 @@
 import django.db.utils
-from django.contrib.auth.models import User
+from .models import User
 from django.test import TestCase
 
 from bsf.models import (

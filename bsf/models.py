@@ -1,6 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User as User_base
 
+class User(User_base):
+    blocked_users = models.ManyToManyField("self")
 
 class Color(models.Model):
     """
@@ -107,4 +109,42 @@ class SetInCollectionQuantity(models.Model):
         return (
             f"{self.quantity} x {self.brick_set} "
             f"in {self.collection.user.username}'s collection"
+        )
+
+
+class BrickInWishlistQuantity(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+
+    def __str__(self):
+        return (
+            f"{self.quantity} x {self.brick} "
+            f"in {self.user.username}'s wishlist"
+        )
+
+
+class ExchangeOffer(models.Model):
+    offer_author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='authored_offers')
+    offer_receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_offers')
+
+    def __str__(self):
+        return (
+            f"Offer of {self.offer_author.username} to {self.offer_receiver.username}"
+        )
+
+
+class BricksInOfferQuantity(models.Model):
+    class Side(models.IntegerChoices):
+        OFFERED = 0
+        WANTED = 1
+    offer = models.ForeignKey(ExchangeOffer, on_delete=models.CASCADE)
+    brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    side = models.IntegerField(choices=Side.choices)
+
+    def __str__(self):
+        return (
+            f"{self.quantity} x {self.brick} "
+            f"in {self.offer.offer_author.username}'s offer to {self.offer.offer_receiver.username}"
         )
