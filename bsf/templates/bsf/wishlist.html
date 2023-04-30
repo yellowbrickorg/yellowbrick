@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block page_meta %}
+    <title>{{ logged_user }}'s collection</title>
+{% endblock %}
+
+{% block page_content %}
+    <h1>{{ logged_user }}'s wishlist</h1>
+    <p class="my-3">
+        Here you can view and adjust your wishlist and offered items.
+    </p>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            Set wishlist
+        </div>
+        <div class="card-body">
+            {% include "snippets/set_wishlist_snippet.html" with user_sets=user_sets_wishlist side=1 %}
+        </div>
+        <div class="card-header">
+            Brick wishlist
+        </div>
+        <div class="card-body">
+            {% include "snippets/brick_wishlist_snippet.html" with user_bricks=user_bricks_wishlist side=1 %}
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            Set offers
+        </div>
+        <div class="card-body">
+            {% include "snippets/set_wishlist_snippet.html" with user_sets=user_sets_offers side=0 %}
+        </div>
+        <div class="card-header">
+            Brick offers
+        </div>
+        <div class="card-body">
+            {% include "snippets/brick_wishlist_snippet.html" with user_bricks=user_bricks_offers side=0 %}
+        </div>
+    </div>
+
+{% endblock %}

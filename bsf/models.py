@@ -1,11 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-
 class Color(models.Model):
     """
     Represents a color of LEGO bricks.
-
     Attributes:
         color_id : color ID number, compliant with LEGO's color numeric identification
         name : color's name
@@ -25,7 +23,6 @@ class Color(models.Model):
 class Brick(models.Model):
     """
     Represents a LEGO brick.
-
     Attributes:
         brick_id : internal brick ID
         part_num : part number compliant with LEGO's numeric identification
@@ -45,7 +42,6 @@ class Brick(models.Model):
 class LegoSet(models.Model):
     """
     Represents a LEGO set.
-
     Attributes:
         number : set number compliant with LEGO set identification
         name : set name
@@ -107,4 +103,124 @@ class SetInCollectionQuantity(models.Model):
         return (
             f"{self.quantity} x {self.brick_set} "
             f"in {self.collection.user.username}'s collection"
+        )
+
+
+class Side(models.IntegerChoices):
+    OFFERED = 0
+    WANTED = 1
+
+
+class BrickInWishlistQuantity(models.Model):
+    """
+    Represents a LEGO brick in a user's wishlist.
+    Attributes:
+        user : whose wishlist does the brick belong to
+        brick :
+        quantity :
+        side :  WANTED - user wants to receive the brick,
+                OFFERED - user offers the brick
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="wishlist_bricks")
+    brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    side = models.IntegerField(choices=Side.choices)
+
+    class Meta:
+        unique_together = ("user", "brick"),
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(quantity__gt=0),
+                name="brick_check_quantity_positive_wishlist",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.quantity} x {self.brick} "
+            f"in {self.user.username}'s wishlist"
+        )
+
+class SetInWishlistQuantity(models.Model):
+    """
+    Represents a LEGO set in a user's wishlist.
+    Attributes:
+        user : whose wishlist does the brick belong to
+        legoset :
+        quantity :
+        side :  WANTED - user wants to receive the brick,
+                OFFERED - user offers the brick
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="wishlist_sets")
+    legoset = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    side = models.IntegerField(choices=Side.choices)
+
+    class Meta:
+        unique_together = ("user", "legoset", "side"),
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(quantity__gt=0),
+                name="set_check_quantity_positive_wishlist",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.quantity} x {self.legoset} "
+            f"in {self.user.username}'s wishlist"
+        )
+
+class ExchangeOffer(models.Model):
+    """
+    Represents an offer that 'offer_author' made to 'offer_receiver'
+    Attributes:
+        offer_author :
+        offer_receiver :
+    """
+    offer_author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='authored_offers')
+    offer_receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_offers')
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(offer_author=models.F('offer_receiver')),
+                name="check_author_receiver_different",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"Offer of {self.offer_author.username} to {self.offer_receiver.username}"
+        )
+
+
+class BrickInOfferQuantity(models.Model):
+    """
+    Represents a LEGO brick in an offer.
+    Attributes:
+        offer : offer the brick is part of
+        brick :
+        quantity :
+        side :  WANTED - 'offer_author' from 'offer' wants to receive the brick,
+                OFFERED - 'offer_author' from 'offer' offers the brick
+    """
+    offer = models.ForeignKey(ExchangeOffer, on_delete=models.CASCADE)
+    brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    side = models.IntegerField(choices=Side.choices)
+
+    class Meta:
+        unique_together = ("offer", "brick"),
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(quantity__gt=0),
+                name="check_quantity_positive_offer",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.quantity} x {self.brick} "
+            f"in {self.offer.offer_author.username}'s offer to {self.offer.offer_receiver.username}"
         )

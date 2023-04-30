@@ -19,7 +19,23 @@
                         <label for="quantity{{ legoset.brick_set_id }}">Add this set
                             to collection</label>
                         <div class="input-group">
-                            <input type="number" name="quantity"
+                            <input type="number" name="quantity" value="0"
+                                   id="setquantity{{ legoset.brick_set.id }}"
+                                   min="0" max="100" class="form-control"
+                                   placeholder="Quantity">
+                            <button type="submit" class="btn btn-secondary">
+                                Submit
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-6 mb-3">
+                    <form action="{% url 'add_set_to_wishlist' legoset.id 1 %}" method="post">
+                        {% csrf_token %}
+                        <label for="quantity{{ legoset.brick_set_id }}">Add this set
+                            to wishlist</label>
+                        <div class="input-group">
+                            <input type="number" name="quantity" value="0"
                                    id="setquantity{{ legoset.brick_set.id }}"
                                    min="0" max="100" class="form-control"
                                    placeholder="Quantity">
