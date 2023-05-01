@@ -22,6 +22,10 @@ from .models import (
     BrickInCollectionQuantity,
     SetInCollectionQuantity,
     BrickInSetQuantity,
+    BrickInWishlistQuantity,
+    ExchangeOffer,
+    BrickInOfferQuantity,
+    Side,
 )
 from .models import UserCollection, User
 
@@ -439,4 +443,102 @@ def password_reset(request):
         request=request,
         template_name="registration/password_reset.html",
         context={"password_reset_form": password_reset_form},
+    )
+
+def generate_possible_offers(logged_user, other=None):
+    """
+    We are looking for users with whom we could trade bricks. They are sorted
+    by min(what we can offer, what we can receive)
+    """
+
+    wanted_bricks = logged_user.wishlist_bricks.filter(side=Side.WANTED)
+    offered_bricks = logged_user.wishlist_bricks.filter(side=Side.OFFERED)
+    wanted_sets = logged_user.wishlist_sets.filter(side=Side.WANTED)
+    offered_sets = logged_user.wishlist_sets.filter(side=Side.OFFERED)
+    """
+    User x Pair list (what brick he wants, count) x Pair list (What brick he offers, count)
+    x Pair list (what set he wants, count) x Pair list (what set he offers, count)
+    x Sum of what we can give x Sum of what we can receive
+    """
+    possible_offers = []
+    if other is not None:
+        possible_offers = [[User.objects.get(username=other), [], [], [], [], 0, 0]]
+    else:
+        possible_offers = [
+            [u, [], [], [], [], 0, 0] for u in User.objects.all() if u != logged_user
+        ]
+    for p_o in possible_offers:
+        other_wanted_bricks = p_o[0].wishlist_bricks.filter(side=Side.WANTED)
+        other_offered_bricks = p_o[0].wishlist_bricks.filter(side=Side.OFFERED)
+        other_wanted_sets = p_o[0].wishlist_sets.filter(side=Side.WANTED)
+        other_offered_sets = p_o[0].wishlist_sets.filter(side=Side.OFFERED)
+        for brick_wanted in other_wanted_bricks:
+            """ Can we offer 'brick_wanted' """
+            if offered_bricks.filter(brick=brick_wanted.brick).exists():
+                bricks_to_trade = min(
+                        offered_bricks.filter(brick=brick_wanted.brick).get().quantity,
+                        brick_wanted.quantity
+                    )
+                p_o[1].append([
+                    brick_wanted.brick,
+                    bricks_to_trade
+                ])
+                p_o[5] += bricks_to_trade
+
+        for brick_offered in other_offered_bricks:
+            """ Do we want 'brick_offered' """
+            if wanted_bricks.filter(brick=brick_offered.brick).exists():
+                bricks_to_trade = min(
+                        offered_bricks.filter(brick=brick_wanted.brick).get().quantity,
+                        brick_wanted.quantity
+                    )
+                p_o[2].append([
+                    brick_offered.brick,
+                    bricks_to_trade
+                ])
+                p_o[6] += bricks_to_trade
+        for set_wanted in other_wanted_sets:
+            """ Can we offer 'set_wanted' """
+            if offered_sets.filter(legoset=set_wanted.legoset).exists():
+                sets_to_trade = min(
+                        offered_sets.filter(legoset=set_wanted.legoset).get().quantity,
+                        set_wanted.quantity
+                    )
+                p_o[3].append([
+                    set_wanted.brick,
+                    sets_to_trade
+                ])
+                p_o[5] += sets_to_trade * set_wanted.legoset.number_of_bricks()
+
+        for set_offered in other_offered_sets:
+            """ Do we want 'set_offered' """
+            if wanted_sets.filter(legoset=set_offered.legoset).exists():
+                sets_to_trade = min(
+                        offered_sets.filter(legoset=set_wanted.legoset).get().quantity,
+                        set_wanted.quantity
+                    )
+                p_o[4].append([
+                    set_offered.legoset,
+                    sets_to_trade
+                ])
+                p_o[6] += bricks_to_trade * set_offered.legoset.number_of_bricks()
+
+    possible_offers = [u for u in possible_offers if u[5] + u[6] > 0]
+    sorted(possible_offers, key=lambda p_o : p_o[5] + p_o[6], reverse=True)
+    return possible_offers
+
+def exchange(request):
+    logged_user = request.user
+    if(not logged_user.is_authenticated):
+        messages.error(request, "You need to be logged in to access brick exchange.")
+        return redirect("index")
+
+    possible_offers = generate_possible_offers(logged_user)
+    context = {
+        "possible_offers" : possible_offers,
+    }
+    return render(
+        request = request,
+        context = context,
+        template_name = "bsf/exchange.html",
     )

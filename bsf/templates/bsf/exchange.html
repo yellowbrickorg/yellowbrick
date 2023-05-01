@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load bootstrap5 %}
+{% load subtraction %}
+
+{% block page_meta %}
+    <title>Exchange bricks</title>
+{% endblock %}
+
+{% block page_content %}
+    <h1>Possible exchanges</h1>
+    {% if possible_offers|length > 0 %}
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">User</th>
+            <th scope="col">We can offer</th>
+            <th scope="col">We can receive</th>
+            <th scope="col"></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for po in possible_offers %}
+            <tr>
+                <th scope="row">
+                    {{ po.0.get_username }}
+                </th>
+                <td>
+                    Total of {{ po.5 }} bricks.
+                    <ul>
+                    {% for set in po.3 %}
+                        <li><img class="img-thumbnail me-2" src="{{ set.0.image_link }}"
+                        width="120">
+                        <a href="{% url 'set_detail' set.0.pk %}">{{ set.0.name }}</a>
+                        x {{ set.1 }}</li>
+                    {% endfor %}
+                    {% for brick in po.1 %}
+                        <li><img class="img-thumbnail me-2" src="{{ brick.0.image_link }}"
+                        width="60">
+                        <a href="{% url 'brick_detail' brick.0.brick_id %}">{{ brick.0.part_num }}</a>
+                        - {{ brick.0.color.name }} x
+                        {{ brick.1 }}</li>
+                    {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    Total of {{ po.6 }} bricks.
+                    <ul>
+                    {% for set in po.4 %}
+                        <li><img class="img-thumbnail me-2" src="{{ set.0.image_link }}"
+                        width="120">
+                        <a href="{% url 'set_detail' set.0.pk %}">{{ set.0.name }}</a>
+                        x {{ set.1 }}</li>
+                    {% endfor %}
+                    {% for brick in po.2 %}
+                        <li><img class="img-thumbnail me-2" src="{{ brick.0.image_link }}"
+                        width="60">
+                        <a href="{% url 'brick_detail' brick.0.brick_id %}">{{ brick.0.part_num }}</a>
+                        - {{ brick.0.color.name }} x
+                        {{ brick.1 }}</li>
+                    {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <a href="{% url 'index' %}">
+                        <button class="btn btn-primary" type="button">Make an offer</button>
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% if possible_offers|length == 0 %}
+    No possible changes found. Update your wishlist.
+    {% endif %}
+{% endblock %}

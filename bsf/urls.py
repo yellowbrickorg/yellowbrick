@@ -41,4 +41,8 @@ urlpatterns = [
         ),
         name="password_reset_complete",
     ),
+    # Exchange
+    path("exchange/", views.exchange, name="exchange"),
+    #path("exchange/offer/make/<username>", views.exchange_make_offer, name="exchange_make_offer"),
+    #path("exchange/offer/<int:pk>", views.exchange_view_offer, name="exchange_view_offer"),
 ]

@@ -12,6 +12,9 @@
                 <a class="nav-link" href="{% url 'sets' %}">Sets</a>
                 <a class="nav-link" href="{% url 'filter' %}">Filter</a>
                 <a class="nav-link" href="{% url 'brick_list' %}">Bricks</a>
+                {% if user.is_authenticated %}
+                <a class="nav-link" href="{% url 'exchange' %}">Exchange</a>
+                {% endif %}
             </div>
             <div class="navbar-nav ms-auto">
                 {% if not user.is_authenticated %}
