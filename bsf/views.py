@@ -595,7 +595,6 @@ def generate_possible_offers(logged_user, other=None):
     else:
         possible_offers = [
             [u, [], [], [], [], 0, 0] for u in User.objects.all() if u != logged_user
-            and ExchangeOffer.objects.filter(offer_author=logged_user, offer_receiver=u).count() == 0
         ]
     for p_o in possible_offers:
         other_wanted_bricks = p_o[0].wishlist_bricks.filter(side=Side.WANTED)

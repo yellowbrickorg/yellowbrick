@@ -9,9 +9,7 @@ urlpatterns = [
     # /collection/
     path("collection/", views.collection, name="collection"),
     # /filter/
-    path("filter/", views.finder, name="filter"),
-    # /help/
-    path("docs/", views.docs, name="docs"),
+    path("filter/", views.filter_collection, name="filter"),
     # /my_bricks/
     path("collection", views.collection, name="collection"),
     path("wishlist", views.wishlist, name="wishlist"),
