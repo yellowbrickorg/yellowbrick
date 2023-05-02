@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 class Color(models.Model):
     """
     Represents a color of LEGO bricks.
-
     Attributes:
         color_id : color ID number, compliant with LEGO's color numeric identification
         name : color's name
@@ -24,7 +23,6 @@ class Color(models.Model):
 class Brick(models.Model):
     """
     Represents a LEGO brick.
-
     Attributes:
         brick_id : internal brick ID
         part_num : part number compliant with LEGO's numeric identification
@@ -44,7 +42,6 @@ class Brick(models.Model):
 class LegoSet(models.Model):
     """
     Represents a LEGO set.
-
     Attributes:
         number : set number compliant with LEGO set identification
         name : set name
@@ -123,7 +120,6 @@ class Side(models.IntegerChoices):
 class BrickInWishlistQuantity(models.Model):
     """
     Represents a LEGO brick in a user's wishlist.
-
     Attributes:
         user : whose wishlist does the brick belong to
         brick :
@@ -203,7 +199,6 @@ class ExchangeOffer(models.Model):
     offer_receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_offers')
 
     class Meta:
-        unique_together = ("offer_author", "offer_receiver"),
         constraints = [
             models.CheckConstraint(
                 check=~models.Q(offer_author=models.F('offer_receiver')),
@@ -220,7 +215,6 @@ class ExchangeOffer(models.Model):
 class BrickInOfferQuantity(models.Model):
     """
     Represents a LEGO brick in an offer.
-
     Attributes:
         offer : offer the brick is part of
         brick :

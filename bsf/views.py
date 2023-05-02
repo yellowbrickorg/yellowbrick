@@ -22,6 +22,7 @@ from .models import (
     BrickInCollectionQuantity,
     SetInCollectionQuantity,
     BrickInSetQuantity,
+    SetInWishlistQuantity,
     BrickInWishlistQuantity,
     ExchangeOffer,
     BrickInOfferQuantity,
@@ -30,6 +31,27 @@ from .models import (
 )
 from .models import UserCollection, User
 
+
+def wishlist(request):
+    logged_user = request.user
+    if logged_user.is_authenticated:
+        user_sets_wishlist = SetInWishlistQuantity.objects.filter(user=logged_user, side=1)
+        user_bricks_wishlist = BrickInWishlistQuantity.objects.filter(user=logged_user, side=1)
+        user_sets_offers = SetInWishlistQuantity.objects.filter(user=logged_user, side=0)
+        user_bricks_offers = BrickInWishlistQuantity.objects.filter(user=logged_user, side=0)
+
+        context = {
+            "user_sets_wishlist": user_sets_wishlist,
+            "user_bricks_wishlist": user_bricks_wishlist,
+            "user_sets_offers": user_sets_offers,
+            "user_bricks_offers": user_bricks_offers,
+            "logged_user": logged_user,
+        }
+        template = loader.get_template("bsf/wishlist.html")
+        return HttpResponse(template.render(context, request))
+    else:
+        messages.info(request, "You need to be logged in to access collections.")
+        return redirect("login")
 
 def collection(request):
     logged_user = request.user
@@ -57,7 +79,6 @@ def collection(request):
         messages.info(request, "You need to be logged in to access collections.")
         return redirect("login")
 
-
 class SetListView(ListView):
     paginate_by = 15
     model = LegoSet
@@ -74,9 +95,7 @@ def add_set(request, id):
         collection = UserCollection.objects.get(user=logged_user)
         if qty > 0:
             try:
-                set_through = collection.sets.through.objects.get(
-                    brick_set=lego_set, collection=collection
-                )
+                set_through = collection.sets.through.objects.get(brick_set=lego_set, collection=collection)
             except:
                 collection.sets.add(lego_set, through_defaults={"quantity": qty})
             else:
@@ -88,6 +107,35 @@ def add_set(request, id):
         )
         return HttpResponseRedirect(reverse("collection", args=()))
 
+def add_set_to_wishlist(request, id, side):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    try:
+        qty = int(request.POST.get("quantity", False))
+    except:
+        return HttpResponseRedirect(reverse("collection", args=()))
+    else:
+        logged_user = request.user
+        wishlist = SetInWishlistQuantity.objects.filter(user=logged_user)
+        if qty > 0:
+            try:
+                set_through = wishlist.get(legoset=lego_set, side=side)
+            except:
+                set_through = SetInWishlistQuantity(user=logged_user, legoset=lego_set, quantity=qty, side=side)
+                set_through.save()
+            else:
+                set_through.quantity = min(set_through.quantity + qty, 100)
+                set_through.save()
+        if side == 0:
+            messages.success(
+                request,
+                f"Added {qty} set(s) with set number {lego_set.id} to " f"offered list.",
+            )
+        else:
+            messages.success(
+                request,
+                f"Added {qty} set(s) with set number {lego_set.id} to " f"wishlist.",
+            )            
+        return HttpResponseRedirect(reverse("wishlist", args=()))
 
 def add_brick(request, brick_id):
     brick = get_object_or_404(Brick, brick_id=brick_id)
@@ -110,6 +158,35 @@ def add_brick(request, brick_id):
     )
     return HttpResponseRedirect(reverse("collection", args=()))
 
+def add_brick_to_wishlist(request, id, side):
+    brick = get_object_or_404(Brick, brick_id=id)
+    try:
+        qty = int(request.POST.get("quantity", False))
+    except:
+        return HttpResponseRedirect(reverse("collection", args=()))
+    else:
+        logged_user = request.user
+        wishlist = BrickInWishlistQuantity.objects.filter(user=logged_user)
+        if qty > 0:
+            try:
+                brick_through = wishlist.get(brick=brick, side=side)
+            except:
+                brick_through = BrickInWishlistQuantity(user=logged_user, brick=brick, quantity=qty, side=side)
+                brick_through.save()
+            else:
+                brick_through.quantity = min(brick_through.quantity + qty, 10000)
+                brick_through.save()
+        if side == 0:
+            messages.success(
+                request,
+                f"Added {qty} brick(s) with part number {brick.part_num} to " f"offered list.",
+            )
+        else:
+            messages.success(
+                request,
+                f"Added {qty} brick(s) with part number {brick.part_num} to " f"wishlist.",
+            )            
+        return HttpResponseRedirect(reverse("wishlist", args=()))
 
 def del_set(request, id):
     lego_set = get_object_or_404(LegoSet, id=id)
@@ -122,9 +199,7 @@ def del_set(request, id):
         collection = UserCollection.objects.get(user=logged_user)
         if qty > 0:
             try:
-                set_through = collection.sets.through.objects.get(
-                    brick_set_id=id, collection=collection
-                )
+                set_through = collection.sets.through.objects.get(brick_set_id=id, collection=collection)
             except (KeyError, SetInCollectionQuantity.DoesNotExist):
                 collection.sets.add(lego_set, through_defaults={"quantity": qty})
             else:
@@ -139,6 +214,38 @@ def del_set(request, id):
         )
         return HttpResponseRedirect(reverse("collection", args=()))
 
+def del_set_from_wishlist(request, id, side):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    try:
+        qty = int(request.POST.get("quantity", False))
+    except:
+        return HttpResponseRedirect(reverse("wishlist", args=()))
+    else:
+        logged_user = request.user
+        wishlist = SetInWishlistQuantity.objects.filter(user=logged_user)
+        if qty > 0:
+            try:
+                set_through = wishlist.get(legoset=lego_set, side=side)
+            except:
+                return HttpResponseRedirect(reverse("wishlist", args=()))
+            else:
+                if set_through.quantity <= qty:
+                    set_through.delete()
+                else:
+                    set_through.quantity -= qty
+                    set_through.save()
+        if side == 0:
+            messages.success(
+                request,
+                f"Removed {qty} set(s) with set number {lego_set.id} from " f"offered list.",
+            )
+        else:
+            messages.success(
+                request,
+                f"Removed {qty} set(s) with set number {lego_set.id} from " f"wishlist.",
+            )
+
+        return HttpResponseRedirect(reverse("wishlist", args=()))
 
 def del_brick(request, brick_id):
     brick = get_object_or_404(Brick, brick_id=brick_id)
@@ -147,9 +254,7 @@ def del_brick(request, brick_id):
     collection = UserCollection.objects.get(user=logged_user)
     if qty > 0:
         try:
-            brick_through = collection.bricks.through.objects.get(
-                brick_id=brick_id, collection=collection
-            )
+            brick_through = collection.bricks.through.objects.get(brick_id=brick_id, collection=collection)
         except (KeyError, BrickInCollectionQuantity.DoesNotExist):
             collection.bricks.add(brick, through_defaults={"quantity": qty})
         else:
@@ -165,6 +270,33 @@ def del_brick(request, brick_id):
     )
     return HttpResponseRedirect(reverse("collection", args=()))
 
+def del_brick_from_wishlist(request, brick_id, side):
+    brick = get_object_or_404(Brick, brick_id=brick_id)
+    qty = int(request.POST.get("quantity", False))
+    logged_user = request.user
+    if qty > 0:
+        wishlist = BrickInWishlistQuantity.objects.filter(user=logged_user)
+        try:
+            brick_through = wishlist.get(brick_id=brick_id, side=side)
+        except (KeyError, BrickInCollectionQuantity.DoesNotExist):
+            return HttpResponseRedirect(reverse("wishlist", args=()))
+        else:
+            if brick_through.quantity <= qty:
+                brick_through.delete()
+            else:
+                brick_through.quantity -= qty
+                brick_through.save()
+    if side == 0:
+        messages.success(
+            request,
+            f"Removed {qty} brick(s) with part number {brick.part_num} from " f"offered list.",
+        )
+    else:
+        messages.success(
+            request,
+            f"Removed {qty} brick(s) with part number {brick.part_num} from " f"wishlist.",
+        )
+    return HttpResponseRedirect(reverse("wishlist", args=()))
 
 def convert(request, id):
     brickset = get_object_or_404(LegoSet, id=id)
@@ -180,14 +312,10 @@ def convert(request, id):
             return HttpResponseRedirect(reverse("collection", args=()))
         else:
             real_qty = min(set_through.quantity, qty)
-            brickinset_through = brickset.bricks.through.objects.filter(
-                brick_set=brickset
-            )
+            brickinset_through = brickset.bricks.through.objects.filter(brick_set=brickset)
             for brickth in brickinset_through:
                 try:
-                    brick_through = bricks_of_user.get(
-                        brick_id=brickth.brick.brick_id, collection=collection
-                    )
+                    brick_through = bricks_of_user.get(brick_id=brickth.brick.brick_id, collection=collection)
                 except (KeyError, BrickInCollectionQuantity.DoesNotExist):
                     collection.bricks.add(
                         brickth.brick,
