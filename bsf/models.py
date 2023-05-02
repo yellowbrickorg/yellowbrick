@@ -58,6 +58,12 @@ class LegoSet(models.Model):
 
     def __str__(self):
         return f"{self.number} - {self.name}"
+    
+    def number_of_bricks(self):
+        ret = 0
+        for b in self.brickinsetquantity_set.all():
+            ret += b.quantity
+        return ret
 
 
 class UserCollection(models.Model):
@@ -131,25 +137,34 @@ class BrickInWishlistQuantity(models.Model):
         constraints = [
             models.CheckConstraint(
                 check=models.Q(quantity__gt=0),
-                name="brick_check_quantity_positive_wishlist",
+                name="check_quantity_positive_wishlist",
             )
         ]
 
     def __str__(self):
-        return (
-            f"{self.quantity} x {self.brick} "
-            f"in {self.user.username}'s wishlist"
-        )
+        if self.side == Side.WANTED:
+            return (
+                f"{self.quantity} x (brick {self.brick}) "
+                f"wanted "
+                f"in {self.user.username}'s wishlist"
+            )
+        else:
+            return (
+                f"{self.quantity} x (brick {self.brick}) "
+                f"offered "
+                f"in {self.user.username}'s wishlist"
+            )
+
 
 class SetInWishlistQuantity(models.Model):
     """
     Represents a LEGO set in a user's wishlist.
     Attributes:
-        user : whose wishlist does the brick belong to
+        user : whose wishlist does the set belong to
         legoset :
         quantity :
-        side :  WANTED - user wants to receive the brick,
-                OFFERED - user offers the brick
+        side :  WANTED - user wants to receive the set,
+                OFFERED - user offers the set
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="wishlist_sets")
     legoset = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
@@ -157,7 +172,7 @@ class SetInWishlistQuantity(models.Model):
     side = models.IntegerField(choices=Side.choices)
 
     class Meta:
-        unique_together = ("user", "legoset", "side"),
+        unique_together = ("user", "legoset"),
         constraints = [
             models.CheckConstraint(
                 check=models.Q(quantity__gt=0),
@@ -171,9 +186,11 @@ class SetInWishlistQuantity(models.Model):
             f"in {self.user.username}'s wishlist"
         )
 
+
 class ExchangeOffer(models.Model):
     """
     Represents an offer that 'offer_author' made to 'offer_receiver'
+
     Attributes:
         offer_author :
         offer_receiver :
@@ -215,7 +232,39 @@ class BrickInOfferQuantity(models.Model):
         constraints = [
             models.CheckConstraint(
                 check=models.Q(quantity__gt=0),
-                name="check_quantity_positive_offer",
+                name="check_quantity_positive_offer_brick",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.quantity} x {self.brick} "
+            f"in {self.offer.offer_author.username}'s offer to {self.offer.offer_receiver.username}"
+        )
+
+
+class SetInOfferQuantity(models.Model):
+    """
+    Represents a LEGO brick in an offer.
+
+    Attributes:
+        offer : offer the brick is part of
+        legoset :
+        quantity :
+        side :  WANTED - 'offer_author' from 'offer' wants to receive the brick,
+                OFFERED - 'offer_author' from 'offer' offers the brick
+    """
+    offer = models.ForeignKey(ExchangeOffer, on_delete=models.CASCADE)
+    legoset = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    side = models.IntegerField(choices=Side.choices)
+
+    class Meta:
+        unique_together = ("offer", "legoset"),
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(quantity__gt=0),
+                name="check_quantity_positive_offer_set",
             )
         ]
 

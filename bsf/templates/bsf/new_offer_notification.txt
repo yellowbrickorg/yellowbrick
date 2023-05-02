@@ -1,0 +1,9 @@
+{% autoescape off %}
+
+Hello {{ user }},
+
+{{ author }} has made you an exchange offer. You can view the details here:
+
+{{ protocol }}://{{ domain }}{% url 'exchange_offers' %}
+
+{% endautoescape %}

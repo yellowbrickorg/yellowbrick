@@ -6,6 +6,8 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     # /
     path("", views.index, name="index"),
+    # /collection/
+    path("collection/", views.collection, name="collection"),
     # /filter/
     path("filter/", views.finder, name="filter"),
     # /help/
@@ -37,15 +39,19 @@ urlpatterns = [
     path(
         "reset/<uidb64>/<token>/",
         auth_views.PasswordResetConfirmView.as_view(
-            template_name="registration/password_reset_confirm.html"
+            template_name="registration/password_reset_newpass.html"
         ),
         name="password_reset_confirm",
     ),
     path(
         "reset/done/",
         auth_views.PasswordResetCompleteView.as_view(
-            template_name="registration/password_reset_complete.html"
+            template_name="registration/password_reset_sent.html"
         ),
         name="password_reset_complete",
     ),
+    # Exchange
+    path("exchange/", views.exchange, name="exchange"),
+    path("exchange/make_offer", views.exchange_make_offer, name="exchange_make_offer"),
+    path("exchange/offers", views.exchange_offers, name="exchange_offers"),
 ]
