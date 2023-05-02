@@ -618,7 +618,7 @@ def generate_possible_offers(logged_user, other=None):
             """ Do we want 'brick_offered' """
             if wanted_bricks.filter(brick=brick_offered.brick).exists():
                 bricks_to_trade = min(
-                        offered_bricks.filter(brick=brick_wanted.brick).get().quantity,
+                        wanted_bricks.filter(brick=brick_offered.brick).get().quantity,
                         brick_wanted.quantity
                     )
                 p_o[2].append([
@@ -643,7 +643,7 @@ def generate_possible_offers(logged_user, other=None):
             """ Do we want 'set_offered' """
             if wanted_sets.filter(legoset=set_offered.legoset).exists():
                 sets_to_trade = min(
-                        offered_sets.filter(legoset=set_wanted.legoset).get().quantity,
+                        wanted_sets.filter(legoset=set_wanted.legoset).get().quantity,
                         set_wanted.quantity
                     )
                 p_o[4].append([
@@ -652,7 +652,7 @@ def generate_possible_offers(logged_user, other=None):
                 ])
                 p_o[6] += bricks_to_trade * set_offered.legoset.number_of_bricks()
 
-    possible_offers = [u for u in possible_offers if u[5] + u[6] > 0]
+    possible_offers = [u for u in possible_offers if u[5] > 0 and u[6] > 0]
     sorted(possible_offers, key=lambda p_o : p_o[5] + p_o[6], reverse=True)
     return possible_offers
 
