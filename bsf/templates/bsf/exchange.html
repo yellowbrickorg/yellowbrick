@@ -21,56 +21,79 @@
         <tbody>
         {% for po in possible_offers %}
             <tr>
-                <th scope="row">
-                    {{ po.0.get_username }}
-                </th>
-                <td>
-                    Total of {{ po.5 }} bricks.
-                    <ul>
-                    {% for set in po.3 %}
-                        <li><img class="img-thumbnail me-2" src="{{ set.0.image_link }}"
-                        width="120">
-                        <a href="{% url 'set_detail' set.0.pk %}">{{ set.0.name }}</a>
-                        x {{ set.1 }}</li>
-                    {% endfor %}
-                    {% for brick in po.1 %}
-                        <li><img class="img-thumbnail me-2" src="{{ brick.0.image_link }}"
-                        width="60">
-                        <a href="{% url 'brick_detail' brick.0.brick_id %}">{{ brick.0.part_num }}</a>
-                        - {{ brick.0.color.name }} x
-                        {{ brick.1 }}</li>
-                    {% endfor %}
-                    </ul>
-                </td>
-                <td>
-                    Total of {{ po.6 }} bricks.
-                    <ul>
-                    {% for set in po.4 %}
-                        <li><img class="img-thumbnail me-2" src="{{ set.0.image_link }}"
-                        width="120">
-                        <a href="{% url 'set_detail' set.0.pk %}">{{ set.0.name }}</a>
-                        x {{ set.1 }}</li>
-                    {% endfor %}
-                    {% for brick in po.2 %}
-                        <li><img class="img-thumbnail me-2" src="{{ brick.0.image_link }}"
-                        width="60">
-                        <a href="{% url 'brick_detail' brick.0.brick_id %}">{{ brick.0.part_num }}</a>
-                        - {{ brick.0.color.name }} x
-                        {{ brick.1 }}</li>
-                    {% endfor %}
-                    </ul>
-                </td>
-                <td>
-                    <a href="{% url 'index' %}">
-                        <button class="btn btn-primary" type="button">Make an offer</button>
-                    </a>
-                </td>
+                <form action="{% url 'exchange_make_offer' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="return_on_error_page" value="{{ request.path }}">
+                    <input type="hidden" name="other_user" value="{{ po.0.get_username }}">
+                    <th scope="row">
+                        {{ po.0.get_username }}
+                    </th>
+                    <td>
+                        Total of {{ po.5 }} bricks.
+                        <ul>
+                        {% for set in po.3 %}
+                            <li><img class="img-thumbnail me-2" src="{{ set.0.image_link }}"
+                            width="120">
+                            <a href="{% url 'set_detail' set.0.pk %}">{{ set.0.name }}</a>
+                            x {{ set.1 }}</li>
+                            <input type="number" name="offer_set_{{ set.0.pk }}"
+                                value="0"
+                                min="0"
+                                max="{{ set.1 }}"
+                                class="form-control">
+                        {% endfor %}
+                        {% for brick in po.1 %}
+                            <li><img class="img-thumbnail me-2" src="{{ brick.0.image_link }}"
+                            width="60">
+                            <a href="{% url 'brick_detail' brick.0.brick_id %}">{{ brick.0.part_num }}</a>
+                            - {{ brick.0.color.name }} x
+                            {{ brick.1 }}</li>
+                            <input type="number" name="offer_brick_{{ brick.0.pk }}"
+                                value="0"
+                                min="0"
+                                max="{{ brick.1 }}"
+                                class="form-control">
+                        {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        Total of {{ po.6 }} bricks.
+                        <ul>
+                        {% for set in po.4 %}
+                            <li><img class="img-thumbnail me-2" src="{{ set.0.image_link }}"
+                            width="120">
+                            <a href="{% url 'set_detail' set.0.pk %}">{{ set.0.name }}</a>
+                            x {{ set.1 }}</li>
+                            <input type="number" name="want_set_{{ set.0.pk }}"
+                                value="0"
+                                min="0"
+                                max="{{ set.1 }}"
+                                class="form-control">
+                        {% endfor %}
+                        {% for brick in po.2 %}
+                            <li><img class="img-thumbnail me-2" src="{{ brick.0.image_link }}"
+                            width="60">
+                            <a href="{% url 'brick_detail' brick.0.brick_id %}">{{ brick.0.part_num }}</a>
+                            - {{ brick.0.color.name }} x
+                            {{ brick.1 }}</li>
+                            <input type="number" name="want_brick_{{ brick.0.pk }}"
+                                value="0"
+                                min="0"
+                                max="{{ brick.1 }}"
+                                class="form-control">
+                        {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" type="submit">Submit an offer</button>
+                    </td>
+                </form>
             </tr>
         {% endfor %}
         </tbody>
     </table>
     {% endif %}
     {% if possible_offers|length == 0 %}
-    No possible changes found. Update your wishlist.
+    No possible exchanges found.
     {% endif %}
 {% endblock %}

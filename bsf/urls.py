@@ -43,6 +43,6 @@ urlpatterns = [
     ),
     # Exchange
     path("exchange/", views.exchange, name="exchange"),
-    #path("exchange/offer/make/<username>", views.exchange_make_offer, name="exchange_make_offer"),
-    #path("exchange/offer/<int:pk>", views.exchange_view_offer, name="exchange_view_offer"),
+    path("exchange/make_offer", views.exchange_make_offer, name="exchange_make_offer"),
+    path("exchange/offers", views.exchange_offers, name="exchange_offers"),
 ]

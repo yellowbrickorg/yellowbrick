@@ -25,6 +25,7 @@ from .models import (
     BrickInWishlistQuantity,
     ExchangeOffer,
     BrickInOfferQuantity,
+    SetInOfferQuantity,
     Side,
 )
 from .models import UserCollection, User
@@ -466,6 +467,7 @@ def generate_possible_offers(logged_user, other=None):
     else:
         possible_offers = [
             [u, [], [], [], [], 0, 0] for u in User.objects.all() if u != logged_user
+            and ExchangeOffer.objects.filter(offer_author=logged_user, offer_receiver=u).count() == 0
         ]
     for p_o in possible_offers:
         other_wanted_bricks = p_o[0].wishlist_bricks.filter(side=Side.WANTED)
@@ -542,3 +544,87 @@ def exchange(request):
         context = context,
         template_name = "bsf/exchange.html",
     )
+
+
+def exchange_make_offer(request):
+    logged_user = request.user
+    if(not logged_user.is_authenticated):
+        messages.error(request, "You need to be logged in to access brick exchange.")
+        return redirect("index")
+    other_user = request.POST.get("other_user")
+    other_user = User.objects.get(username=other_user)
+    possible_offers = generate_possible_offers(logged_user, other_user)
+
+    new_offer = ExchangeOffer(offer_author=request.user, offer_receiver=other_user)
+
+    bricks_in_offer = []
+    sets_in_offer = []
+
+    for brick in possible_offers[0][1]:
+        """ Bricks offered """
+        amount = int(request.POST.get("offer_brick_" + str(brick[0].pk)))
+        if amount > 0:
+            bioq = BrickInOfferQuantity(offer=new_offer, brick=brick[0], quantity=amount, side=Side.OFFERED)
+            bricks_in_offer.append(bioq)
+    
+    for brick in possible_offers[0][2]:
+        """ Bricks wanted """
+        amount = int(request.POST.get("want_brick_" + str(brick[0].pk)))
+        if amount > 0:
+            bioq = BrickInOfferQuantity(offer=new_offer, brick=brick[0], quantity=amount, side=Side.WANTED)
+            bricks_in_offer.append(bioq)
+
+    for legoset in possible_offers[0][3]:
+        """ Sets offered """
+        amount = int(request.POST.get("offer_set_" + str(legoset[0].pk)))
+        if amount > 0:
+            sioq = SetInOfferQuantity(offer=new_offer, legoset=legoset[0], quantity=amount, side=Side.OFFERED)
+            bricks_in_offer.append(sioq)
+    
+    for legoset in possible_offers[0][3]:
+        """ Sets offered """
+        amount = int(request.POST.get("offer_set_" + str(legoset[0].pk)))
+        if amount > 0:
+            sioq = SetInOfferQuantity(offer=new_offer, legoset=legoset[0], quantity=amount, side=Side.WANTED)
+            bricks_in_offer.append(sioq)
+
+    new_offer.save()
+    for bioq in bricks_in_offer:
+        bioq.save()
+    
+    for sioq in sets_in_offer:
+        sioq.save()
+
+    """ Send an email notifying the other person about the new offer """
+    subject = "Password Reset Requested"
+    email_template_name = "bsf/new_offer_notification.txt"
+    c = {
+        "email": other_user.email,
+        "domain": "127.0.0.1:8000",
+        "user": other_user,
+        "author": logged_user,
+        "protocol": "http",
+    }
+    email = render_to_string(email_template_name, c)
+    try:
+        send_mail(
+            subject,
+            email,
+            "exchange@yellowbrick.com",
+            [other_user.email],
+            fail_silently=False,
+        )
+    except BadHeaderError:
+        pass
+
+    return redirect("exchange_offers")
+
+
+def exchange_offers(request):
+    logged_user = request.user
+    if(not logged_user.is_authenticated):
+        messages.error(request, "You need to be logged in to access brick exchange.")
+        return redirect("index")
+    
+    messages.info(request, "TODO : exchange_offers")
+    return redirect("index")

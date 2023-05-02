@@ -203,6 +203,7 @@ class ExchangeOffer(models.Model):
     offer_receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_offers')
 
     class Meta:
+        unique_together = ("offer_author", "offer_receiver"),
         constraints = [
             models.CheckConstraint(
                 check=~models.Q(offer_author=models.F('offer_receiver')),
