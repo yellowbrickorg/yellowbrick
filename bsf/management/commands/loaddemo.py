@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from bsf.models import LegoSet, Color, Brick, UserCollection
+from bsf.models import LegoSet, Color, Brick, UserCollection, BrickStats
 
 
 class Command(BaseCommand):
@@ -104,10 +104,37 @@ class Command(BaseCommand):
         lego_set4.bricks.add(brick3, through_defaults={"quantity": 10})
 
         # Example UserCollection object
-        user = User.objects.create_user("marian", "marian@mimuw.edu.pl", "123456")
-        user_collection = UserCollection.objects.create(user=user)
+        user1 = User.objects.create_user("marian", "marian@mimuw.edu.pl", "123456")
+        user_collection = UserCollection.objects.create(user=user1)
         user_collection.bricks.add(brick1, through_defaults={"quantity": 20})
         user_collection.bricks.add(brick2, through_defaults={"quantity": 10})
         user_collection.sets.add(lego_set1, through_defaults={"quantity": 1})
+
+        user2 = User.objects.create_user("ania", "ania@mimuw.edu.pl", "654321")
+        user_collection = UserCollection.objects.create(user=user2)
+        user_collection.bricks.add(brick1, through_defaults={"quantity": 15})
+        user_collection.bricks.add(brick2, through_defaults={"quantity": 10})
+        user_collection.sets.add(lego_set1, through_defaults={"quantity": 5})
+
+        stat1 = BrickStats.objects.create(
+            user = user1,
+            brick_set = lego_set1,
+            likes = 8,
+            min_recommended_age = 18,
+        )
+
+        stat2 = BrickStats.objects.create(
+            user = user2,
+            brick_set = lego_set1,
+            likes = 5,
+            min_recommended_age = 30,
+        )
+
+        stat2 = BrickStats.objects.create(
+            user = user2,
+            brick_set = lego_set2,
+            likes = 10,
+            min_recommended_age = 5,
+        )
 
         self.stdout.write(self.style.SUCCESS("Successfully created demo database"))
