@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from bsf.models import LegoSet, Color, Brick, UserCollection
+from bsf.models import LegoSet, Color, Brick, UserCollection, Wishlist
 
 
 class Command(BaseCommand):
@@ -109,5 +109,7 @@ class Command(BaseCommand):
         user_collection.bricks.add(brick1, through_defaults={"quantity": 20})
         user_collection.bricks.add(brick2, through_defaults={"quantity": 10})
         user_collection.sets.add(lego_set1, through_defaults={"quantity": 1})
+
+        Wishlist.objects.create(user=user)
 
         self.stdout.write(self.style.SUCCESS("Successfully created demo database"))

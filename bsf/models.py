@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 
+
 class Color(models.Model):
     """
     Represents a color of LEGO bricks.
@@ -142,6 +143,12 @@ class Side(models.IntegerChoices):
     OFFERED = 0
     WANTED = 1
 
+    @staticmethod
+    def negate(side):
+        assert side in [Side.OFFERED, Side.WANTED]
+        return 1 - side
+
+
 class Wishlist(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
@@ -158,6 +165,7 @@ class Wishlist(models.Model):
             bricks_in_wishlist.get(brick=brick, side=side).modify_quantity_or_delete(quantity)
         else:
             bricks_in_wishlist.create(brick=brick, quantity=quantity, user=self.user, side=side)
+
 
 class BrickInWishlistQuantity(Countable):
     """
@@ -256,7 +264,7 @@ class ExchangeOffer(models.Model):
     author_state = models.IntegerField(choices=Status.choices, default=Status.ACCEPTED)
     receiver_state = models.IntegerField(choices=Status.choices, default=Status.PENDING)
 
-    exchanged = models.BooleanField(False)
+    exchanged = models.BooleanField(default=False)
 
     class Meta:
         constraints = [

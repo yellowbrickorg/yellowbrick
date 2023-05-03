@@ -15,6 +15,7 @@
             <th scope="col">User</th>
             <th scope="col">We offer</th>
             <th scope="col">We receive</th>
+            <th scope="col"></th>
         </tr>
         </thead>
         <tbody>
@@ -56,6 +57,13 @@
                             {{ brick.quantity }}</li>
                         {% endfor %}
                     </ul>
+                </td>
+                <td>
+                    <form action="{% url "exchange_offer_continue" %}" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="offer_accepted" value={{o.1}}>
+                        <button class="btn btn-primary" type="submit">Continue</button>
+                    </form>
                 </td>
             </tr>
         {% endfor %}
@@ -115,10 +123,10 @@
                     </ul>
                 </td>
                 <td>
-                    <form action="{% url "exchange_offer_accepted" %}" method="post">
+                    <form action="{% url "exchange_offer_continue" %}" method="post">
                         {% csrf_token %}
                         <input type="hidden" name="offer_accepted" value={{o.1}}>
-                        <button class="btn btn-primary" type="submit">Accept</button>
+                        <button class="btn btn-primary" type="submit">Continue</button>
                     </form>
                 </td>
             </tr>

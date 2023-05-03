@@ -69,8 +69,8 @@ urlpatterns = [
     path("exchange/make_offer", views.exchange_make_offer, name="exchange_make_offer"),
     path("exchange/offers", views.exchange_offers, name="exchange_offers"),
     path(
-        "exchange/offer_accepted",
-        views.exchange_offer_accepted,
-        name="exchange_offer_accepted",
+        "exchange/continue_exchange",
+        views.exchange_offer_continue,
+        name="exchange_offer_continue",
     ),
 ]

@@ -28,6 +28,7 @@ from .models import (
     BrickInOfferQuantity,
     SetInOfferQuantity,
     Side,
+    Wishlist,
 )
 from .models import UserCollection, User
 
@@ -557,8 +558,8 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             auth_login(request, user)
-            new_collection = UserCollection(user=user)
-            new_collection.save()
+            UserCollection.objects.create(user=user)
+            Wishlist.objects.create(user=user)
             messages.success(request, "Registration successful.")
             return redirect("index")
         messages.error(request, "Unsuccessful registration. Invalid information.")
@@ -657,7 +658,7 @@ def generate_possible_offers(logged_user, other=None):
             if wanted_bricks.filter(brick=brick_offered.brick).exists():
                 bricks_to_trade = min(
                     wanted_bricks.filter(brick=brick_offered.brick).get().quantity,
-                    brick_wanted.quantity,
+                    brick_offered.quantity,
                 )
                 p_o[2].append([brick_offered.brick, bricks_to_trade])
                 p_o[6] += bricks_to_trade
@@ -677,7 +678,7 @@ def generate_possible_offers(logged_user, other=None):
             if wanted_sets.filter(legoset=set_offered.legoset).exists():
                 sets_to_trade = min(
                     wanted_sets.filter(legoset=set_offered.legoset).get().quantity,
-                    set_wanted.quantity,
+                    set_offered.quantity,
                 )
                 p_o[4].append([set_offered.legoset, sets_to_trade])
                 p_o[6] += sets_to_trade * set_offered.legoset.number_of_bricks()
@@ -810,8 +811,8 @@ def exchange_offers(request):
         messages.error(request, "You need to be logged in to access brick exchange.")
         return redirect("index")
 
-    offers_made = ExchangeOffer.objects.filter(offer_author=logged_user)
-    offers_received = ExchangeOffer.objects.filter(offer_receiver=logged_user)
+    offers_made = ExchangeOffer.objects.filter(offer_author=logged_user, exchanged=False)
+    offers_received = ExchangeOffer.objects.filter(offer_receiver=logged_user, exchanged=False)
 
     offers_made_context = []
     offers_received_context = []
@@ -852,6 +853,69 @@ def exchange_offers(request):
     )
 
 
+def exchange_items(request, offer):
+    receivers_collection = UserCollection.objects.get(user=offer.offer_receiver)
+    receivers_wishlist = Wishlist.objects.get(user=offer.offer_receiver)
+    authors_collection = UserCollection.objects.get(user=offer.offer_author)
+    authors_wishlist = Wishlist.objects.get(user=offer.offer_author)
+
+    for set_in_offer in SetInOfferQuantity.objects.filter(offer=offer):
+        rel = 1 if set_in_offer.side == Side.OFFERED else -1
+        receivers_collection.modify_set_quantity(set_in_offer.legoset, rel * set_in_offer.quantity)
+        authors_collection.modify_set_quantity(set_in_offer.legoset, - rel * set_in_offer.quantity)
+
+        receivers_wishlist.modify_sets_quantity(set_in_offer.legoset, -set_in_offer.quantity,
+                                                Side.WANTED if rel == 1 else Side.OFFERED)
+        authors_wishlist.modify_sets_quantity(set_in_offer.legoset, -set_in_offer.quantity,
+                                              Side.OFFERED if rel == 1 else Side.WANTED)
+
+    for brick_in_offer in BrickInOfferQuantity.objects.filter(offer=offer):
+        rel = 1 if brick_in_offer.side == Side.OFFERED else -1
+        receivers_collection.modify_brick_quantity(brick_in_offer.legoset, rel * brick_in_offer.quantity)
+        authors_collection.modify_brick_quantity(brick_in_offer.legoset, - rel * brick_in_offer.quantity)
+
+    offer.exchanged = True
+    offer.save()
+
+    messages.info(request, "Items exchanged!")
+
+
+def exchange_offer_continue(request):
+    logged_user = request.user
+    if not logged_user.is_authenticated:
+        messages.error(request, "You need to be logged in to access brick exchange.")
+        return redirect("index")
+
+    offer_id = request.POST.get("offer_accepted")
+    if offer_id is None:
+        messages.error(request, "Offer not found.")
+        return redirect("index")
+
+    offer = ExchangeOffer.objects.get(pk=int(offer_id))
+    is_author = offer.offer_author == logged_user
+
+    match offer.author_state, offer.receiver_state:
+        case ExchangeOffer.Status.EXCHANGED, ExchangeOffer.Status.EXCHANGED:
+            exchange_items(request, offer)
+            messages.success(request, "Exchange completed and updated in system successfully!")
+        case _, ExchangeOffer.Status.PENDING:
+            if not is_author:
+                offer.receiver_state = ExchangeOffer.Status.ACCEPTED
+                messages.success(request, "Offer accepted!")
+        case _, ExchangeOffer.Status.ACCEPTED:
+            if is_author:
+                offer.author_state = ExchangeOffer.Status.EXCHANGED
+            else:
+                offer.receiver_state = ExchangeOffer.Status.EXCHANGED
+            messages.success(request, "Items marked as exchanged successfully!")
+        case _, _:
+            messages.info(request, "Nothing to do!")
+
+    offer.save()
+
+    return redirect("index")
+
+
 def exchange_offer_accepted(request):
     logged_user = request.user
     if not logged_user.is_authenticated:
@@ -865,26 +929,6 @@ def exchange_offer_accepted(request):
 
     offer = ExchangeOffer.objects.get(pk=int(offer_id))
 
-    receivers_collection = UserCollection.objects.get(user=offer.offer_receiver)
-    authors_collection = UserCollection.objects.get(user=offer.offer_author)
+    exchange_items(offer)
 
-    for set_in_offer in SetInOfferQuantity.objects.filter(offer=offer):
-        rel = 1 if set_in_offer.side == Side.OFFERED else -1
-        receivers_collection.modify_set_quantity(set_in_offer.legoset, rel * set_in_offer.quantity)
-        authors_collection.modify_set_quantity(set_in_offer.legoset, - rel * set_in_offer.quantity)
-
-    for brick_in_offer in BrickInOfferQuantity.objects.filter(offer=offer):
-        rel = 1 if brick_in_offer.side == Side.OFFERED else -1
-        receivers_collection.modify_brick_quantity(brick_in_offer.legoset, rel * brick_in_offer.quantity)
-        authors_collection.modify_brick_quantity(brick_in_offer.legoset, - rel * brick_in_offer.quantity)
-
-    offer.exchanged = True
-
-    messages.info(
-        request,
-        "Offer of "
-        + offer.offer_author.get_username()
-        + " accepted by "
-        + offer.offer_receiver.get_username()
-    )
     return redirect("index")
