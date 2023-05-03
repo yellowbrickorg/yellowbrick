@@ -322,7 +322,8 @@ def get_review_exists(brick_set: LegoSet, user : User):
     review = BrickStats.objects.filter(brick_set = brick_set, user = user)
     return review.exists()
 
-
+def get_review_data(brick_set: LegoSet, user : User):
+    return BrickStats.objects.filter(brick_set = brick_set, user = user).values('likes', 'min_recommended_age').first()
 
 def maxsize_if_empty(_str):
     return sys.maxsize if _str == "" else int(_str)
@@ -385,7 +386,11 @@ class SetDetailView(DetailView):
         )
         context["likes"] = get_avg_likes(self.get_object())
         context["age"] = get_avg_age(self.get_object())
-        context["review_exists"] = get_review_exists(self.get_object(), self.request.user)
+        if self.request.user.id:
+            context["review_exists"] = get_review_exists(self.get_object(), self.request.user)
+            if(context["review_exists"]):
+                context["review_likes"] = get_review_data(self.get_object(), self.request.user)["likes"]
+                context["review_age"] = get_review_data(self.get_object(), self.request.user)["min_recommended_age"]
         return context
 
 
