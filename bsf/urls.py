@@ -22,6 +22,7 @@ urlpatterns = [
     path("set/add/<int:id>/", views.add_set, name="add_set"),
     path("set/del/<int:id>", views.del_set, name="del_set"),
     path("set/convert/<int:id>", views.convert, name="convert"),
+    path("set/add_review/<int:id>", views.add_review, name="add_review"),
     # Account management
     path("login/", views.login, name="login"),
     path("signup/", views.signup, name="signup"),

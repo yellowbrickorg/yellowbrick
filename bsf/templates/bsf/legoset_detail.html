@@ -10,39 +10,64 @@
     <div class="row mt-3">
         <div class="col-md-5">
             <img class="img-thumbnail shadow" src="{{ legoset.image_link }}">
-            
+
             <div style="padding: 10px;">
                 <div style="padding: 10px">
                     {% if likes == None %}
-                        Brak ocen do wyświetlenia.
+                        Not enough data to display the rating.
                     {% else %}
-                        Średnia ocena na podstawie feedbacku użytkowników: 
-                        <progress value={{likes}} max="10" style="background-color: green; border-radius: 5px;"> {{ likes }} out of 10 </progress>
-                    {% endif %}
+                        Average rating basing on users feedback:
+                        <div style="align-self: center; font-family: 'Courier New', monospace;">
+                            {{likes}} out of 10
+                        </div>
+                        {% endif %}
                 </div>
 
                 <div style="padding: 10px">
                     {% if age == None %}
-                        Brak zalecanego wieku.
+                        Not enough data to estimate recommended age.
                     {% else %}
-                        Średni zalecany wiek na podstawie feedbacku użytkowników: 
-                        <progress value={{age}} max="10" style="background-color: green; border-radius: 5px;"> {{ age }} out of 10 </progress>
+                        Average recommended age basing on users feedback:
+                        <div style="align-self: center; font-family: 'Courier New', monospace;">
+                            {{age}} out of 100
+                        </div>
                     {% endif %}
                 </div>
             </div>
 
             {% if request.user.is_authenticated %}
                 <div style="padding: 20px">
-                    <form method="POST" action="{% url 'review' legoset.id %}">
+                    {% if review_exists %}
+                    
+                    <div>
+                        You have already left us your review! <br>
+                        Thanks for contributing to our community!
+                    </div>
+
+                    {% else %}
+
+                    <form method="POST" action="{% url 'add_review' legoset.id %}">
                         {% csrf_token %}
-                        <label for="id_rating">Ocena:</label>
-                        {{ form.rating }}
-                        <br>
-                        <label for="id_age">Zalecany wiek:</label>
-                        {{ form.age }}
-                        <br>
-                        <button type="submit">Wyślij</button>
+                            <label for="set_rating {{user}} {{legoset.id}}">Your rating:</label>
+                            <input type="number" name="set_rating"
+                                   value="0"
+                                   id="set_rating {{user}} {{legoset.id}}"
+                                   min="0"
+                                   max="10"
+                                   class="form-control"> <br>
+                            <label for="set_age {{user}} {{legoset.id}}">Your recommended age:</label>
+                            <input type="number" name="set_age"
+                                   value="0"
+                                   id="set_age {{user}} {{legoset.id}}"
+                                   min="0"
+                                   max="100"
+                                   class="form-control"> <br>
+                            <button type="submit"
+                                    class="btn btn-outline-secondary">
+                                Submit
+                            </button> <br>
                     </form>
+                    {% endif %}
                 </div>
             {%endif%}
 

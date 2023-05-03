@@ -111,7 +111,7 @@ class SetInCollectionQuantity(models.Model):
     
 class BrickStats(models.Model):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     likes = models.IntegerField()
     min_recommended_age = models.IntegerField()
 
