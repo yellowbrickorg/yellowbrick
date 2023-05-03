@@ -12,13 +12,15 @@
 
     <div class="card mt-3">
         <div class="card-header">
-            Set wishlist
+            Wanted sets
         </div>
         <div class="card-body">
             {% include "snippets/set_wishlist_snippet.html" with user_sets=user_sets_wishlist side=1 %}
         </div>
+    </div>
+    <div class="card mt-3">
         <div class="card-header">
-            Brick wishlist
+            Wanted bricks
         </div>
         <div class="card-body">
             {% include "snippets/brick_wishlist_snippet.html" with user_bricks=user_bricks_wishlist side=1 %}
@@ -27,13 +29,15 @@
 
     <div class="card mt-3">
         <div class="card-header">
-            Set offers
+            Offered sets
         </div>
         <div class="card-body">
             {% include "snippets/set_wishlist_snippet.html" with user_sets=user_sets_offers side=0 %}
         </div>
+    </div>
+    <div class="card mt-3">
         <div class="card-header">
-            Brick offers
+            Offered bricks
         </div>
         <div class="card-body">
             {% include "snippets/brick_wishlist_snippet.html" with user_bricks=user_bricks_offers side=0 %}

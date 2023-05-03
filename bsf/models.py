@@ -82,7 +82,9 @@ class UserCollection(models.Model):
         if set_collection.filter(brick_set=brick_set).exists():
             set_collection.get(brick_set=brick_set).modify_quantity_or_delete(quantity)
         else:
-            set_collection.create(brick_set=brick_set, quantity=quantity, collection=self)
+            set_collection.create(
+                brick_set=brick_set, quantity=quantity, collection=self
+            )
 
     def modify_brick_quantity(self, brick, quantity):
         brick_collection = BrickInCollectionQuantity.objects.filter(collection=self)
@@ -155,16 +157,24 @@ class Wishlist(models.Model):
     def modify_sets_quantity(self, brick_set, quantity, side):
         sets_in_wishlist = SetInWishlistQuantity.objects.filter(user=self.user)
         if sets_in_wishlist.filter(legoset=brick_set, side=side).exists():
-            sets_in_wishlist.get(legoset=brick_set, side=side).modify_quantity_or_delete(quantity)
+            sets_in_wishlist.get(
+                legoset=brick_set, side=side
+            ).modify_quantity_or_delete(quantity)
         else:
-            sets_in_wishlist.create(legoset=brick_set, quantity=quantity, user=self.user, side=side)
+            sets_in_wishlist.create(
+                legoset=brick_set, quantity=quantity, user=self.user, side=side
+            )
 
     def modify_bricks_quantity(self, brick, quantity, side):
         bricks_in_wishlist = BrickInWishlistQuantity.objects.filter(user=self.user)
         if bricks_in_wishlist.filter(brick=brick, side=side).exists():
-            bricks_in_wishlist.get(brick=brick, side=side).modify_quantity_or_delete(quantity)
+            bricks_in_wishlist.get(brick=brick, side=side).modify_quantity_or_delete(
+                quantity
+            )
         else:
-            bricks_in_wishlist.create(brick=brick, quantity=quantity, user=self.user, side=side)
+            bricks_in_wishlist.create(
+                brick=brick, quantity=quantity, user=self.user, side=side
+            )
 
 
 class BrickInWishlistQuantity(Countable):
@@ -257,9 +267,9 @@ class ExchangeOffer(models.Model):
     )
 
     class Status(models.IntegerChoices):
-        PENDING = 0, _('Pending')
-        ACCEPTED = 1, _('Accepted')
-        EXCHANGED = 2, _('Exchanged')
+        PENDING = 0, _("Pending")
+        ACCEPTED = 1, _("Accepted")
+        EXCHANGED = 2, _("Exchanged")
 
     author_state = models.IntegerField(choices=Status.choices, default=Status.ACCEPTED)
     receiver_state = models.IntegerField(choices=Status.choices, default=Status.PENDING)
