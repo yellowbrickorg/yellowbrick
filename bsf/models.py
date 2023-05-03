@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-
+from django.utils.translation import gettext_lazy as _
 
 class Color(models.Model):
     """
@@ -142,6 +142,22 @@ class Side(models.IntegerChoices):
     OFFERED = 0
     WANTED = 1
 
+class Wishlist(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    def modify_sets_quantity(self, brick_set, quantity, side):
+        sets_in_wishlist = SetInWishlistQuantity.objects.filter(user=self.user)
+        if sets_in_wishlist.filter(legoset=brick_set, side=side).exists():
+            sets_in_wishlist.get(legoset=brick_set, side=side).modify_quantity_or_delete(quantity)
+        else:
+            sets_in_wishlist.create(legoset=brick_set, quantity=quantity, user=self.user, side=side)
+
+    def modify_bricks_quantity(self, brick, quantity, side):
+        bricks_in_wishlist = BrickInWishlistQuantity.objects.filter(user=self.user)
+        if bricks_in_wishlist.filter(brick=brick, side=side).exists():
+            bricks_in_wishlist.get(brick=brick, side=side).modify_quantity_or_delete(quantity)
+        else:
+            bricks_in_wishlist.create(brick=brick, quantity=quantity, user=self.user, side=side)
 
 class BrickInWishlistQuantity(Countable):
     """
@@ -231,6 +247,15 @@ class ExchangeOffer(models.Model):
     offer_receiver = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="received_offers"
     )
+
+    class Status(models.IntegerChoices):
+        PENDING = 0, _('Pending')
+        ACCEPTED = 1, _('Accepted')
+        EXCHANGED = 2, _('Exchanged')
+
+    author_state = models.IntegerField(choices=Status.choices, default=Status.ACCEPTED)
+    receiver_state = models.IntegerField(choices=Status.choices, default=Status.PENDING)
+
     exchanged = models.BooleanField(False)
 
     class Meta:
