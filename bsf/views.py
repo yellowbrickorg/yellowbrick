@@ -379,8 +379,8 @@ def convert(request, id):
 
 
 def check_set(
-    all_users_bricks,
-    lego_set: LegoSet,
+        all_users_bricks,
+        lego_set: LegoSet,
 ):
     max_diff = 0
     gdiff = 0
@@ -399,7 +399,7 @@ def get_dict_of_users_bricks(user: User, all_users_bricks=None):
     users_collection = UserCollection.objects.get(user=user)
 
     for brick_data in BrickInCollectionQuantity.objects.filter(
-        collection=users_collection
+            collection=users_collection
     ):
         q = brick_data.quantity
         if brick_data.brick in all_users_bricks:
@@ -857,6 +857,7 @@ def exchange_offer_accepted(request):
     if not logged_user.is_authenticated:
         messages.error(request, "You need to be logged in to access brick exchange.")
         return redirect("index")
+
     offer_id = request.POST.get("offer_accepted")
     if offer_id is None:
         messages.error(request, "Offer not found.")
@@ -864,13 +865,26 @@ def exchange_offer_accepted(request):
 
     offer = ExchangeOffer.objects.get(pk=int(offer_id))
 
-    """Todo"""
-    messages.error(
+    receivers_collection = UserCollection.objects.get(user=offer.offer_receiver)
+    authors_collection = UserCollection.objects.get(user=offer.offer_author)
+
+    for set_in_offer in SetInOfferQuantity.objects.filter(offer=offer):
+        rel = 1 if set_in_offer.side == Side.OFFERED else -1
+        receivers_collection.modify_set_quantity(set_in_offer.legoset, rel * set_in_offer.quantity)
+        authors_collection.modify_set_quantity(set_in_offer.legoset, - rel * set_in_offer.quantity)
+
+    for brick_in_offer in BrickInOfferQuantity.objects.filter(offer=offer):
+        rel = 1 if brick_in_offer.side == Side.OFFERED else -1
+        receivers_collection.modify_brick_quantity(brick_in_offer.legoset, rel * brick_in_offer.quantity)
+        authors_collection.modify_brick_quantity(brick_in_offer.legoset, - rel * brick_in_offer.quantity)
+
+    offer.exchanged = True
+
+    messages.info(
         request,
         "Offer of "
         + offer.offer_author.get_username()
         + " accepted by "
         + offer.offer_receiver.get_username()
-        + ". TODO: update data?",
     )
     return redirect("index")

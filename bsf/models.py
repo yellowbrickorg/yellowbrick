@@ -76,23 +76,49 @@ class UserCollection(models.Model):
     bricks = models.ManyToManyField(Brick, through="BrickInCollectionQuantity")
     sets = models.ManyToManyField(LegoSet, through="SetInCollectionQuantity")
 
+    def modify_set_quantity(self, brick_set, quantity):
+        set_collection = SetInCollectionQuantity.objects.filter(collection=self)
+        if set_collection.filter(brick_set=brick_set).exists():
+            set_collection.get(brick_set=brick_set).modify_quantity_or_delete(quantity)
+        else:
+            set_collection.create(brick_set=brick_set, quantity=quantity, collection=self)
+
+    def modify_brick_quantity(self, brick, quantity):
+        brick_collection = BrickInCollectionQuantity.objects.filter(collection=self)
+        if brick_collection.filter(brick=brick).exists():
+            brick_collection.get(brick=brick).modify_quantity_or_delete(quantity)
+        else:
+            brick_collection.create(brick=brick, quantity=quantity, collection=self)
+
     def __str__(self):
         return f"Collection of {self.user.username}"
 
 
-class BrickInSetQuantity(models.Model):
+class Countable(models.Model):
+    quantity = models.PositiveIntegerField()
+
+    class Meta:
+        abstract = True
+
+    def modify_quantity_or_delete(self, quantity):
+        assert self.quantity + quantity >= 0
+        self.quantity += quantity
+
+        if self.quantity == 0:
+            self.delete()
+
+
+class BrickInSetQuantity(Countable):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
 
     def __str__(self):
         return f"{self.quantity} x {self.brick} in set {self.brick_set.number}"
 
 
-class BrickInCollectionQuantity(models.Model):
+class BrickInCollectionQuantity(Countable):
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
 
     def __str__(self):
         return (
@@ -101,10 +127,9 @@ class BrickInCollectionQuantity(models.Model):
         )
 
 
-class SetInCollectionQuantity(models.Model):
+class SetInCollectionQuantity(Countable):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
 
     def __str__(self):
         return (
@@ -118,7 +143,7 @@ class Side(models.IntegerChoices):
     WANTED = 1
 
 
-class BrickInWishlistQuantity(models.Model):
+class BrickInWishlistQuantity(Countable):
     """
     Represents a LEGO brick in a user's wishlist.
     Attributes:
@@ -133,7 +158,6 @@ class BrickInWishlistQuantity(models.Model):
         User, on_delete=models.CASCADE, related_name="wishlist_bricks"
     )
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
     side = models.IntegerField(choices=Side.choices)
 
     class Meta:
@@ -160,7 +184,7 @@ class BrickInWishlistQuantity(models.Model):
             )
 
 
-class SetInWishlistQuantity(models.Model):
+class SetInWishlistQuantity(Countable):
     """
     Represents a LEGO set in a user's wishlist.
     Attributes:
@@ -175,7 +199,6 @@ class SetInWishlistQuantity(models.Model):
         User, on_delete=models.CASCADE, related_name="wishlist_sets"
     )
     legoset = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
     side = models.IntegerField(choices=Side.choices)
 
     class Meta:
@@ -208,6 +231,7 @@ class ExchangeOffer(models.Model):
     offer_receiver = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="received_offers"
     )
+    exchanged = models.BooleanField(False)
 
     class Meta:
         constraints = [
@@ -223,7 +247,7 @@ class ExchangeOffer(models.Model):
         )
 
 
-class BrickInOfferQuantity(models.Model):
+class BrickInOfferQuantity(Countable):
     """
     Represents a LEGO brick in an offer.
     Attributes:
@@ -236,7 +260,6 @@ class BrickInOfferQuantity(models.Model):
 
     offer = models.ForeignKey(ExchangeOffer, on_delete=models.CASCADE)
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
     side = models.IntegerField(choices=Side.choices)
 
     class Meta:
@@ -254,7 +277,7 @@ class BrickInOfferQuantity(models.Model):
         )
 
 
-class SetInOfferQuantity(models.Model):
+class SetInOfferQuantity(Countable):
     """
     Represents a LEGO brick in an offer.
 
@@ -268,7 +291,6 @@ class SetInOfferQuantity(models.Model):
 
     offer = models.ForeignKey(ExchangeOffer, on_delete=models.CASCADE)
     legoset = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
     side = models.IntegerField(choices=Side.choices)
 
     class Meta:
@@ -281,6 +303,6 @@ class SetInOfferQuantity(models.Model):
 
     def __str__(self):
         return (
-            f"{self.quantity} x {self.brick} "
+            f"{self.quantity} x {self.legoset} "
             f"in {self.offer.offer_author.username}'s offer to {self.offer.offer_receiver.username}"
         )
