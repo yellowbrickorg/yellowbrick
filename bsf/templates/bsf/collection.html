@@ -27,8 +27,8 @@
             {% csrf_token %}
                 <div class="input-group mb-3">
 
-                    <input type="number" name="start_quantity" id="start_quantity" value="{{ start_quantity }}" min="{{ min_quantity }}" max="{{ max_quantity }}" placeholder="Min quantity" class="form-control">
-                    <input type="number" name="end_quantity" id="end_quantity" value="{{ end_quantity }}" min="{{ min_quantity }}" max="{{ max_quantity }}" placeholder="Max quantity" class="form-control">
+                    <input type="number" name="start_quantity" id="start_quantity" value="{{ start_quantity }}"  placeholder="Min quantity" class="form-control">
+                    <input type="number" name="end_quantity" id="end_quantity" value="{{ end_quantity }}"  placeholder="Max quantity" class="form-control">
 
                     <select class="form-select" id="theme" class="form-control" name="theme">
                         <option value="">All themes</option>

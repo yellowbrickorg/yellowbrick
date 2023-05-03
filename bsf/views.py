@@ -19,6 +19,7 @@ from django.views.generic import ListView, DetailView
 from django.db.models import Avg
 from django.db.models import Q
 from .forms import NewUserForm
+from django.db.models import Max
 from .models import (
     Brick,
     LegoSet,
@@ -34,19 +35,33 @@ def collection(request):
     logged_user = request.user
     if logged_user.is_authenticated:
         user_collection = UserCollection.objects.get(user=logged_user)
-        set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
+        set_themes = user_collection.sets.values_list("theme", flat=True).distinct()
+        max_bricks = user_collection.sets.aggregate(
+            max_bricks=Max("quantity_of_bricks")
+        )["max_bricks"]
 
         if user_collection:
             theme = request.GET.get("theme")
-            min_quantity = request.GET.get("start_quantity")
-            max_quantity = request.GET.get("end_quantity")
+            min_quantity = request.GET.get("start_quantity", 0)
+            max_quantity = request.GET.get("end_quantity", max_bricks)
+
+            if not min_quantity:
+                min_quantity = 0
+            else:
+                min_quantity = int(min_quantity)
+
+            if not max_quantity:
+                max_quantity = sys.maxsize
+            else:
+                max_quantity = int(max_quantity)
 
             user_sets = user_collection.sets.through.objects.filter(
                 collection=user_collection
             )
             if theme:
                 user_sets = user_sets.filter(brick_set__theme=theme)
-            if min_quantity and max_quantity:
+
+            if min_quantity <= max_quantity:
                 user_sets = user_sets.filter(
                     brick_set__quantity_of_bricks__range=(min_quantity, max_quantity)
                 )
@@ -63,6 +78,9 @@ def collection(request):
             "user_bricks": user_bricks,
             "logged_user": logged_user,
             "set_themes": set_themes,
+            "selected_theme": theme,
+            "start_quantity": min_quantity,
+            "end_quantity": max_quantity,
         }
         template = loader.get_template("bsf/collection.html")
         return HttpResponse(template.render(context, request))
@@ -79,25 +97,26 @@ class SetListView(ListView):
 
 def legoset_list(request):
     queryset = LegoSet.objects.all()
-    start_quantity = request.GET.get("start_quantity")
-    end_quantity = request.GET.get("end_quantity")
+    max_bricks = queryset.aggregate(max_bricks=Max("quantity_of_bricks"))["max_bricks"]
+    set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
+    start_quantity = request.GET.get("start_quantity", 0)
+    end_quantity = request.GET.get("end_quantity", max_bricks)
     theme = request.GET.get("theme")
 
-    if start_quantity and end_quantity:
-        try:
-            start_quantity = int(start_quantity)
-            end_quantity = int(end_quantity)
-        except ValueError:
-            # Handle invalid input
-            pass
-        else:
-            if start_quantity <= end_quantity:
-                queryset = queryset.filter(
-                    quantity_of_bricks__range=(start_quantity, end_quantity)
-                )
-            else:
-                # Handle invalid range
-                pass
+    if not start_quantity:
+        start_quantity = 0
+    else:
+        start_quantity = int(start_quantity)
+
+    if not end_quantity:
+        end_quantity = 99999999
+    else:
+        end_quantity = int(end_quantity)
+
+    if start_quantity <= end_quantity:
+        queryset = queryset.filter(
+            quantity_of_bricks__range=(start_quantity, end_quantity)
+        )
 
     if theme:
         queryset = queryset.filter(theme=theme)
@@ -106,21 +125,11 @@ def legoset_list(request):
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    min_quantity = LegoSet.objects.aggregate(Min("quantity_of_bricks"))[
-        "quantity_of_bricks__min"
-    ]
-    max_quantity = LegoSet.objects.aggregate(Max("quantity_of_bricks"))[
-        "quantity_of_bricks__max"
-    ]
-    set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
-
     return render(
         request,
         "bsf/legoset_list.html",
         {
             "page_obj": page_obj,
-            "min_quantity": min_quantity,
-            "max_quantity": max_quantity,
             "start_quantity": start_quantity,
             "end_quantity": end_quantity,
             "set_themes": set_themes,
@@ -372,11 +381,12 @@ def maxsize_if_empty(_str):
 
 def filter_collection(request):
     logged_user = request.user
-
+    queryset = LegoSet.objects.all()
+    max_bricks = queryset.aggregate(max_bricks=Max("quantity_of_bricks"))["max_bricks"]
     set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
     theme = request.POST.get("theme")
     min_quantity = request.POST.get("start_quantity")
-    max_quantity = request.POST.get("end_quantity")
+    max_quantity = request.POST.get("end_quantity", max_bricks)
 
     if request.method == "POST":
         single_diff = maxsize_if_empty(request.POST.get("single_diff"))
@@ -389,16 +399,30 @@ def filter_collection(request):
 
     if theme:
         viable_sets = [set for set in viable_sets if set["lego_set"].theme == theme]
-    if min_quantity and max_quantity:
-        viable_sets = [
-            set
-            for set in viable_sets
-            if int(min_quantity)
-            <= set["lego_set"].quantity_of_bricks
-            <= int(max_quantity)
-        ]
 
-    context = {"viable_sets": viable_sets, "set_themes": set_themes}
+    if not min_quantity:
+        min_quantity = 0
+    else:
+        min_quantity = int(min_quantity)
+
+    if not max_quantity:
+        max_quantity = 99999999
+    else:
+        max_quantity = int(max_quantity)
+
+    viable_sets = [
+        set
+        for set in viable_sets
+        if int(min_quantity) <= set["lego_set"].quantity_of_bricks <= int(max_quantity)
+    ]
+
+    context = {
+        "viable_sets": viable_sets,
+        "set_themes": set_themes,
+        "selected_theme": theme,
+        "start_quantity": min_quantity,
+        "end_quantity": max_quantity,
+    }
     return HttpResponse(template.render(context, request))
 
 
