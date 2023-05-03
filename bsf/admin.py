@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import UserCollection, LegoSet, Brick, Color, BrickInCollectionQuantity, BrickInSetQuantity, SetInCollectionQuantity
+from .models import (
+    UserCollection,
+    LegoSet,
+    Brick,
+    Color,
+    BrickInCollectionQuantity,
+    BrickInSetQuantity,
+    SetInCollectionQuantity,
+)
 
 admin.site.register(UserCollection)
 admin.site.register(LegoSet)

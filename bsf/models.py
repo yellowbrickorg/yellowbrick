@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
 class Color(models.Model):
     """
     Represents a color of LEGO bricks.
@@ -58,7 +59,7 @@ class LegoSet(models.Model):
 
     def __str__(self):
         return f"{self.number} - {self.name}"
-    
+
     def number_of_bricks(self):
         ret = 0
         for b in self.brickinsetquantity_set.all():
@@ -127,13 +128,16 @@ class BrickInWishlistQuantity(models.Model):
         side :  WANTED - user wants to receive the brick,
                 OFFERED - user offers the brick
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="wishlist_bricks")
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="wishlist_bricks"
+    )
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     side = models.IntegerField(choices=Side.choices)
 
     class Meta:
-        unique_together = ("user", "brick", "side"),
+        unique_together = (("user", "brick", "side"),)
         constraints = [
             models.CheckConstraint(
                 check=models.Q(quantity__gt=0),
@@ -166,13 +170,16 @@ class SetInWishlistQuantity(models.Model):
         side :  WANTED - user wants to receive the set,
                 OFFERED - user offers the set
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="wishlist_sets")
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="wishlist_sets"
+    )
     legoset = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     side = models.IntegerField(choices=Side.choices)
 
     class Meta:
-        unique_together = ("user", "legoset", "side"),
+        unique_together = (("user", "legoset", "side"),)
         constraints = [
             models.CheckConstraint(
                 check=models.Q(quantity__gt=0),
@@ -182,8 +189,7 @@ class SetInWishlistQuantity(models.Model):
 
     def __str__(self):
         return (
-            f"{self.quantity} x {self.legoset} "
-            f"in {self.user.username}'s wishlist"
+            f"{self.quantity} x {self.legoset} " f"in {self.user.username}'s wishlist"
         )
 
 
@@ -195,13 +201,18 @@ class ExchangeOffer(models.Model):
         offer_author :
         offer_receiver :
     """
-    offer_author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='authored_offers')
-    offer_receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_offers')
+
+    offer_author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="authored_offers"
+    )
+    offer_receiver = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="received_offers"
+    )
 
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=~models.Q(offer_author=models.F('offer_receiver')),
+                check=~models.Q(offer_author=models.F("offer_receiver")),
                 name="check_author_receiver_different",
             )
         ]
@@ -222,6 +233,7 @@ class BrickInOfferQuantity(models.Model):
         side :  WANTED - 'offer_author' from 'offer' wants to receive the brick,
                 OFFERED - 'offer_author' from 'offer' offers the brick
     """
+
     offer = models.ForeignKey(ExchangeOffer, on_delete=models.CASCADE)
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
@@ -253,6 +265,7 @@ class SetInOfferQuantity(models.Model):
         side :  WANTED - 'offer_author' from 'offer' wants to receive the brick,
                 OFFERED - 'offer_author' from 'offer' offers the brick
     """
+
     offer = models.ForeignKey(ExchangeOffer, on_delete=models.CASCADE)
     legoset = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()

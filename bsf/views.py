@@ -35,10 +35,18 @@ from .models import UserCollection, User
 def wishlist(request):
     logged_user = request.user
     if logged_user.is_authenticated:
-        user_sets_wishlist = SetInWishlistQuantity.objects.filter(user=logged_user, side=1)
-        user_bricks_wishlist = BrickInWishlistQuantity.objects.filter(user=logged_user, side=1)
-        user_sets_offers = SetInWishlistQuantity.objects.filter(user=logged_user, side=0)
-        user_bricks_offers = BrickInWishlistQuantity.objects.filter(user=logged_user, side=0)
+        user_sets_wishlist = SetInWishlistQuantity.objects.filter(
+            user=logged_user, side=1
+        )
+        user_bricks_wishlist = BrickInWishlistQuantity.objects.filter(
+            user=logged_user, side=1
+        )
+        user_sets_offers = SetInWishlistQuantity.objects.filter(
+            user=logged_user, side=0
+        )
+        user_bricks_offers = BrickInWishlistQuantity.objects.filter(
+            user=logged_user, side=0
+        )
 
         context = {
             "user_sets_wishlist": user_sets_wishlist,
@@ -52,6 +60,7 @@ def wishlist(request):
     else:
         messages.info(request, "You need to be logged in to access collections.")
         return redirect("login")
+
 
 def collection(request):
     logged_user = request.user
@@ -79,6 +88,7 @@ def collection(request):
         messages.info(request, "You need to be logged in to access collections.")
         return redirect("login")
 
+
 class SetListView(ListView):
     paginate_by = 15
     model = LegoSet
@@ -95,7 +105,9 @@ def add_set(request, id):
         collection = UserCollection.objects.get(user=logged_user)
         if qty > 0:
             try:
-                set_through = collection.sets.through.objects.get(brick_set=lego_set, collection=collection)
+                set_through = collection.sets.through.objects.get(
+                    brick_set=lego_set, collection=collection
+                )
             except:
                 collection.sets.add(lego_set, through_defaults={"quantity": qty})
             else:
@@ -106,6 +118,7 @@ def add_set(request, id):
             f"Added {qty} set(s) with set number {lego_set.id} to " f"collection.",
         )
         return HttpResponseRedirect(reverse("collection", args=()))
+
 
 def add_set_to_wishlist(request, id, side):
     lego_set = get_object_or_404(LegoSet, id=id)
@@ -120,7 +133,9 @@ def add_set_to_wishlist(request, id, side):
             try:
                 set_through = wishlist.get(legoset=lego_set, side=side)
             except:
-                set_through = SetInWishlistQuantity(user=logged_user, legoset=lego_set, quantity=qty, side=side)
+                set_through = SetInWishlistQuantity(
+                    user=logged_user, legoset=lego_set, quantity=qty, side=side
+                )
                 set_through.save()
             else:
                 set_through.quantity = min(set_through.quantity + qty, 100)
@@ -128,14 +143,16 @@ def add_set_to_wishlist(request, id, side):
         if side == 0:
             messages.success(
                 request,
-                f"Added {qty} set(s) with set number {lego_set.id} to " f"offered list.",
+                f"Added {qty} set(s) with set number {lego_set.id} to "
+                f"offered list.",
             )
         else:
             messages.success(
                 request,
                 f"Added {qty} set(s) with set number {lego_set.id} to " f"wishlist.",
-            )            
+            )
         return HttpResponseRedirect(reverse("wishlist", args=()))
+
 
 def add_brick(request, brick_id):
     brick = get_object_or_404(Brick, brick_id=brick_id)
@@ -158,6 +175,7 @@ def add_brick(request, brick_id):
     )
     return HttpResponseRedirect(reverse("collection", args=()))
 
+
 def add_brick_to_wishlist(request, id, side):
     brick = get_object_or_404(Brick, brick_id=id)
     try:
@@ -171,7 +189,9 @@ def add_brick_to_wishlist(request, id, side):
             try:
                 brick_through = wishlist.get(brick=brick, side=side)
             except:
-                brick_through = BrickInWishlistQuantity(user=logged_user, brick=brick, quantity=qty, side=side)
+                brick_through = BrickInWishlistQuantity(
+                    user=logged_user, brick=brick, quantity=qty, side=side
+                )
                 brick_through.save()
             else:
                 brick_through.quantity = min(brick_through.quantity + qty, 10000)
@@ -179,14 +199,17 @@ def add_brick_to_wishlist(request, id, side):
         if side == 0:
             messages.success(
                 request,
-                f"Added {qty} brick(s) with part number {brick.part_num} to " f"offered list.",
+                f"Added {qty} brick(s) with part number {brick.part_num} to "
+                f"offered list.",
             )
         else:
             messages.success(
                 request,
-                f"Added {qty} brick(s) with part number {brick.part_num} to " f"wishlist.",
-            )            
+                f"Added {qty} brick(s) with part number {brick.part_num} to "
+                f"wishlist.",
+            )
         return HttpResponseRedirect(reverse("wishlist", args=()))
+
 
 def del_set(request, id):
     lego_set = get_object_or_404(LegoSet, id=id)
@@ -199,7 +222,9 @@ def del_set(request, id):
         collection = UserCollection.objects.get(user=logged_user)
         if qty > 0:
             try:
-                set_through = collection.sets.through.objects.get(brick_set_id=id, collection=collection)
+                set_through = collection.sets.through.objects.get(
+                    brick_set_id=id, collection=collection
+                )
             except (KeyError, SetInCollectionQuantity.DoesNotExist):
                 collection.sets.add(lego_set, through_defaults={"quantity": qty})
             else:
@@ -213,6 +238,7 @@ def del_set(request, id):
             f"Removed {qty} set(s) with set number {lego_set.id} from " f"collection.",
         )
         return HttpResponseRedirect(reverse("collection", args=()))
+
 
 def del_set_from_wishlist(request, id, side):
     lego_set = get_object_or_404(LegoSet, id=id)
@@ -237,15 +263,18 @@ def del_set_from_wishlist(request, id, side):
         if side == 0:
             messages.success(
                 request,
-                f"Removed {qty} set(s) with set number {lego_set.id} from " f"offered list.",
+                f"Removed {qty} set(s) with set number {lego_set.id} from "
+                f"offered list.",
             )
         else:
             messages.success(
                 request,
-                f"Removed {qty} set(s) with set number {lego_set.id} from " f"wishlist.",
+                f"Removed {qty} set(s) with set number {lego_set.id} from "
+                f"wishlist.",
             )
 
         return HttpResponseRedirect(reverse("wishlist", args=()))
+
 
 def del_brick(request, brick_id):
     brick = get_object_or_404(Brick, brick_id=brick_id)
@@ -254,7 +283,9 @@ def del_brick(request, brick_id):
     collection = UserCollection.objects.get(user=logged_user)
     if qty > 0:
         try:
-            brick_through = collection.bricks.through.objects.get(brick_id=brick_id, collection=collection)
+            brick_through = collection.bricks.through.objects.get(
+                brick_id=brick_id, collection=collection
+            )
         except (KeyError, BrickInCollectionQuantity.DoesNotExist):
             collection.bricks.add(brick, through_defaults={"quantity": qty})
         else:
@@ -269,6 +300,7 @@ def del_brick(request, brick_id):
         f" {brick.part_num} from collection.",
     )
     return HttpResponseRedirect(reverse("collection", args=()))
+
 
 def del_brick_from_wishlist(request, brick_id, side):
     brick = get_object_or_404(Brick, brick_id=brick_id)
@@ -289,14 +321,17 @@ def del_brick_from_wishlist(request, brick_id, side):
     if side == 0:
         messages.success(
             request,
-            f"Removed {qty} brick(s) with part number {brick.part_num} from " f"offered list.",
+            f"Removed {qty} brick(s) with part number {brick.part_num} from "
+            f"offered list.",
         )
     else:
         messages.success(
             request,
-            f"Removed {qty} brick(s) with part number {brick.part_num} from " f"wishlist.",
+            f"Removed {qty} brick(s) with part number {brick.part_num} from "
+            f"wishlist.",
         )
     return HttpResponseRedirect(reverse("wishlist", args=()))
+
 
 def convert(request, id):
     brickset = get_object_or_404(LegoSet, id=id)
@@ -312,10 +347,14 @@ def convert(request, id):
             return HttpResponseRedirect(reverse("collection", args=()))
         else:
             real_qty = min(set_through.quantity, qty)
-            brickinset_through = brickset.bricks.through.objects.filter(brick_set=brickset)
+            brickinset_through = brickset.bricks.through.objects.filter(
+                brick_set=brickset
+            )
             for brickth in brickinset_through:
                 try:
-                    brick_through = bricks_of_user.get(brick_id=brickth.brick.brick_id, collection=collection)
+                    brick_through = bricks_of_user.get(
+                        brick_id=brickth.brick.brick_id, collection=collection
+                    )
                 except (KeyError, BrickInCollectionQuantity.DoesNotExist):
                     collection.bricks.add(
                         brickth.brick,
@@ -574,6 +613,7 @@ def password_reset(request):
         context={"password_reset_form": password_reset_form},
     )
 
+
 def generate_possible_offers(logged_user, other=None):
     """
     We are looking for users with whom we could trade bricks. They are sorted
@@ -601,85 +641,76 @@ def generate_possible_offers(logged_user, other=None):
         other_offered_bricks = p_o[0].wishlist_bricks.filter(side=Side.OFFERED)
         other_wanted_sets = p_o[0].wishlist_sets.filter(side=Side.WANTED)
         other_offered_sets = p_o[0].wishlist_sets.filter(side=Side.OFFERED)
+
         for brick_wanted in other_wanted_bricks:
-            """ Can we offer 'brick_wanted' """
+            """Can we offer 'brick_wanted'"""
             if offered_bricks.filter(brick=brick_wanted.brick).exists():
                 bricks_to_trade = min(
-                        offered_bricks.filter(brick=brick_wanted.brick).get().quantity,
-                        brick_wanted.quantity
-                    )
-                p_o[1].append([
-                    brick_wanted.brick,
-                    bricks_to_trade
-                ])
+                    offered_bricks.filter(brick=brick_wanted.brick).get().quantity,
+                    brick_wanted.quantity,
+                )
+                p_o[1].append([brick_wanted.brick, bricks_to_trade])
                 p_o[5] += bricks_to_trade
 
         for brick_offered in other_offered_bricks:
-            """ Do we want 'brick_offered' """
+            """Do we want 'brick_offered'"""
             if wanted_bricks.filter(brick=brick_offered.brick).exists():
                 bricks_to_trade = min(
-                        wanted_bricks.filter(brick=brick_offered.brick).get().quantity,
-                        brick_wanted.quantity
-                    )
-                p_o[2].append([
-                    brick_offered.brick,
-                    bricks_to_trade
-                ])
+                    wanted_bricks.filter(brick=brick_offered.brick).get().quantity,
+                    brick_wanted.quantity,
+                )
+                p_o[2].append([brick_offered.brick, bricks_to_trade])
                 p_o[6] += bricks_to_trade
+
         for set_wanted in other_wanted_sets:
-            """ Can we offer 'set_wanted' """
+            """Can we offer 'set_wanted'"""
             if offered_sets.filter(legoset=set_wanted.legoset).exists():
                 sets_to_trade = min(
-                        offered_sets.filter(legoset=set_wanted.legoset).get().quantity,
-                        set_wanted.quantity
-                    )
-                p_o[3].append([
-                    set_wanted.legoset,
-                    sets_to_trade
-                ])
+                    offered_sets.filter(legoset=set_wanted.legoset).get().quantity,
+                    set_wanted.quantity,
+                )
+                p_o[3].append([set_wanted.legoset, sets_to_trade])
                 p_o[5] += sets_to_trade * set_wanted.legoset.number_of_bricks()
 
         for set_offered in other_offered_sets:
-            """ Do we want 'set_offered' """
+            """Do we want 'set_offered'"""
             if wanted_sets.filter(legoset=set_offered.legoset).exists():
                 sets_to_trade = min(
-                        wanted_sets.filter(legoset=set_offered.legoset).get().quantity,
-                        set_wanted.quantity
-                    )
-                p_o[4].append([
-                    set_offered.legoset,
-                    sets_to_trade
-                ])
-                p_o[6] += bricks_to_trade * set_offered.legoset.number_of_bricks()
+                    wanted_sets.filter(legoset=set_offered.legoset).get().quantity,
+                    set_wanted.quantity,
+                )
+                p_o[4].append([set_offered.legoset, sets_to_trade])
+                p_o[6] += sets_to_trade * set_offered.legoset.number_of_bricks()
 
     possible_offers = [u for u in possible_offers if u[5] > 0 and u[6] > 0]
-    sorted(possible_offers, key=lambda p_o : p_o[5] + p_o[6], reverse=True)
+    sorted(possible_offers, key=lambda p_o: p_o[5] + p_o[6], reverse=True)
     return possible_offers
+
 
 def exchange(request):
     logged_user = request.user
-    if(not logged_user.is_authenticated):
+    if not logged_user.is_authenticated:
         messages.error(request, "You need to be logged in to access brick exchange.")
         return redirect("index")
 
     possible_offers = generate_possible_offers(logged_user)
     context = {
-        "possible_offers" : possible_offers,
+        "possible_offers": possible_offers,
     }
     return render(
-        request = request,
-        context = context,
-        template_name = "bsf/exchange.html",
+        request=request,
+        context=context,
+        template_name="bsf/exchange.html",
     )
 
 
 def exchange_make_offer(request):
     logged_user = request.user
-    if(not logged_user.is_authenticated):
+    if not logged_user.is_authenticated:
         messages.error(request, "You need to be logged in to access brick exchange.")
         return redirect("index")
     other_user = request.POST.get("other_user")
-    if(other_user is None):
+    if other_user is None:
         return redirect("index")
     other_user = User.objects.get(username=other_user)
     possible_offers = generate_possible_offers(logged_user, other_user)
@@ -690,43 +721,51 @@ def exchange_make_offer(request):
     sets_in_offer = []
 
     for brick in possible_offers[0][1]:
-        """ Bricks offered """
+        """Bricks offered"""
         amount = request.POST.get("offer_brick_" + str(brick[0].pk))
         if amount == "":
             continue
         amount = int(amount)
         if amount > 0:
-            bioq = BrickInOfferQuantity(offer=new_offer, brick=brick[0], quantity=amount, side=Side.OFFERED)
+            bioq = BrickInOfferQuantity(
+                offer=new_offer, brick=brick[0], quantity=amount, side=Side.OFFERED
+            )
             bricks_in_offer.append(bioq)
-    
+
     for brick in possible_offers[0][2]:
-        """ Bricks wanted """
+        """Bricks wanted"""
         amount = request.POST.get("want_brick_" + str(brick[0].pk))
         if amount == "":
             continue
         amount = int(amount)
         if amount > 0:
-            bioq = BrickInOfferQuantity(offer=new_offer, brick=brick[0], quantity=amount, side=Side.WANTED)
+            bioq = BrickInOfferQuantity(
+                offer=new_offer, brick=brick[0], quantity=amount, side=Side.WANTED
+            )
             bricks_in_offer.append(bioq)
 
     for legoset in possible_offers[0][3]:
-        """ Sets offered """
+        """Sets offered"""
         amount = request.POST.get("offer_set_" + str(legoset[0].pk))
         if amount == "":
             continue
         amount = int(amount)
         if amount > 0:
-            sioq = SetInOfferQuantity(offer=new_offer, legoset=legoset[0], quantity=amount, side=Side.OFFERED)
+            sioq = SetInOfferQuantity(
+                offer=new_offer, legoset=legoset[0], quantity=amount, side=Side.OFFERED
+            )
             bricks_in_offer.append(sioq)
-    
+
     for legoset in possible_offers[0][4]:
-        """ Sets wanted """
+        """Sets wanted"""
         amount = request.POST.get("want_set_" + str(legoset[0].pk))
         if amount == "":
             continue
         amount = int(amount)
         if amount > 0:
-            sioq = SetInOfferQuantity(offer=new_offer, legoset=legoset[0], quantity=amount, side=Side.WANTED)
+            sioq = SetInOfferQuantity(
+                offer=new_offer, legoset=legoset[0], quantity=amount, side=Side.WANTED
+            )
             bricks_in_offer.append(sioq)
 
     if len(bricks_in_offer) + len(sets_in_offer) == 0:
@@ -736,12 +775,12 @@ def exchange_make_offer(request):
     new_offer.save()
     for bioq in bricks_in_offer:
         bioq.save()
-    
+
     for sioq in sets_in_offer:
         sioq.save()
 
     """ Send an email notifying the other person about the new offer """
-    subject = "Password Reset Requested"
+    subject = "New offer"
     email_template_name = "bsf/new_offer_notification.txt"
     c = {
         "email": other_user.email,
@@ -767,7 +806,7 @@ def exchange_make_offer(request):
 
 def exchange_offers(request):
     logged_user = request.user
-    if(not logged_user.is_authenticated):
+    if not logged_user.is_authenticated:
         messages.error(request, "You need to be logged in to access brick exchange.")
         return redirect("index")
 
@@ -778,24 +817,32 @@ def exchange_offers(request):
     offers_received_context = []
 
     for o in offers_made:
-        offers_made_context.append([o.offer_author,
-                                    o.id,
-                                    SetInOfferQuantity.objects.filter(offer=o, side=Side.OFFERED),
-                                    BrickInOfferQuantity.objects.filter(offer=o, side=Side.OFFERED),
-                                    SetInOfferQuantity.objects.filter(offer=o, side=Side.WANTED),
-                                    BrickInOfferQuantity.objects.filter(offer=o, side=Side.WANTED)])
-    
+        offers_made_context.append(
+            [
+                o.offer_author,
+                o.id,
+                SetInOfferQuantity.objects.filter(offer=o, side=Side.OFFERED),
+                BrickInOfferQuantity.objects.filter(offer=o, side=Side.OFFERED),
+                SetInOfferQuantity.objects.filter(offer=o, side=Side.WANTED),
+                BrickInOfferQuantity.objects.filter(offer=o, side=Side.WANTED),
+            ]
+        )
+
     for o in offers_received:
-        offers_received_context.append([o.offer_author,
-                                    o.id,
-                                    SetInOfferQuantity.objects.filter(offer=o, side=Side.OFFERED),
-                                    BrickInOfferQuantity.objects.filter(offer=o, side=Side.OFFERED),
-                                    SetInOfferQuantity.objects.filter(offer=o, side=Side.WANTED),
-                                    BrickInOfferQuantity.objects.filter(offer=o, side=Side.WANTED)])
-    
+        offers_received_context.append(
+            [
+                o.offer_author,
+                o.id,
+                SetInOfferQuantity.objects.filter(offer=o, side=Side.OFFERED),
+                BrickInOfferQuantity.objects.filter(offer=o, side=Side.OFFERED),
+                SetInOfferQuantity.objects.filter(offer=o, side=Side.WANTED),
+                BrickInOfferQuantity.objects.filter(offer=o, side=Side.WANTED),
+            ]
+        )
+
     context = {
-        "offers_made" : offers_made_context,
-        "offers_received" : offers_received_context,
+        "offers_made": offers_made_context,
+        "offers_received": offers_received_context,
     }
 
     return render(
@@ -807,18 +854,23 @@ def exchange_offers(request):
 
 def exchange_offer_accepted(request):
     logged_user = request.user
-    if(not logged_user.is_authenticated):
+    if not logged_user.is_authenticated:
         messages.error(request, "You need to be logged in to access brick exchange.")
         return redirect("index")
     offer_id = request.POST.get("offer_accepted")
-    if(offer_id is None):
+    if offer_id is None:
         messages.error(request, "Offer not found.")
         return redirect("index")
 
     offer = ExchangeOffer.objects.get(pk=int(offer_id))
 
     """Todo"""
-    messages.error(request, "Offer of " + offer.offer_author.get_username() + " accepted by " +
-                    offer.offer_receiver.get_username() + ". TODO: update data?")
+    messages.error(
+        request,
+        "Offer of "
+        + offer.offer_author.get_username()
+        + " accepted by "
+        + offer.offer_receiver.get_username()
+        + ". TODO: update data?",
+    )
     return redirect("index")
-    
