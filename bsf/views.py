@@ -634,7 +634,7 @@ def generate_possible_offers(logged_user, other=None):
                         set_wanted.quantity
                     )
                 p_o[3].append([
-                    set_wanted.brick,
+                    set_wanted.legoset,
                     sets_to_trade
                 ])
                 p_o[5] += sets_to_trade * set_wanted.legoset.number_of_bricks()
@@ -643,7 +643,7 @@ def generate_possible_offers(logged_user, other=None):
             """ Do we want 'set_offered' """
             if wanted_sets.filter(legoset=set_offered.legoset).exists():
                 sets_to_trade = min(
-                        wanted_sets.filter(legoset=set_wanted.legoset).get().quantity,
+                        wanted_sets.filter(legoset=set_offered.legoset).get().quantity,
                         set_wanted.quantity
                     )
                 p_o[4].append([
@@ -679,6 +679,8 @@ def exchange_make_offer(request):
         messages.error(request, "You need to be logged in to access brick exchange.")
         return redirect("index")
     other_user = request.POST.get("other_user")
+    if(other_user is None):
+        return redirect("index")
     other_user = User.objects.get(username=other_user)
     possible_offers = generate_possible_offers(logged_user, other_user)
 
@@ -689,31 +691,47 @@ def exchange_make_offer(request):
 
     for brick in possible_offers[0][1]:
         """ Bricks offered """
-        amount = int(request.POST.get("offer_brick_" + str(brick[0].pk)))
+        amount = request.POST.get("offer_brick_" + str(brick[0].pk))
+        if amount == "":
+            continue
+        amount = int(amount)
         if amount > 0:
             bioq = BrickInOfferQuantity(offer=new_offer, brick=brick[0], quantity=amount, side=Side.OFFERED)
             bricks_in_offer.append(bioq)
     
     for brick in possible_offers[0][2]:
         """ Bricks wanted """
-        amount = int(request.POST.get("want_brick_" + str(brick[0].pk)))
+        amount = request.POST.get("want_brick_" + str(brick[0].pk))
+        if amount == "":
+            continue
+        amount = int(amount)
         if amount > 0:
             bioq = BrickInOfferQuantity(offer=new_offer, brick=brick[0], quantity=amount, side=Side.WANTED)
             bricks_in_offer.append(bioq)
 
     for legoset in possible_offers[0][3]:
         """ Sets offered """
-        amount = int(request.POST.get("offer_set_" + str(legoset[0].pk)))
+        amount = request.POST.get("offer_set_" + str(legoset[0].pk))
+        if amount == "":
+            continue
+        amount = int(amount)
         if amount > 0:
             sioq = SetInOfferQuantity(offer=new_offer, legoset=legoset[0], quantity=amount, side=Side.OFFERED)
             bricks_in_offer.append(sioq)
     
-    for legoset in possible_offers[0][3]:
-        """ Sets offered """
-        amount = int(request.POST.get("offer_set_" + str(legoset[0].pk)))
+    for legoset in possible_offers[0][4]:
+        """ Sets wanted """
+        amount = request.POST.get("want_set_" + str(legoset[0].pk))
+        if amount == "":
+            continue
+        amount = int(amount)
         if amount > 0:
             sioq = SetInOfferQuantity(offer=new_offer, legoset=legoset[0], quantity=amount, side=Side.WANTED)
             bricks_in_offer.append(sioq)
+
+    if len(bricks_in_offer) + len(sets_in_offer) == 0:
+        messages.error(request, "Can't submit an empty offer.")
+        return redirect("exchange")
 
     new_offer.save()
     for bioq in bricks_in_offer:
@@ -752,6 +770,55 @@ def exchange_offers(request):
     if(not logged_user.is_authenticated):
         messages.error(request, "You need to be logged in to access brick exchange.")
         return redirect("index")
+
+    offers_made = ExchangeOffer.objects.filter(offer_author=logged_user)
+    offers_received = ExchangeOffer.objects.filter(offer_receiver=logged_user)
+
+    offers_made_context = []
+    offers_received_context = []
+
+    for o in offers_made:
+        offers_made_context.append([o.offer_author,
+                                    o.id,
+                                    SetInOfferQuantity.objects.filter(offer=o, side=Side.OFFERED),
+                                    BrickInOfferQuantity.objects.filter(offer=o, side=Side.OFFERED),
+                                    SetInOfferQuantity.objects.filter(offer=o, side=Side.WANTED),
+                                    BrickInOfferQuantity.objects.filter(offer=o, side=Side.WANTED)])
     
-    messages.info(request, "TODO : exchange_offers")
+    for o in offers_received:
+        offers_received_context.append([o.offer_author,
+                                    o.id,
+                                    SetInOfferQuantity.objects.filter(offer=o, side=Side.OFFERED),
+                                    BrickInOfferQuantity.objects.filter(offer=o, side=Side.OFFERED),
+                                    SetInOfferQuantity.objects.filter(offer=o, side=Side.WANTED),
+                                    BrickInOfferQuantity.objects.filter(offer=o, side=Side.WANTED)])
+    
+    context = {
+        "offers_made" : offers_made_context,
+        "offers_received" : offers_received_context,
+    }
+
+    return render(
+        request=request,
+        template_name="bsf/exchange_offers.html",
+        context=context,
+    )
+
+
+def exchange_offer_accepted(request):
+    logged_user = request.user
+    if(not logged_user.is_authenticated):
+        messages.error(request, "You need to be logged in to access brick exchange.")
+        return redirect("index")
+    offer_id = request.POST.get("offer_accepted")
+    if(offer_id is None):
+        messages.error(request, "Offer not found.")
+        return redirect("index")
+
+    offer = ExchangeOffer.objects.get(pk=int(offer_id))
+
+    """Todo"""
+    messages.error(request, "Offer of " + offer.offer_author.get_username() + " accepted by " +
+                    offer.offer_receiver.get_username() + ". TODO: update data?")
     return redirect("index")
+    

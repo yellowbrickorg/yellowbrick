@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load bootstrap5 %}
+{% load subtraction %}
+
+{% block page_meta %}
+    <title>Exchange bricks</title>
+{% endblock %}
+
+{% block page_content %}
+    {% if offers_made|length > 0 %}
+    <h3>Offers made</h3>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">User</th>
+            <th scope="col">We offer</th>
+            <th scope="col">We receive</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for o in offers_made %}
+            <tr>
+                <th scope="row">
+                    {{ o.0.get_username }}
+                </th>
+                <td>
+                    <ul>
+                        {% for set in o.2 %}
+                            <li><img class="img-thumbnail me-2" src="{{ set.legoset.image_link }}"
+                            width="120">
+                            <a href="{% url 'set_detail' set.pk %}">{{ set.name }}</a>
+                            x {{ set.quantity }}</li>
+                        {% endfor %}
+                        {% for brick in o.3 %}
+                            <li><img class="img-thumbnail me-2" src="{{ brick.brick.image_link }}"
+                            width="60">
+                            <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
+                            - {{ brick.0.color.name }} x
+                            {{ brick.quantity }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <ul>
+                        {% for set in o.4 %}
+                            <li><img class="img-thumbnail me-2" src="{{ set.legoset.image_link }}"
+                            width="120">
+                            <a href="{% url 'set_detail' set.pk %}">{{ set.name }}</a>
+                            x {{ set.quantity }}</li>
+                        {% endfor %}
+                        {% for brick in o.5 %}
+                            <li><img class="img-thumbnail me-2" src="{{ brick.brick.image_link }}"
+                            width="60">
+                            <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
+                            - {{ brick.0.color.name }} x
+                            {{ brick.quantity }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% if offers_received|length > 0 %}
+    <h3>Offers received</h3>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">User</th>
+            <th scope="col">We offer</th>
+            <th scope="col">We receive</th>
+            <th scope="col"></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for o in offers_received %}
+            <tr>
+                <th scope="row">
+                    {{ o.0.get_username }}
+                </th>
+                <td>
+                    <ul>
+                        {% for set in o.2 %}
+                            <li><img class="img-thumbnail me-2" src="{{ set.legoset.image_link }}"
+                            width="120">
+                            <a href="{% url 'set_detail' set.pk %}">{{ set.name }}</a>
+                            x {{ set.quantity }}</li>
+                        {% endfor %}
+                        {% for brick in o.3 %}
+                            <li><img class="img-thumbnail me-2" src="{{ brick.brick.image_link }}"
+                            width="60">
+                            <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
+                            - {{ brick.0.color.name }} x
+                            {{ brick.quantity }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <ul>
+                        {% for set in o.4 %}
+                            <li><img class="img-thumbnail me-2" src="{{ set.legoset.image_link }}"
+                            width="120">
+                            <a href="{% url 'set_detail' set.pk %}">{{ set.name }}</a>
+                            x {{ set.quantity }}</li>
+                        {% endfor %}
+                        {% for brick in o.5 %}
+                            <li><img class="img-thumbnail me-2" src="{{ brick.brick.image_link }}"
+                            width="60">
+                            <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
+                            - {{ brick.0.color.name }} x
+                            {{ brick.quantity }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <form action="{% url "exchange_offer_accepted" %}" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="offer_accepted" value={{o.1}}>
+                        <button class="btn btn-primary" type="submit">Accept</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+{% endblock %}

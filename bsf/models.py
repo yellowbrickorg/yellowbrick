@@ -133,7 +133,7 @@ class BrickInWishlistQuantity(models.Model):
     side = models.IntegerField(choices=Side.choices)
 
     class Meta:
-        unique_together = ("user", "brick"),
+        unique_together = ("user", "brick", "side"),
         constraints = [
             models.CheckConstraint(
                 check=models.Q(quantity__gt=0),
@@ -172,7 +172,7 @@ class SetInWishlistQuantity(models.Model):
     side = models.IntegerField(choices=Side.choices)
 
     class Meta:
-        unique_together = ("user", "legoset"),
+        unique_together = ("user", "legoset", "side"),
         constraints = [
             models.CheckConstraint(
                 check=models.Q(quantity__gt=0),
@@ -228,7 +228,6 @@ class BrickInOfferQuantity(models.Model):
     side = models.IntegerField(choices=Side.choices)
 
     class Meta:
-        unique_together = ("offer", "brick"),
         constraints = [
             models.CheckConstraint(
                 check=models.Q(quantity__gt=0),
@@ -260,7 +259,6 @@ class SetInOfferQuantity(models.Model):
     side = models.IntegerField(choices=Side.choices)
 
     class Meta:
-        unique_together = ("offer", "legoset"),
         constraints = [
             models.CheckConstraint(
                 check=models.Q(quantity__gt=0),
