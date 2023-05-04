@@ -5,6 +5,8 @@ from bsf.models import (
     ExchangeOffer,
     BrickInOfferQuantity,
     SetInOfferQuantity,
+    BrickInCollectionQuantity,
+    SetInCollectionQuantity,
     Side,
     Wishlist,
 )
@@ -40,13 +42,14 @@ def add_brick_to_wishlist(request, id, side):
                 )
                 brick_through.save()
             else:
-                collection = UserCollection.objects.get(user=logged_user)
-                bricks_in_collection = BrickInCollectionQuantity.objects.get(
-                    brick=brick, collection=collection
-                )
-                if brick_through.quantity + qty > bricks_in_collection.quantity:
-                    messages.error(request, "Can't offer more bricks than you have.")
-                    return redirect(request.POST.get("next", "/"))
+                if side == Side.OFFERED:
+                    collection = UserCollection.objects.get(user=logged_user)
+                    bricks_in_collection = BrickInCollectionQuantity.objects.get(
+                        brick=brick, collection=collection
+                    )
+                    if brick_through.quantity + qty > bricks_in_collection.quantity:
+                        messages.error(request, "Can't offer more bricks than you have.")
+                        return redirect(request.POST.get("next", "/"))
                 brick_through.quantity = min(brick_through.quantity + qty, 10000)
                 brick_through.save()
         if side == 0:
