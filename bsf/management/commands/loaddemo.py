@@ -121,6 +121,7 @@ class Command(BaseCommand):
             brick_set=lego_set1,
             likes=8,
             min_recommended_age=18,
+            build_time=30,
         )
 
         stat2 = BrickStats.objects.create(
@@ -128,6 +129,7 @@ class Command(BaseCommand):
             brick_set=lego_set1,
             likes=5,
             min_recommended_age=30,
+            build_time=40,
         )
 
         stat2 = BrickStats.objects.create(
@@ -135,6 +137,7 @@ class Command(BaseCommand):
             brick_set=lego_set2,
             likes=10,
             min_recommended_age=5,
+            build_time=50,
         )
 
         self.stdout.write(self.style.SUCCESS("Successfully created demo database"))

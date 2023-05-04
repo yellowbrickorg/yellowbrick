@@ -115,6 +115,7 @@ class BrickStats(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     likes = models.IntegerField()
     min_recommended_age = models.IntegerField()
+    build_time = models.IntegerField()
 
     def __str__(self) -> str:
         return (

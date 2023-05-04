@@ -65,6 +65,7 @@ def add_review(request, id):
     try:
         rating = int(request.POST.get("set_rating", False))
         age = int(request.POST.get("set_age", False))
+        time = int(request.POST.get("set_time", False))
     except:
         return HttpResponseRedirect(reverse("sets", args=()))
     else:
@@ -74,8 +75,15 @@ def add_review(request, id):
             user=logged_user,
             likes=rating,
             min_recommended_age=age,
+            build_time=time,
         )
         return HttpResponseRedirect(reverse("sets", args=()))
+    
+def del_review(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    logged_user = request.user
+    BrickStats.objects.filter(brick_set = lego_set, user = logged_user).delete()
+    return HttpResponseRedirect(reverse("sets", args=()))
 
 
 def add_set(request, id):
@@ -322,6 +330,15 @@ def get_avg_age(brick_set: LegoSet):
         avg_age = round(avg_age, 1)
     return avg_age
 
+def get_avg_time(brick_set: LegoSet):
+    all_reviews = BrickStats.objects.filter(brick_set=brick_set)
+    avg_time = all_reviews.aggregate(Avg("build_time"))[
+        "build_time__avg"
+    ]
+    if avg_time != None:
+        avg_time = round(avg_time, 0)
+    return avg_time
+
 
 def get_review_exists(brick_set: LegoSet, user: User):
     review = BrickStats.objects.filter(brick_set=brick_set, user=user)
@@ -331,7 +348,7 @@ def get_review_exists(brick_set: LegoSet, user: User):
 def get_review_data(brick_set: LegoSet, user: User):
     return (
         BrickStats.objects.filter(brick_set=brick_set, user=user)
-        .values("likes", "min_recommended_age")
+        .values("likes", "min_recommended_age", "build_time")
         .first()
     )
 
@@ -397,6 +414,7 @@ class SetDetailView(DetailView):
         )
         context["likes"] = get_avg_likes(self.get_object())
         context["age"] = get_avg_age(self.get_object())
+        context["time"] = get_avg_time(self.get_object())
         if self.request.user.id:
             context["review_exists"] = get_review_exists(
                 self.get_object(), self.request.user
@@ -408,6 +426,9 @@ class SetDetailView(DetailView):
                 context["review_age"] = get_review_data(
                     self.get_object(), self.request.user
                 )["min_recommended_age"]
+                context["review_time"] = get_review_data(
+                    self.get_object(), self.request.user
+                )["build_time"]
         return context
 
 
