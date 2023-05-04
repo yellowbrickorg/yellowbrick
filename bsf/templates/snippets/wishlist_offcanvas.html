@@ -1,0 +1,50 @@
+<div class="offcanvas offcanvas-start shadow" data-bs-scroll="true"
+     data-bs-backdrop="false"
+     tabindex="-1" id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasScrollingLabel">Wishlist</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
+                aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <p class="my-3">
+            Here you can view and adjust your wishlist and offered items.
+        </p>
+        <a class="btn btn-outline-secondary mt-2" type="button"
+           href="{% url 'wishlist' %}">Go to wishlist page
+        </a>
+        <div class="card mt-3">
+            <div class="card-header">
+                Wanted sets
+            </div>
+            <div class="card-body">
+                {% include "snippets/set_wishlist_snippet.html" with user_sets=user_sets_wishlist side=1 %}
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-header">
+                Wanted bricks
+            </div>
+            <div class="card-body">
+                {% include "snippets/brick_wishlist_snippet.html" with user_bricks=user_bricks_wishlist side=1 %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                Offered sets
+            </div>
+            <div class="card-body">
+                {% include "snippets/set_wishlist_snippet.html" with user_sets=user_sets_offers side=0 %}
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-header">
+                Offered bricks
+            </div>
+            <div class="card-body">
+                {% include "snippets/brick_wishlist_snippet.html" with user_bricks=user_bricks_offers side=0 %}
+            </div>
+        </div>
+    </div>
+</div>

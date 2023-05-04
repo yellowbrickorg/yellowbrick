@@ -91,7 +91,7 @@ postawić bazę danych całkowicie od nowa. W konsoli Postgresa należy wyczyśc
 tabele należące do bazy `yellowbrick`:
 
 ```
-$ psql yellowbrick
+$ sudo -u postgres psql yellowbrick
 yellowbrick=# DROP SCHEMA public CASCADE;
 yellowbrick=# CREATE SCHEMA public;
 yellowbrick=# GRANT ALL ON SCHEMA public TO postgres;
