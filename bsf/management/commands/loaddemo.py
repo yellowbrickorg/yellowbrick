@@ -72,6 +72,8 @@ class Command(BaseCommand):
             name="Pickup Truck",
             image_link="https://cdn.rebrickable.com/media/sets/10290-1.jpg",
             inventory_id=1,
+            theme="LEGO® Icons",
+            quantity_of_bricks=1677,
         )
         lego_set1.bricks.add(brick1, through_defaults={"quantity": 10})
         lego_set1.bricks.add(brick2, through_defaults={"quantity": 5})
@@ -81,6 +83,8 @@ class Command(BaseCommand):
             name="Jazz Club",
             image_link="https://cdn.rebrickable.com/media/sets/10312-1.jpg",
             inventory_id=2,
+            theme="LEGO® Icons",
+            quantity_of_bricks=2899,
         )
         lego_set2.bricks.add(brick1, through_defaults={"quantity": 100})
         lego_set2.bricks.add(brick2, through_defaults={"quantity": 20})
@@ -90,6 +94,8 @@ class Command(BaseCommand):
             name="Millenium Falcon",
             image_link="https://cdn.rebrickable.com/media/sets/75192-1.jpg",
             inventory_id=3,
+            theme="Star Wars™",
+            quantity_of_bricks=7541,
         )
         lego_set3.bricks.add(brick4, through_defaults={"quantity": 2000})
         lego_set3.bricks.add(brick5, through_defaults={"quantity": 5000})
@@ -99,6 +105,8 @@ class Command(BaseCommand):
             name="Garbage Truck",
             image_link="https://cdn.rebrickable.com/media/sets/60118-1.jpg",
             inventory_id=4,
+            theme="LEGO® City",
+            quantity_of_bricks=248,
         )
         lego_set4.bricks.add(brick2, through_defaults={"quantity": 25})
         lego_set4.bricks.add(brick3, through_defaults={"quantity": 10})

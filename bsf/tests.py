@@ -1,6 +1,7 @@
 import django.db.utils
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.db.models import Avg
 
 from bsf.models import (
     Color,
@@ -9,10 +10,15 @@ from bsf.models import (
     UserCollection,
     BrickInSetQuantity,
     BrickInCollectionQuantity,
+    BrickStats,
 )
 
 from . import views
-from bsf.views import get_viable_sets
+from bsf.views import (
+    get_viable_sets,
+    get_avg_likes,
+    get_avg_age,
+)
 
 
 class CollectionFilterTestCase(TestCase):
@@ -28,6 +34,8 @@ class CollectionFilterTestCase(TestCase):
             name="Lego Set 1",
             image_link="https://example.com/image.png",
             inventory_id=1,
+            theme="aa",
+            quantity_of_bricks=2,
         )
         lego_set1.bricks.add(brick1, through_defaults={"quantity": 10})
         lego_set1.bricks.add(brick2, through_defaults={"quantity": 5})
@@ -37,6 +45,8 @@ class CollectionFilterTestCase(TestCase):
             name="Lego Set 2",
             image_link="https://example.com/image.png",
             inventory_id=2,
+            theme="aa",
+            quantity_of_bricks=2,
         )
         lego_set2.bricks.add(brick1, through_defaults={"quantity": 2})
         lego_set2.bricks.add(brick2, through_defaults={"quantity": 5})
@@ -46,6 +56,8 @@ class CollectionFilterTestCase(TestCase):
             name="Lego Set 3",
             image_link="https://example.com/image.png",
             inventory_id=3,
+            theme="aa",
+            quantity_of_bricks=2,
         )
         lego_set3.bricks.add(brick1, through_defaults={"quantity": 4})
         lego_set3.bricks.add(brick2, through_defaults={"quantity": 10})
@@ -63,6 +75,16 @@ class CollectionFilterTestCase(TestCase):
         user3 = User.objects.create(username="Julia")
         user_collection = UserCollection.objects.create(user=user3)
         user_collection.sets.add(lego_set2, through_defaults={"quantity": 2})
+
+        stat1 = BrickStats.objects.create(
+            user=user1, brick_set=lego_set1, likes=7, min_recommended_age=15
+        )
+        stat2 = BrickStats.objects.create(
+            user=user2, brick_set=lego_set1, likes=5, min_recommended_age=20
+        )
+        stat3 = BrickStats.objects.create(
+            user=user3, brick_set=lego_set2, likes=10, min_recommended_age=8
+        )
 
     def test_user_can_have_only_one_collection(self):
         user1 = User.objects.get(username="Janusz")
@@ -176,3 +198,16 @@ class CollectionFilterTestCase(TestCase):
             get_viable_sets(user2, 4, 5),
             [{"lego_set": lego_set2, "single_diff": 4, "general_diff": 5}],
         )
+
+    def test_brick_stats(self):
+        lego_set1 = LegoSet.objects.get(number="11111")
+        lego_set2 = LegoSet.objects.get(number="22222")
+        lego_set3 = LegoSet.objects.get(number="33333")
+
+        self.assertEqual(get_avg_likes(lego_set1), {"likes__avg": 6.0})
+        self.assertEqual(get_avg_likes(lego_set2), {"likes__avg": 10.0})
+        self.assertEqual(get_avg_likes(lego_set3), {"likes__avg": None})
+
+        self.assertEqual(get_avg_age(lego_set1), {"min_recommended_age__avg": 17.5})
+        self.assertEqual(get_avg_age(lego_set2), {"min_recommended_age__avg": 8.0})
+        self.assertEqual(get_avg_age(lego_set3), {"min_recommended_age__avg": None})
