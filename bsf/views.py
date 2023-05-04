@@ -808,7 +808,7 @@ def exchange_make_offer(request):
 
     for brick in possible_offers[0]["brick_quantity_offered"]:
         """Bricks offered"""
-        amount = request.POST.get("offer_brick_" + str(brick["brick"].pk))
+        amount = request.POST.get("offer_brick_" + str(brick["brick"].brick_id))
         if amount == "":
             continue
         amount = int(amount)
@@ -823,7 +823,7 @@ def exchange_make_offer(request):
 
     for brick in possible_offers[0]["brick_quantity_wanted"]:
         """Bricks wanted"""
-        amount = request.POST.get("want_brick_" + str(brick["brick"].pk))
+        amount = request.POST.get("want_brick_" + str(brick["brick"].brick_id))
         if amount == "":
             continue
         amount = int(amount)
@@ -835,7 +835,7 @@ def exchange_make_offer(request):
 
     for legoset in possible_offers[0]["set_quantity_offered"]:
         """Sets offered"""
-        amount = request.POST.get("offer_set_" + str(legoset["legoset"].pk))
+        amount = request.POST.get("offer_set_" + str(legoset["legoset"].id))
         if amount == "":
             continue
         amount = int(amount)
@@ -850,7 +850,7 @@ def exchange_make_offer(request):
 
     for legoset in possible_offers[0]["set_quantity_wanted"]:
         """Sets wanted"""
-        amount = request.POST.get("want_set_" + str(legoset["legoset"].pk))
+        amount = request.POST.get("want_set_" + str(legoset["legoset"].id))
         if amount == "":
             continue
         amount = int(amount)
