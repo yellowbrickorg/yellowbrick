@@ -418,6 +418,8 @@ def filter_collection(request):
 
     context = {
         "viable_sets": viable_sets,
+        "single_diff": None if single_diff == sys.maxsize else single_diff,
+        "general_diff": None if general_diff == sys.maxsize else general_diff,
         "set_themes": set_themes,
         "selected_theme": theme,
         "start_quantity": min_quantity,

@@ -8,27 +8,7 @@
 
 {% block page_content %}
     <h1>LEGO sets</h1>
-
-<form method="get" action="{% url 'legoset_list_filtered' %}" class="col-lg-6">
-    {% csrf_token %}
-    <div class="input-group mb-3">
-
-
-        <input type="number" name="start_quantity" id="start_quantity" value="{{ start_quantity }}"  placeholder="Min quantity" class="form-control">
-        <input type="number" name="end_quantity" id="end_quantity" value="{{ end_quantity }}"  placeholder="Max quantity" class="form-control">
-
-        <select class="form-select" id="theme" class="form-control" name="theme">
-            <option value="">All themes</option>
-            {% for theme in set_themes %}
-                <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme }}</option>
-            {% endfor %}
-        </select>
-
-
-    <button type="submit" class="btn btn-outline-secondary">Submit</button>
-    </div>
-</form>
-
+    {% include "snippets/set_statfilter.html" with submit_path="legoset_list_filtered" %}
     {% include "snippets/legoset_table_snippet.html" with page_obj=page_obj %}
 
     <div class="mt-2">

@@ -1,0 +1,30 @@
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" action="{% url submit_path %}">
+            {% csrf_token %}
+            <div class="d-md-flex align-items-center">
+                <span class="col-auto me-2">Bricks count:</span>
+                <div class="d-flex col-md-3 align-items-center">
+                    <input type="number" name="start_quantity" id="start_quantity"
+                           value="{{ start_quantity }}" placeholder="Min quantity"
+                           class="form-control">
+                    <span class="mx-3">&ndash;</span>
+                    <input type="number" name="end_quantity" id="end_quantity"
+                           value="{{ end_quantity }}" placeholder="Max quantity"
+                           class="form-control">
+                </div>
+
+                <span class="col-auto ms-md-3 me-2">Theme:</span>
+                <select class="form-select mx-md-2" id="theme" class="form-control"
+                        name="theme">
+                    <option value="">All themes</option>
+                    {% for theme in set_themes %}
+                        <option value="{{ theme }}"
+                                {% if theme == selected_theme %}selected{% endif %}>{{ theme }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-outline-secondary">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>

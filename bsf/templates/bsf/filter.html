@@ -15,35 +15,55 @@
         "Total brick difference" input slot.
     </p>
 
-    <form action="{% url 'filter_run' %}" method="post" class="col-lg-11">
-        {% csrf_token %}
-        <div class="input-group mb-3">
-            <input type="number" name="single_diff" id="single_diff"
-                   value="{{ single_diff }}" min="0" max="10"
-                   placeholder="Single brick difference"
-                   aria-label="Single brick difference"
-                   class="form-control">
+    <div class="card mb-3">
+        <div class="card-body">
+            <form action="{% url 'filter_run' %}" method="post">
+                {% csrf_token %}
+                <div class="d-md-flex align-items-center mb-3">
+                    <span class="col-md-6 me-2">Single/total difference:</span>
+                    <input type="number" name="single_diff" id="single_diff"
+                           value="{{ single_diff }}" min="0" max="10"
+                           placeholder="Single"
+                           aria-label="Single"
+                           class="form-control me-md-2">
 
-            <input type="number" name="general_diff" id="general_diff"
-                   value="{{ general_diff }}" min="0" max="1000"
-                   placeholder="Total brick difference"
-                   aria-label="Total brick difference"
-                   class="form-control">
+                    <input type="number" name="general_diff" id="general_diff"
+                           value="{{ general_diff }}" min="0" max="1000"
+                           placeholder="Total"
+                           aria-label="Total"
+                           class="form-control">
+                </div>
+                <div class="d-md-flex align-items-center">
+                    <span class="col-auto me-2">Bricks count:</span>
+                    <div class="d-flex col-md-3 align-items-center">
+                        <input type="number" name="start_quantity" id="start_quantity"
+                               value="{{ start_quantity }}" min="{{ min_quantity }}"
+                               max="{{ max_quantity }}" placeholder="Min quantity"
+                               class="form-control">
+                        <span class="mx-3">&ndash;</span>
+                        <input type="number" name="end_quantity" id="end_quantity"
+                               value="{{ end_quantity }}" min="{{ min_quantity }}"
+                               max="{{ max_quantity }}" placeholder="Max quantity"
+                               class="form-control">
+                    </div>
 
-            <input type="number" name="start_quantity" id="start_quantity" value="{{ start_quantity }}" min="{{ min_quantity }}" max="{{ max_quantity }}" placeholder="Min quantity" class="form-control">
-            <input type="number" name="end_quantity" id="end_quantity" value="{{ end_quantity }}" min="{{ min_quantity }}" max="{{ max_quantity }}" placeholder="Max quantity" class="form-control">
+                    <span class="col-auto ms-md-3 me-2">Theme:</span>
+                    <select class="form-select mx-md-2" id="theme" class="form-control"
+                            name="theme">
+                        <option value="">All themes</option>
+                        {% for theme in set_themes %}
+                            <option value="{{ theme }}"
+                                    {% if theme == selected_theme %}selected{% endif %}>{{ theme }}</option>
+                        {% endfor %}
+                    </select>
 
-             <select class="form-select" id="theme" class="form-control" name="theme">
-                 <option value="">All themes</option>
-                    {% for theme in set_themes %}
-                        <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme }}</option>
-                    {% endfor %}
-             </select>
 
-
-            <button class="btn btn-outline-secondary" type="submit">Submit</button>
+                    <button class="btn btn-outline-secondary" type="submit">Submit
+                    </button>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 
     {% include "snippets/viable_set_table_snippet.html" with viable_sets=viable_sets %}
 
