@@ -87,15 +87,13 @@
                         {% else %}
                             <span>Exchange ended</span>
                         {% endif %}
-                        {% if offer_context.offer.receiver_state == 0 or offer_context.offer.exchanged %}
+                        {% if offer_context.offer.receiver_state == 0 %}
                                 <form action="{% url "delete_offer" %}" method="post">
                                     {% csrf_token %}
                                     <input type="hidden" name="offer_id"
                                         value={{ offer_context.offer.id }}>
                                     <button class="btn btn-primary" type="submit">
-                                        {% if offer_context.offer.exchanged %}
-                                            Delete
-                                        {% else %}
+                                        {% if not offer_context.offer.exchanged %}
                                             Cancel
                                         {% endif %}
                                     </button>
@@ -184,15 +182,13 @@
                         {% else %}
                             <span>Exchange ended</span>
                         {% endif %}
-                        {% if offer_context.offer.receiver_state == 0 or offer_context.offer.exchanged %}
+                        {% if offer_context.offer.receiver_state == 0 %}
                                 <form action="{% url "delete_offer" %}" method="post">
                                     {% csrf_token %}
                                     <input type="hidden" name="offer_id"
                                         value={{ offer_context.offer.id }}>
                                     <button class="btn btn-primary" type="submit">
-                                        {% if offer_context.offer.exchanged %}
-                                            Delete
-                                        {% else %}
+                                        {% if not offer_context.offer.exchanged %}
                                             Refuse
                                         {% endif %}
                                     </button>
