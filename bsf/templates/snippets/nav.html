@@ -13,20 +13,26 @@
                 <a class="nav-link" href="{% url 'filter' %}">Filter</a>
                 <a class="nav-link" href="{% url 'brick_list' %}">Bricks</a>
                 {% if user.is_authenticated %}
-                <a class="nav-link" href="{% url 'wishlist' %}">Wishlist</a>
                 <a class="nav-link" href="{% url 'exchange' %}">Exchange</a>
                 <a class="nav-link" href="{% url 'exchange_offers' %}">Offers</a>
                 {% endif %}
             </div>
             <div class="navbar-nav ms-auto">
                 {% if not user.is_authenticated %}
-                <a class="nav-link" href="{% url 'login' %}">Sign in</a>
+                    <a class="nav-link" href="{% url 'login' %}">Sign in</a>
                 {% endif %}
                 {% if user.is_authenticated %}
-                <a class="nav-link">{{ user.username }}</a>
-                <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                    <a class="nav-link">{{ user.username }}</a>
+                    <a class="nav-link" href="{% url 'logout' %}">Logout</a>
                 {% endif %}
             </div>
+            {% if user.is_authenticated %}
+                <button class="btn btn-primary ms-2" type="button"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#offcanvasScrolling"
+                        aria-controls="offcanvasScrolling">Wishlist
+                </button>
+            {% endif %}
         </div>
     </div>
 </nav>

@@ -53,6 +53,8 @@
                                       method="post">
                                     {% csrf_token %}
                                     <div class="input-group">
+                                        <input type="hidden" name="next"
+                                               value="{{ request.path }}">
                                         <input type="number" name="quantity"
                                                value="1"
                                                id="brickofferquantity{{ set.brick_id }}"

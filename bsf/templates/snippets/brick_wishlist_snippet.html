@@ -21,6 +21,8 @@
                                       method="post" class="me-2">
                                     {% csrf_token %}
                                     <div class="input-group">
+                                        <input type="hidden" name="next"
+                                               value="{{ request.path }}">
                                         <input type="number" name="quantity"
                                                value="1"
                                                id="brickquantity{{ brick.brick_id }}-{{ side }}"
@@ -37,6 +39,8 @@
                                       method="post" class="me-2">
                                     {% csrf_token %}
                                     <div class="input-group">
+                                        <input type="hidden" name="next"
+                                               value="{{ request.path }}">
                                         <input type="number" name="quantity"
                                                value="1"
                                                id="brickdelquantity{{ brick.brick_id }}-{{ side }}"
