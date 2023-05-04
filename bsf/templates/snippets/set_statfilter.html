@@ -1,0 +1,63 @@
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" action="{% url submit_path %}">
+            {% csrf_token %}
+            {% if extended %}
+                <div class="d-md-flex align-items-center mb-3">
+                    <span class="col-auto me-2">Time:</span>
+                    <div class="d-flex col-md-3 align-items-center">
+                        <input type="number" name="min_time" id="min_time"
+                               value="{{ min_time }}"
+                               placeholder="Min time"
+                               class="form-control">
+                        <span class="mx-3">&ndash;</span>
+                        <input type="number" name="max_time" id="max_time"
+                               value="{{ max_time }}"
+                               placeholder="Max time"
+                               class="form-control">
+                    </div>
+
+                    <span class="col-auto ms-3 me-2">Age:</span>
+                    <div class="d-flex col-md-3 align-items-center">
+                        <input type="number" name="min_age" id="min_age"
+                               value="{{ min_age }}"
+                               placeholder="Min age"
+                               class="form-control">
+                        <span class="mx-3">&ndash;</span>
+                        <input type="number" name="max_age" id="max_age"
+                               value="{{ max_age }}"
+                               placeholder="Max age"
+                               class="form-control">
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="d-md-flex align-items-center">
+                <span class="col-auto me-2">Bricks count:</span>
+                <div class="d-flex col-md-3 align-items-center">
+                    <input type="number" name="start_quantity" id="start_quantity"
+                           value="{{ start_quantity }}" placeholder="Min quantity"
+                           class="form-control">
+                    <span class="mx-3">&ndash;</span>
+                    <input type="number" name="end_quantity" id="end_quantity"
+                           value="{{ end_quantity }}" placeholder="Max quantity"
+                           class="form-control">
+                </div>
+
+                <span class="col-auto mx-md-3 me-2">Theme:</span>
+                <select class="form-select mx-md-2" id="theme" class="form-control"
+                        name="theme">
+                    <option value="">All themes</option>
+                    {% for theme in set_themes %}
+                        <option value="{{ theme }}"
+                                {% if theme == selected_theme %}selected{% endif %}>{{ theme }}</option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit" class="btn btn-outline-secondary
+                ms-auto">Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

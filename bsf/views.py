@@ -5,7 +5,7 @@ from django.contrib.auth import login as auth_login, logout as auth_logout, auth
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail, BadHeaderError
-from django.db.models.query_utils import Q
+from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template import loader
@@ -13,9 +13,13 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from django.views.generic import ListView, DetailView
+from django.db.models import Avg
+from django.db.models import Q
 from django.views.generic import ListView, DetailView, View
 
 from .forms import NewUserForm
+from django.db.models import Max
 from .models import (
     Brick,
     LegoSet,
@@ -29,6 +33,7 @@ from .models import (
     SetInOfferQuantity,
     Side,
     Wishlist,
+    BrickStats,
 )
 from .models import UserCollection, User
 
@@ -72,10 +77,37 @@ def collection(request):
     logged_user = request.user
     if logged_user.is_authenticated:
         user_collection = UserCollection.objects.get(user=logged_user)
+        set_themes = user_collection.sets.values_list("theme", flat=True).distinct()
+        max_bricks = user_collection.sets.aggregate(
+            max_bricks=Max("quantity_of_bricks")
+        )["max_bricks"]
+
         if user_collection:
-            user_sets = user_collection.sets.through.objects.all().filter(
+            theme = request.GET.get("theme")
+            min_quantity = request.GET.get("start_quantity", 0)
+            max_quantity = request.GET.get("end_quantity", max_bricks)
+
+            if not min_quantity:
+                min_quantity = 0
+            else:
+                min_quantity = int(min_quantity)
+
+            if not max_quantity:
+                max_quantity = sys.maxsize
+            else:
+                max_quantity = int(max_quantity)
+
+            user_sets = user_collection.sets.through.objects.filter(
                 collection=user_collection
             )
+            if theme:
+                user_sets = user_sets.filter(brick_set__theme=theme)
+
+            if min_quantity <= max_quantity:
+                user_sets = user_sets.filter(
+                    brick_set__quantity_of_bricks__range=(min_quantity, max_quantity)
+                )
+
             user_bricks = user_collection.bricks.through.objects.all().filter(
                 collection=user_collection
             )
@@ -89,13 +121,121 @@ def collection(request):
                 "user_sets": user_sets,
                 "user_bricks": user_bricks,
                 "logged_user": logged_user,
-            }
-        )
+                "set_themes": set_themes,
+                "selected_theme": theme,
+                "start_quantity": min_quantity,
+                "end_quantity": max_quantity,
+            })
         template = loader.get_template("bsf/collection.html")
         return HttpResponse(template.render(context, request))
     else:
         messages.info(request, "You need to be logged in to access collections.")
         return redirect("login")
+
+
+class SetListView(ListView):
+    paginate_by = 15
+    model = LegoSet
+    set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
+
+
+def legoset_list(request):
+    queryset = (
+        LegoSet.objects.annotate(avg_rating=Avg("brickstats__likes"))
+        .annotate(avg_time=Avg("brickstats__build_time"))
+        .annotate(avg_age=Avg("brickstats__min_recommended_age"))
+        .all()
+    )
+
+    max_bricks = queryset.aggregate(max_bricks=Max("quantity_of_bricks")).get(
+        "max_bricks", 9999999
+    )
+    max_time = int(
+        queryset.aggregate(max_time=Max("avg_time")).get("max_time", 9999999)
+    )
+    max_age = int(queryset.aggregate(max_age=Max("avg_age")).get("max_age", 9999999))
+
+    set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
+
+    start_quantity = zero_if_empty(request.GET.get("start_quantity"))
+    end_quantity = default_if_empty(request.GET.get("end_quantity"), max_bricks)
+
+    min_time = zero_if_empty(request.GET.get("min_time"))
+    max_time = default_if_empty(request.GET.get("max_time"), max_time)
+
+    min_age = zero_if_empty(request.GET.get("min_age"))
+    max_age = default_if_empty(request.GET.get("max_age"), max_age)
+
+    theme = request.GET.get("theme")
+
+    if start_quantity <= end_quantity:
+        queryset = queryset.filter(
+            Q(quantity_of_bricks__range=(start_quantity, end_quantity)),
+            Q(avg_time__range=(min_time, max_time)) | Q(avg_time__isnull=True),
+            Q(avg_age__range=(min_age, max_age)) | Q(avg_age__isnull=True),
+        )
+
+    if theme:
+        queryset = queryset.filter(theme=theme)
+
+    paginator = Paginator(queryset, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(
+        request,
+        "bsf/legoset_list.html",
+        {
+            "page_obj": page_obj,
+            "start_quantity": start_quantity,
+            "end_quantity": end_quantity,
+            "min_time": min_time,
+            "max_time": max_time,
+            "min_age": min_age,
+            "max_age": max_age,
+            "set_themes": set_themes,
+            "selected_theme": theme,
+        },
+    )
+
+
+def add_review(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    try:
+        rating = int(request.POST.get("set_rating", False))
+        age = int(request.POST.get("set_age", False))
+        time = int(float(request.POST.get("set_time", False)) * 10)
+    except:
+        messages.error(
+            request,
+            f"Failed to add a review of {lego_set}",
+        )
+        return redirect(lego_set)
+    else:
+        logged_user = request.user
+        BrickStats.objects.create(
+            brick_set=lego_set,
+            user=logged_user,
+            likes=rating,
+            min_recommended_age=age,
+            build_time=time,
+        )
+        messages.success(
+            request,
+            f"Added review of {lego_set}.",
+        )
+        return redirect(lego_set)
+
+
+def del_review(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    logged_user = request.user
+    BrickStats.objects.filter(brick_set=lego_set, user=logged_user).delete()
+    messages.success(
+        request,
+        f"Deleted review of {lego_set}.",
+    )
+    return redirect(lego_set)
 
 
 def add_set(request, id):
@@ -476,12 +616,60 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
     return viable_sets
 
 
+def get_avg_likes(reviews):
+    avg_likes = reviews.aggregate(Avg("likes"))["likes__avg"]
+    if avg_likes != None:
+        avg_likes = round(avg_likes, 1)
+    return avg_likes
+
+
+def get_avg_age(reviews):
+    avg_age = reviews.aggregate(Avg("min_recommended_age"))["min_recommended_age__avg"]
+    if avg_age != None:
+        avg_age = round(avg_age, 1)
+    return avg_age
+
+
+def get_avg_time(reviews):
+    avg_time = reviews.aggregate(Avg("build_time"))["build_time__avg"]
+    if avg_time != None:
+        avg_time = round(avg_time, 0)
+    return avg_time
+
+
+def get_review_exists(brick_set: LegoSet, user: User):
+    review = BrickStats.objects.filter(brick_set=brick_set, user=user)
+    return review.exists()
+
+
+def get_review_data(brick_set: LegoSet, user: User):
+    return (
+        BrickStats.objects.filter(brick_set=brick_set, user=user)
+        .values("likes", "min_recommended_age", "build_time")
+        .first()
+    )
+
+
 def maxsize_if_empty(_str):
-    return sys.maxsize if _str == "" else int(_str)
+    return sys.maxsize if not _str else int(_str)
+
+
+def default_if_empty(_str, default):
+    return default if not _str else int(_str)
+
+
+def zero_if_empty(_str):
+    return 0 if not _str else int(_str)
 
 
 def filter_collection(request):
     logged_user = request.user
+    queryset = LegoSet.objects.all()
+    max_bricks = queryset.aggregate(max_bricks=Max("quantity_of_bricks"))["max_bricks"]
+    set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
+    theme = request.POST.get("theme")
+    min_quantity = request.POST.get("start_quantity")
+    max_quantity = request.POST.get("end_quantity", max_bricks)
 
     if request.method == "POST":
         single_diff = maxsize_if_empty(request.POST.get("single_diff"))
@@ -494,6 +682,36 @@ def filter_collection(request):
     context.update(
         {"viable_sets": get_viable_sets(logged_user, single_diff, general_diff)}
     )
+    viable_sets = get_viable_sets(logged_user, single_diff, general_diff)
+
+    if theme:
+        viable_sets = [set for set in viable_sets if set["lego_set"].theme == theme]
+
+    if not min_quantity:
+        min_quantity = 0
+    else:
+        min_quantity = int(min_quantity)
+
+    if not max_quantity:
+        max_quantity = 99999999
+    else:
+        max_quantity = int(max_quantity)
+
+    viable_sets = [
+        set
+        for set in viable_sets
+        if int(min_quantity) <= set["lego_set"].quantity_of_bricks <= int(max_quantity)
+    ]
+
+    context.update({
+        "viable_sets": viable_sets,
+        "single_diff": None if single_diff == sys.maxsize else single_diff,
+        "general_diff": None if general_diff == sys.maxsize else general_diff,
+        "set_themes": set_themes,
+        "selected_theme": theme,
+        "start_quantity": min_quantity,
+        "end_quantity": max_quantity,
+    })
     return HttpResponse(template.render(context, request))
 
 
@@ -558,6 +776,28 @@ class SetDetailView(ContextDetailView):
         context["bricks_in_set"] = BrickInSetQuantity.objects.filter(
             brick_set_id=self.kwargs["pk"]
         )
+        all_reviews = BrickStats.objects.filter(brick_set=self.get_object())
+        context.update(
+            {
+                "likes": get_avg_likes(all_reviews),
+                "age": get_avg_age(all_reviews),
+                "time": get_avg_time(all_reviews),
+                "review_count": all_reviews.count(),
+            }
+        )
+        if self.request.user.id:
+            context["review_exists"] = get_review_exists(
+                self.get_object(), self.request.user
+            )
+            review_data = get_review_data(self.get_object(), self.request.user)
+            if context["review_exists"]:
+                context.update(
+                    {
+                        "review_likes": review_data["likes"],
+                        "review_age": review_data["min_recommended_age"],
+                        "review_time": review_data["build_time"],
+                    }
+                )
         return context
 
 

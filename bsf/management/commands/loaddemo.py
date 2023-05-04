@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from bsf.models import LegoSet, Color, Brick, UserCollection, Wishlist
+from bsf.models import LegoSet, Color, Brick, UserCollection, Wishlist, BrickStats
 
 
 class Command(BaseCommand):
@@ -73,6 +73,8 @@ class Command(BaseCommand):
             name="Pickup Truck",
             image_link="https://cdn.rebrickable.com/media/sets/10290-1.jpg",
             inventory_id=1,
+            theme="LEGO® Icons",
+            quantity_of_bricks=1677,
         )
         lego_set1.bricks.add(brick1, through_defaults={"quantity": 10})
         lego_set1.bricks.add(brick2, through_defaults={"quantity": 5})
@@ -82,6 +84,8 @@ class Command(BaseCommand):
             name="Jazz Club",
             image_link="https://cdn.rebrickable.com/media/sets/10312-1.jpg",
             inventory_id=2,
+            theme="LEGO® Icons",
+            quantity_of_bricks=2899,
         )
         lego_set2.bricks.add(brick1, through_defaults={"quantity": 100})
         lego_set2.bricks.add(brick2, through_defaults={"quantity": 20})
@@ -91,6 +95,8 @@ class Command(BaseCommand):
             name="Millenium Falcon",
             image_link="https://cdn.rebrickable.com/media/sets/75192-1.jpg",
             inventory_id=3,
+            theme="Star Wars™",
+            quantity_of_bricks=7541,
         )
         lego_set3.bricks.add(brick4, through_defaults={"quantity": 2000})
         lego_set3.bricks.add(brick5, through_defaults={"quantity": 5000})
@@ -100,6 +106,8 @@ class Command(BaseCommand):
             name="Garbage Truck",
             image_link="https://cdn.rebrickable.com/media/sets/60118-1.jpg",
             inventory_id=4,
+            theme="LEGO® City",
+            quantity_of_bricks=248,
         )
         lego_set4.bricks.add(brick2, through_defaults={"quantity": 25})
         lego_set4.bricks.add(brick3, through_defaults={"quantity": 10})
@@ -112,12 +120,36 @@ class Command(BaseCommand):
 
         Wishlist.objects.create(user=user1)
 
-        user2 = User.objects.create_user("marcin", "marcin@mimuw.edu.pl", "123456")
-        user2_collection = UserCollection.objects.create(user=user2)
-        user2_collection.bricks.add(brick3, through_defaults={"quantity": 20})
-        user2_collection.bricks.add(brick4, through_defaults={"quantity": 10})
-        user2_collection.sets.add(lego_set2, through_defaults={"quantity": 1})
+        user2 = User.objects.create_user("ania", "ania@mimuw.edu.pl", "654321")
+        user_collection = UserCollection.objects.create(user=user2)
+        user_collection.bricks.add(brick1, through_defaults={"quantity": 15})
+        user_collection.bricks.add(brick2, through_defaults={"quantity": 10})
+        user_collection.sets.add(lego_set1, through_defaults={"quantity": 5})
 
         Wishlist.objects.create(user=user2)
+
+        stat1 = BrickStats.objects.create(
+            user=user1,
+            brick_set=lego_set1,
+            likes=8,
+            min_recommended_age=18,
+            build_time=30,
+        )
+
+        stat2 = BrickStats.objects.create(
+            user=user2,
+            brick_set=lego_set1,
+            likes=5,
+            min_recommended_age=30,
+            build_time=40,
+        )
+
+        stat2 = BrickStats.objects.create(
+            user=user2,
+            brick_set=lego_set2,
+            likes=10,
+            min_recommended_age=5,
+            build_time=50,
+        )
 
         self.stdout.write(self.style.SUCCESS("Successfully created demo database"))

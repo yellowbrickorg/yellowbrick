@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 class Color(models.Model):
     """
     Represents a color of LEGO bricks.
+
     Attributes:
         color_id : color ID number, compliant with LEGO's color numeric identification
         name : color's name
@@ -25,6 +26,7 @@ class Color(models.Model):
 class Brick(models.Model):
     """
     Represents a LEGO brick.
+
     Attributes:
         brick_id : internal brick ID
         part_num : part number compliant with LEGO's numeric identification
@@ -44,6 +46,7 @@ class Brick(models.Model):
 class LegoSet(models.Model):
     """
     Represents a LEGO set.
+
     Attributes:
         number : set number compliant with LEGO set identification
         name : set name
@@ -57,15 +60,19 @@ class LegoSet(models.Model):
     image_link = models.CharField(max_length=256)
     bricks = models.ManyToManyField(Brick, through="BrickInSetQuantity")
     inventory_id = models.IntegerField()
+    theme = models.CharField(max_length=256)
+    quantity_of_bricks = models.IntegerField()
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+
+        return reverse("set_detail", kwargs={"pk": self.id})
 
     def __str__(self):
         return f"{self.number} - {self.name}"
 
     def number_of_bricks(self):
-        ret = 0
-        for b in self.brickinsetquantity_set.all():
-            ret += b.quantity
-        return ret
+        return self.quantity_of_bricks
 
 
 class UserCollection(models.Model):
@@ -348,4 +355,18 @@ class SetInOfferQuantity(Countable):
         return (
             f"{self.quantity} x {self.legoset} "
             f"in {self.offer.offer_author.username}'s offer to {self.offer.offer_receiver.username}"
+        )
+
+
+class BrickStats(models.Model):
+    brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    likes = models.IntegerField()
+    min_recommended_age = models.IntegerField()
+    build_time = models.IntegerField()
+
+    def __str__(self) -> str:
+        return (
+            f"Rated {self.brick_set}: {self.likes} likes, and {self.min_recommended_age} recommended age, "
+            f"by user {self.user}"
         )

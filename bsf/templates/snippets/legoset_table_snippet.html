@@ -3,16 +3,26 @@
     <tr>
         <th scope="col">ID</th>
         <th scope="col">Name</th>
+        <th scope="col">Theme</th>
+        <th scope="col">Bricks count</th>
+        <th scope="col">Rating</th>
+        <th scope="col">Time spent</th>
+        <th scope="col">Min. age</th>
     </tr>
     </thead>
     <tbody>
     {% for legoset in page_obj %}
         <tr>
-            <th scope="row">{{ legoset.id }}</th>
+            <th scope="row">{{ legoset.number }}</th>
             <td><img class="img-thumbnail me-2" src="{{ legoset.image_link }}"
                      width="120">
                 <a href="{% url 'set_detail' legoset.id %}">{{ legoset.name }}</a>
             </td>
+            <th scope="row">{{ legoset.theme }}</th>
+            <th scope="row">{{ legoset.quantity_of_bricks }}</th>
+            <th scope="row">{{ legoset.avg_rating }}</th>
+            <th scope="row">{{ legoset.avg_time }}</th>
+            <th scope="row">{{ legoset.avg_age }}</th>
         </tr>
     {% empty %}
         No sets found.

@@ -24,7 +24,8 @@ urlpatterns = [
         name="del_brick_from_wishlist",
     ),
     # /sets/
-    path("sets/", SetListView.as_view(), name="sets"),
+    path("sets/", views.legoset_list, name="sets"),
+    path("sets/filter/", views.legoset_list, name="legoset_list_filtered"),
     path("sets/<int:pk>/", SetDetailView.as_view(), name="set_detail"),
     path("filter/run", views.filter_collection, name="filter_run"),
     path(
@@ -45,6 +46,8 @@ urlpatterns = [
     ),
     path("set/del/<int:id>", views.del_set, name="del_set"),
     path("set/convert/<int:id>", views.convert, name="convert"),
+    path("set/add_review/<int:id>", views.add_review, name="add_review"),
+    path("set/del_review/<int:id>", views.del_review, name="del_review"),
     # Account management
     path("login/", views.login, name="login"),
     path("signup/", views.signup, name="signup"),
