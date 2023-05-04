@@ -6,8 +6,6 @@ from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail, BadHeaderError
 from django.core.paginator import Paginator
-from django.db.models import Min, Max
-from django.db.models.query_utils import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template import loader
@@ -136,6 +134,45 @@ def legoset_list(request):
             "selected_theme": theme,
         },
     )
+
+
+def add_review(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    try:
+        rating = int(request.POST.get("set_rating", False))
+        age = int(request.POST.get("set_age", False))
+        time = int(float(request.POST.get("set_time", False)) * 10)
+    except:
+        messages.error(
+            request,
+            f"Failed to add a review of {lego_set}",
+        )
+        return redirect(lego_set)
+    else:
+        logged_user = request.user
+        BrickStats.objects.create(
+            brick_set=lego_set,
+            user=logged_user,
+            likes=rating,
+            min_recommended_age=age,
+            build_time=time,
+        )
+        messages.success(
+            request,
+            f"Added review of {lego_set}.",
+        )
+        return redirect(lego_set)
+
+
+def del_review(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    logged_user = request.user
+    BrickStats.objects.filter(brick_set=lego_set, user=logged_user).delete()
+    messages.success(
+        request,
+        f"Deleted review of {lego_set}.",
+    )
+    return redirect(lego_set)
 
 
 def add_set(request, id):
@@ -365,14 +402,38 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
     return viable_sets
 
 
-def get_avg_likes(brick_set: LegoSet):
-    all_reviews = BrickStats.objects.filter(brick_set=brick_set)
-    return all_reviews.aggregate(Avg("likes"))
+def get_avg_likes(reviews):
+    avg_likes = reviews.aggregate(Avg("likes"))["likes__avg"]
+    if avg_likes != None:
+        avg_likes = round(avg_likes, 1)
+    return avg_likes
 
 
-def get_avg_age(brick_set: LegoSet):
-    all_reviews = BrickStats.objects.filter(brick_set=brick_set)
-    return all_reviews.aggregate(Avg("min_recommended_age"))
+def get_avg_age(reviews):
+    avg_age = reviews.aggregate(Avg("min_recommended_age"))["min_recommended_age__avg"]
+    if avg_age != None:
+        avg_age = round(avg_age, 1)
+    return avg_age
+
+
+def get_avg_time(reviews):
+    avg_time = reviews.aggregate(Avg("build_time"))["build_time__avg"]
+    if avg_time != None:
+        avg_time = round(avg_time, 0)
+    return avg_time
+
+
+def get_review_exists(brick_set: LegoSet, user: User):
+    review = BrickStats.objects.filter(brick_set=brick_set, user=user)
+    return review.exists()
+
+
+def get_review_data(brick_set: LegoSet, user: User):
+    return (
+        BrickStats.objects.filter(brick_set=brick_set, user=user)
+        .values("likes", "min_recommended_age", "build_time")
+        .first()
+    )
 
 
 def maxsize_if_empty(_str):
@@ -469,6 +530,28 @@ class SetDetailView(DetailView):
         context["bricks_in_set"] = BrickInSetQuantity.objects.filter(
             brick_set_id=self.kwargs["pk"]
         )
+        all_reviews = BrickStats.objects.filter(brick_set=self.get_object())
+        context.update(
+            {
+                "likes": get_avg_likes(all_reviews),
+                "age": get_avg_age(all_reviews),
+                "time": get_avg_time(all_reviews),
+                "review_count": all_reviews.count(),
+            }
+        )
+        if self.request.user.id:
+            context["review_exists"] = get_review_exists(
+                self.get_object(), self.request.user
+            )
+            review_data = get_review_data(self.get_object(), self.request.user)
+            if context["review_exists"]:
+                context.update(
+                    {
+                        "review_likes": review_data["likes"],
+                        "review_age": review_data["min_recommended_age"],
+                        "review_time": review_data["build_time"],
+                    }
+                )
         return context
 
 
