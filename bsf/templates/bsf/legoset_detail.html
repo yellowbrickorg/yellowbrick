@@ -10,71 +10,8 @@
     <div class="row mt-3">
         <div class="col-md-5">
             <img class="img-thumbnail shadow" src="{{ legoset.image_link }}">
-
-            <div style="padding: 10px;">
-                <div style="padding: 10px">
-                    {% if likes == None %}
-                        Not enough data to display the rating.
-                    {% else %}
-                        Average rating basing on users feedback:
-                        <div style="align-self: center; font-family: 'Courier New', monospace;">
-                            {{likes}} out of 10
-                        </div>
-                        {% endif %}
-                </div>
-
-                <div style="padding: 10px">
-                    {% if age == None %}
-                        Not enough data to estimate recommended age.
-                    {% else %}
-                        Average recommended age basing on users feedback:
-                        <div style="align-self: center; font-family: 'Courier New', monospace;">
-                            {{age}} out of 100
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            {% if request.user.is_authenticated %}
-                <div style="padding: 20px">
-                    {% if review_exists %}
-                    
-                    <div>
-                        You have already left us your review! <br>
-                        Thanks for contributing to our community!<br>
-                        <br>
-                        You gave this set a rating of {{review_likes}}.<br>
-                        You decided the recommended age for this set should be {{review_age}}.
-                    </div>
-
-                    {% else %}
-
-                    <form method="POST" action="{% url 'add_review' legoset.id %}">
-                        {% csrf_token %}
-                            <label for="set_rating {{user}} {{legoset.id}}">Your rating:</label>
-                            <input type="number" name="set_rating"
-                                   value="0"
-                                   id="set_rating {{user}} {{legoset.id}}"
-                                   min="0"
-                                   max="10"
-                                   class="form-control"> <br>
-                            <label for="set_age {{user}} {{legoset.id}}">Your recommended age:</label>
-                            <input type="number" name="set_age"
-                                   value="0"
-                                   id="set_age {{user}} {{legoset.id}}"
-                                   min="0"
-                                   max="100"
-                                   class="form-control"> <br>
-                            <button type="submit"
-                                    class="btn btn-outline-secondary">
-                                Submit
-                            </button> <br>
-                    </form>
-                    {% endif %}
-                </div>
-            {%endif%}
-
         </div>
+
         <div class="col-md-6">
             {% if request.user.is_authenticated %}
                 <div class="col-6 mb-3">
@@ -94,7 +31,15 @@
                     </form>
                 </div>
             {% endif %}
-            <div class="card">
+            <div class="card mt-3">
+                <div class="card-header">
+                    Community review
+                </div>
+                <div class="card-body">
+                    {% include "snippets/set_review.html" %}
+                </div>
+            </div>
+            <div class="card mt-3">
                 <div class="card-header">
                     Contains
                 </div>

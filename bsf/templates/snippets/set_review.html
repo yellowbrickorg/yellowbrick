@@ -1,0 +1,70 @@
+<div class="d-flex justify-content-evenly">
+    <div>
+        <p class="mb-0"><b>Rating</b></p>
+        <h3>
+            {% if likes == None %}
+                ?/10
+            {% else %}
+                {{ likes }}/10
+            {% endif %}
+        </h3>
+    </div>
+    <div>
+        <p class="mb-0"><b>Age</b></p>
+        <h3>
+            {% if age == None %}
+                ?
+            {% else %}
+                {{ age }}
+            {% endif %}
+        </h3>
+    </div>
+    <div>
+        <p class="mb-0"><b>Time to build</b></p>
+        <h3>
+            {% if time == None %}
+                ?
+            {% else %}
+                {{ time }} min
+            {% endif %}
+        </h3>
+    </div>
+</div>
+
+<div class="mt-4">
+    {% if request.user.is_authenticated %}
+        {% if review_exists %}
+            <p>
+                You have already submitted your review, thanks for your contribution!
+            </p>
+            <p>
+                You rated it as {{ review_likes }}/10 with appropriate age of
+                {{ review_age }}.
+            </p>
+        {% else %}
+            <form method="POST" action="{% url 'add_review' legoset.id %}">
+                {% csrf_token %}
+                <label for="set_rating {{ user }} {{ legoset.id }}">Your rating:</label>
+                <input type="number" name="set_rating"
+                       value="0"
+                       id="set_rating {{ user }} {{ legoset.id }}"
+                       min="0"
+                       max="10"
+                       class="form-control"> <br>
+                <label for="set_age {{ user }} {{ legoset.id }}">Your recommended
+                    age:</label>
+                <input type="number" name="set_age"
+                       value="0"
+                       id="set_age {{ user }} {{ legoset.id }}"
+                       min="0"
+                       max="100"
+                       class="form-control"> <br>
+                <button type="submit"
+                        class="btn btn-outline-secondary">
+                    Submit
+                </button>
+                <br>
+            </form>
+        {% endif %}
+        </div>
+    {% endif %}

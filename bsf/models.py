@@ -108,7 +108,8 @@ class SetInCollectionQuantity(models.Model):
             f"{self.quantity} x {self.brick_set} "
             f"in {self.collection.user.username}'s collection"
         )
-    
+
+
 class BrickStats(models.Model):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -120,4 +121,3 @@ class BrickStats(models.Model):
             f"Rated {self.brick_set}: {self.likes} likes, and {self.min_recommended_age} recommended age, "
             f"by user {self.user}"
         )
-

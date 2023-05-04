@@ -117,24 +117,24 @@ class Command(BaseCommand):
         user_collection.sets.add(lego_set1, through_defaults={"quantity": 5})
 
         stat1 = BrickStats.objects.create(
-            user = user1,
-            brick_set = lego_set1,
-            likes = 8,
-            min_recommended_age = 18,
+            user=user1,
+            brick_set=lego_set1,
+            likes=8,
+            min_recommended_age=18,
         )
 
         stat2 = BrickStats.objects.create(
-            user = user2,
-            brick_set = lego_set1,
-            likes = 5,
-            min_recommended_age = 30,
+            user=user2,
+            brick_set=lego_set1,
+            likes=5,
+            min_recommended_age=30,
         )
 
         stat2 = BrickStats.objects.create(
-            user = user2,
-            brick_set = lego_set2,
-            likes = 10,
-            min_recommended_age = 5,
+            user=user2,
+            brick_set=lego_set2,
+            likes=10,
+            min_recommended_age=5,
         )
 
         self.stdout.write(self.style.SUCCESS("Successfully created demo database"))
