@@ -73,4 +73,5 @@ urlpatterns = [
         views.exchange_offer_continue,
         name="exchange_offer_continue",
     ),
+    path("exchange/delete", views.exchange_delete_offer, name="delete_offer"),
 ]

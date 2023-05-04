@@ -35,17 +35,17 @@
                             {% for set in offer_context.offered_sets %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ set.legoset.image_link }}"
-                                         width="120">
+                                         width="80">
                                     <a href="{% url 'set_detail' set.pk %}">
                                         {{ set.legoset.name }}</a>
                                     x {{ set.quantity }}</li>
                             {% endfor %}
-                            {% for brick in offer_context.wanted_bricks %}
+                            {% for brick in offer_context.offered_bricks %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ brick.brick.image_link }}"
                                          width="60">
                                     <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
-                                    - {{ brick.0.color.name }} x
+                                    - {{ brick.brick.color.name }} x
                                     {{ brick.quantity }}</li>
                             {% endfor %}
                         </ul>
@@ -55,7 +55,7 @@
                             {% for set in offer_context.wanted_sets %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ set.legoset.image_link }}"
-                                         width="120">
+                                         width="80">
                                     <a href="{% url 'set_detail' set.pk %}">
                                         {{ set.legoset.name }}</a>
                                     x {{ set.quantity }}</li>
@@ -84,6 +84,22 @@
                         {% elif not offer_context.offer.exchanged %}
                             <span>Waiting for
                                 {{ offer_context.offer.offer_receiver }}</span>
+                        {% else %}
+                            <span>Exchange ended</span>
+                        {% endif %}
+                        {% if offer_context.offer.receiver_state == 0 or offer_context.offer.exchanged %}
+                                <form action="{% url "delete_offer" %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="offer_id"
+                                        value={{ offer_context.offer.id }}>
+                                    <button class="btn btn-primary" type="submit">
+                                        {% if offer_context.offer.exchanged %}
+                                            Delete
+                                        {% else %}
+                                            Cancel
+                                        {% endif %}
+                                    </button>
+                                </form>
                         {% endif %}
                     </td>
                 </tr>
@@ -116,7 +132,7 @@
                             {% for set in offer_context.offered_sets %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ set.legoset.image_link }}"
-                                         width="120">
+                                         width="80">
                                     <a href="{% url 'set_detail' set.legoset.id %}">
                                         {{ set.legoset.name }}</a>
                                     x {{ set.quantity }}</li>
@@ -136,7 +152,7 @@
                             {% for set in offer_context.wanted_sets %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ set.legoset.image_link }}"
-                                         width="120">
+                                         width="80">
                                     <a href="{% url 'set_detail' set.legoset.id %}">
                                         {{ set.legoset.name }}</a>
                                     x {{ set.quantity }}</li>
@@ -165,6 +181,22 @@
                         {% elif not offer_context.offer.exchanged %}
                             <span>Waiting for
                                 {{ offer_context.offer.offer_author }}</span>
+                        {% else %}
+                            <span>Exchange ended</span>
+                        {% endif %}
+                        {% if offer_context.offer.receiver_state == 0 or offer_context.offer.exchanged %}
+                                <form action="{% url "delete_offer" %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="offer_id"
+                                        value={{ offer_context.offer.id }}>
+                                    <button class="btn btn-primary" type="submit">
+                                        {% if offer_context.offer.exchanged %}
+                                            Delete
+                                        {% else %}
+                                            Refuse
+                                        {% endif %}
+                                    </button>
+                                </form>
                         {% endif %}
                     </td>
                 </tr>

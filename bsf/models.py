@@ -81,7 +81,7 @@ class UserCollection(models.Model):
         set_collection = SetInCollectionQuantity.objects.filter(collection=self)
         if set_collection.filter(brick_set=brick_set).exists():
             set_collection.get(brick_set=brick_set).modify_quantity_or_delete(quantity)
-        else:
+        elif quantity > 0:
             set_collection.create(
                 brick_set=brick_set, quantity=quantity, collection=self
             )
@@ -90,7 +90,7 @@ class UserCollection(models.Model):
         brick_collection = BrickInCollectionQuantity.objects.filter(collection=self)
         if brick_collection.filter(brick=brick).exists():
             brick_collection.get(brick=brick).modify_quantity_or_delete(quantity)
-        else:
+        elif quantity > 0:
             brick_collection.create(brick=brick, quantity=quantity, collection=self)
 
     def __str__(self):
@@ -104,11 +104,9 @@ class Countable(models.Model):
         abstract = True
 
     def modify_quantity_or_delete(self, quantity):
-        assert self.quantity + quantity >= 0
-        self.quantity += quantity
-
-        if self.quantity == 0:
+        if self.quantity + quantity <= 0:
             self.delete()
+        self.quantity += quantity
 
 
 class BrickInSetQuantity(Countable):
@@ -160,7 +158,7 @@ class Wishlist(models.Model):
             sets_in_wishlist.get(
                 legoset=brick_set, side=side
             ).modify_quantity_or_delete(quantity)
-        else:
+        elif quantity > 0:
             sets_in_wishlist.create(
                 legoset=brick_set, quantity=quantity, user=self.user, side=side
             )
@@ -171,7 +169,7 @@ class Wishlist(models.Model):
             bricks_in_wishlist.get(brick=brick, side=side).modify_quantity_or_delete(
                 quantity
             )
-        else:
+        elif quantity > 0:
             bricks_in_wishlist.create(
                 brick=brick, quantity=quantity, user=self.user, side=side
             )

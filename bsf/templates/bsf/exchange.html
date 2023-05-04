@@ -30,84 +30,84 @@
                         <input type="hidden" name="return_on_error_page"
                                value="{{ request.path }}">
                         <input type="hidden" name="other_user"
-                               value="{{ po.0.get_username }}">
+                               value="{{ po.user.get_username }}">
                         <th scope="row">
-                            {{ po.0.get_username }}
+                            {{ po.user.get_username }}
                         </th>
                         <td>
-                            Total of {{ po.5 }} bricks.
+                            Total of {{ po.sum_offered }} bricks.
                             <ul>
-                                {% for set in po.3 %}
+                                {% for set in po.set_quantity_offered %}
                                     <li>
                                         <img class="img-thumbnail me-2"
-                                             src="{{ set.0.image_link }}"
+                                             src="{{ set.legoset.image_link }}"
                                              width="50">
-                                        <a href="{% url 'set_detail' set.0.pk %}">{{ set.0.name }}</a>
+                                        <a href="{% url 'set_detail' set.legoset.pk %}">{{ set.legoset.name }}</a>
                                     </li>
                                     <div class="input-group">
                                         <input type="number"
-                                               name="offer_set_{{ set.0.pk }}"
-                                               value="{{ set.1 }}"
+                                               name="offer_set_{{ set.legoset.pk }}"
+                                               value="{{ 0 }}"
                                                min="0"
-                                               max="{{ set.1 }}"
+                                               max="{{ set.quantity }}"
                                                class="form-control">
                                         <span class="input-group-text">/
-                                            {{ set.1 }}</span>
+                                            {{ set.quantity }}</span>
                                     </div>
                                 {% endfor %}
-                                {% for brick in po.1 %}
+                                {% for brick in po.brick_quantity_offered %}
                                     <li><img class="img-thumbnail me-2"
-                                             src="{{ brick.0.image_link }}"
+                                             src="{{ brick.brick.image_link }}"
                                              width="50">
-                                        <a href="{% url 'brick_detail' brick.0.brick_id %}">{{ brick.0.part_num }}</a>
-                                        - {{ brick.0.color.name }}
+                                        <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
+                                        - {{ brick.brick.color.name }}
                                     </li>
                                     <div class="input-group">
                                         <input type="number"
-                                               name="offer_brick_{{ brick.0.pk }}"
-                                               value="{{ brick.1 }}"
+                                               name="offer_brick_{{ brick.brick.pk }}"
+                                               value="{{ 0 }}"
                                                min="0"
-                                               max="{{ brick.1 }}"
+                                               max="{{ brick.quantity }}"
                                                class="form-control">
-                                        <span class="input-group-text">/{{ brick.1 }}</span>
+                                        <span class="input-group-text">/{{ brick.quantity }}</span>
                                     </div>
                                 {% endfor %}
                             </ul>
                         </td>
                         <td>
-                            Total of {{ po.6 }} bricks.
+                            Total of {{ po.sum_wanted }} bricks.
                             <ul>
-                                {% for set in po.4 %}
+                                {% for set in po.set_quantity_wanted %}
                                     <li><img class="img-thumbnail me-2"
-                                             src="{{ set.0.image_link }}"
+                                             src="{{ set.legoset.image_link }}"
                                              width="50">
-                                        <a href="{% url 'set_detail' set.0.pk %}">{{ set.0.name }}</a>
+                                        <a href="{% url 'set_detail' set.legoset.pk %}">{{ set.legoset.name }}</a>
                                     </li>
                                     <div class="input-group">
                                         <input type="number"
-                                               name="want_set_{{ set.0.pk }}"
-                                               value="{{ set.1 }}"
+                                               name="want_set_{{ set.legoset.pk }}"
+                                               value="{{ 0 }}"
                                                min="0"
-                                               max="{{ set.1 }}"
+                                               max="{{ set.legoset }}"
                                                class="form-control">
                                         <span class="input-group-text">/
-                                            {{ set.1 }}</span>
+                                            {{ set.quantity }}</span>
                                     </div>
                                 {% endfor %}
-                                {% for brick in po.2 %}
+                                {% for brick in po.brick_quantity_wanted %}
                                     <li><img class="img-thumbnail me-2"
-                                             src="{{ brick.0.image_link }}"
+                                             src="{{ brick.brick.image_link }}"
                                              width="50">
-                                        <a href="{% url 'brick_detail' brick.0.brick_id %}">{{ brick.0.part_num }}</a>
-                                        - {{ brick.0.color.name }}</li>
+                                        <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
+                                        - {{ brick.brick.color.name }}</li>
                                     <div class="input-group">
                                         <input type="number"
-                                               name="want_brick_{{ brick.0.pk }}"
-                                               value="{{ brick.1 }}"
+                                               name="want_brick_{{ brick.brick.pk }}"
+                                               value="{{ 0 }}"
                                                min="0"
-                                               max="{{ brick.1 }}"
+                                               max="{{ brick.quantity }}"
                                                class="form-control">
-                                        <span class="input-group-text">/{{ brick.1 }}</span>
+                                        <span class="input-group-text">/{{ brick.quantity }}</span>
                                     </div>
                                 {% endfor %}
                             </ul>
