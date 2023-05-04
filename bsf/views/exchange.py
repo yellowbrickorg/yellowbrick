@@ -1,17 +1,13 @@
+from django.core.mail import send_mail, BadHeaderError
+from django.template.loader import render_to_string
+
 from bsf.models import (
-    Brick,
-    LegoSet,
-    BrickInCollectionQuantity,
-    SetInCollectionQuantity,
-    SetInWishlistQuantity,
-    BrickInWishlistQuantity,
     ExchangeOffer,
     BrickInOfferQuantity,
     SetInOfferQuantity,
     Side,
     Wishlist,
 )
-from bsf.models import UserCollection, User
 from .base import *
 
 
