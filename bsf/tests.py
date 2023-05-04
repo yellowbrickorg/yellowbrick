@@ -71,13 +71,25 @@ class CollectionFilterTestCase(TestCase):
         user_collection.sets.add(lego_set2, through_defaults={"quantity": 2})
 
         stat1 = BrickStats.objects.create(
-            user=user1, brick_set=lego_set1, likes=7, min_recommended_age=15
+            user=user1,
+            brick_set=lego_set1,
+            likes=7,
+            min_recommended_age=15,
+            build_time=1,
         )
         stat2 = BrickStats.objects.create(
-            user=user2, brick_set=lego_set1, likes=5, min_recommended_age=20
+            user=user2,
+            brick_set=lego_set1,
+            likes=5,
+            min_recommended_age=20,
+            build_time=2,
         )
         stat3 = BrickStats.objects.create(
-            user=user3, brick_set=lego_set2, likes=10, min_recommended_age=8
+            user=user3,
+            brick_set=lego_set2,
+            likes=10,
+            min_recommended_age=8,
+            build_time=3,
         )
 
     def test_user_can_have_only_one_collection(self):
@@ -198,10 +210,14 @@ class CollectionFilterTestCase(TestCase):
         lego_set2 = LegoSet.objects.get(number="22222")
         lego_set3 = LegoSet.objects.get(number="33333")
 
-        self.assertEqual(get_avg_likes(lego_set1), 6.0)
-        self.assertEqual(get_avg_likes(lego_set2), 10.0)
-        self.assertEqual(get_avg_likes(lego_set3), None)
+        reviews1 = BrickStats.objects.filter(brick_set=lego_set1)
+        reviews2 = BrickStats.objects.filter(brick_set=lego_set2)
+        reviews3 = BrickStats.objects.filter(brick_set=lego_set3)
 
-        self.assertEqual(get_avg_age(lego_set1), 17.5)
-        self.assertEqual(get_avg_age(lego_set2), 8.0)
-        self.assertEqual(get_avg_age(lego_set3), None)
+        self.assertEqual(get_avg_likes(reviews1), 6.0)
+        self.assertEqual(get_avg_likes(reviews2), 10.0)
+        self.assertEqual(get_avg_likes(reviews3), None)
+
+        self.assertEqual(get_avg_age(reviews1), 17.5)
+        self.assertEqual(get_avg_age(reviews2), 8.0)
+        self.assertEqual(get_avg_age(reviews3), None)

@@ -60,6 +60,11 @@ class LegoSet(models.Model):
     bricks = models.ManyToManyField(Brick, through="BrickInSetQuantity")
     inventory_id = models.IntegerField()
 
+    def get_absolute_url(self):
+        from django.urls import reverse
+
+        return reverse("set_detail", kwargs={"pk": self.id})
+
     def __str__(self):
         return f"{self.number} - {self.name}"
 
