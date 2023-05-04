@@ -31,12 +31,12 @@
                         {{ offer_context.offer.offer_receiver }}
                     </th>
                     <td>
-                        <ul>
+                        <ul class="list-unstyled">
                             {% for set in offer_context.offered_sets %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ set.legoset.image_link }}"
                                          width="80">
-                                    <a href="{% url 'set_detail' set.pk %}">
+                                    <a href="{% url 'set_detail' set.legoset.id %}">
                                         {{ set.legoset.name }}</a>
                                     x {{ set.quantity }}</li>
                             {% endfor %}
@@ -51,12 +51,12 @@
                         </ul>
                     </td>
                     <td>
-                        <ul>
+                        <ul class="list-unstyled">
                             {% for set in offer_context.wanted_sets %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ set.legoset.image_link }}"
                                          width="80">
-                                    <a href="{% url 'set_detail' set.pk %}">
+                                    <a href="{% url 'set_detail' set.legoset.id %}">
                                         {{ set.legoset.name }}</a>
                                     x {{ set.quantity }}</li>
                             {% endfor %}
@@ -88,16 +88,16 @@
                             <span>Exchange ended</span>
                         {% endif %}
                         {% if offer_context.offer.receiver_state == 0 %}
-                                <form action="{% url "delete_offer" %}" method="post">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="offer_id"
-                                        value={{ offer_context.offer.id }}>
-                                    <button class="btn btn-primary" type="submit">
-                                        {% if not offer_context.offer.exchanged %}
-                                            Cancel
-                                        {% endif %}
-                                    </button>
-                                </form>
+                            <form action="{% url "delete_offer" %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="offer_id"
+                                       value={{ offer_context.offer.id }}>
+                                <button class="btn btn-primary" type="submit">
+                                    {% if not offer_context.offer.exchanged %}
+                                        Cancel
+                                    {% endif %}
+                                </button>
+                            </form>
                         {% endif %}
                     </td>
                 </tr>
@@ -126,7 +126,7 @@
                         {{ offer_context.offer.offer_author }}
                     </th>
                     <td>
-                        <ul>
+                        <ul class="list-unstyled">
                             {% for set in offer_context.wanted_sets %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ set.legoset.image_link }}"
@@ -146,7 +146,7 @@
                         </ul>
                     </td>
                     <td>
-                        <ul>
+                        <ul class="list-unstyled">
                             {% for set in offer_context.offered_sets %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ set.legoset.image_link }}"
@@ -183,16 +183,16 @@
                             <span>Exchange ended</span>
                         {% endif %}
                         {% if offer_context.offer.receiver_state == 0 %}
-                                <form action="{% url "delete_offer" %}" method="post">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="offer_id"
-                                        value={{ offer_context.offer.id }}>
-                                    <button class="btn btn-primary" type="submit">
-                                        {% if not offer_context.offer.exchanged %}
-                                            Refuse
-                                        {% endif %}
-                                    </button>
-                                </form>
+                            <form action="{% url "delete_offer" %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="offer_id"
+                                       value={{ offer_context.offer.id }}>
+                                <button class="btn btn-primary" type="submit">
+                                    {% if not offer_context.offer.exchanged %}
+                                        Refuse
+                                    {% endif %}
+                                </button>
+                            </form>
                         {% endif %}
                     </td>
                 </tr>

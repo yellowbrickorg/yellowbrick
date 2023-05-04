@@ -42,11 +42,11 @@
                                         <img class="img-thumbnail me-2"
                                              src="{{ set.legoset.image_link }}"
                                              width="50">
-                                        <a href="{% url 'set_detail' set.legoset.pk %}">{{ set.legoset.name }}</a>
+                                        <a href="{% url 'set_detail' set.legoset.id %}">{{ set.legoset.name }}</a>
                                     </li>
                                     <div class="input-group">
                                         <input type="number"
-                                               name="offer_set_{{ set.legoset.pk }}"
+                                               name="offer_set_{{ set.legoset.id }}"
                                                value="{{ set.quantity }}"
                                                min="0"
                                                max="{{ set.quantity }}"
@@ -64,7 +64,7 @@
                                     </li>
                                     <div class="input-group">
                                         <input type="number"
-                                               name="offer_brick_{{ brick.brick.pk }}"
+                                               name="offer_brick_{{ brick.brick.id }}"
                                                value="{{ brick.quantity }}"
                                                min="0"
                                                max="{{ brick.quantity }}"
@@ -81,11 +81,11 @@
                                     <li><img class="img-thumbnail me-2"
                                              src="{{ set.legoset.image_link }}"
                                              width="50">
-                                        <a href="{% url 'set_detail' set.legoset.pk %}">{{ set.legoset.name }}</a>
+                                        <a href="{% url 'set_detail' set.legoset.id %}">{{ set.legoset.name }}</a>
                                     </li>
                                     <div class="input-group">
                                         <input type="number"
-                                               name="want_set_{{ set.legoset.pk }}"
+                                               name="want_set_{{ set.legoset.id }}"
                                                value="{{ set.quantity }}"
                                                min="0"
                                                max="{{ set.quantity }}"
@@ -102,7 +102,7 @@
                                         - {{ brick.brick.color.name }}</li>
                                     <div class="input-group">
                                         <input type="number"
-                                               name="want_brick_{{ brick.brick.pk }}"
+                                               name="want_brick_{{ brick.brick.id }}"
                                                value="{{ brick.quantity }}"
                                                min="0"
                                                max="{{ brick.quantity }}"
