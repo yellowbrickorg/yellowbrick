@@ -94,26 +94,39 @@ class SetListView(ListView):
 
 
 def legoset_list(request):
-    queryset = LegoSet.objects.all()
-    max_bricks = queryset.aggregate(max_bricks=Max("quantity_of_bricks"))["max_bricks"]
+    queryset = (
+        LegoSet.objects.annotate(avg_rating=Avg("brickstats__likes"))
+        .annotate(avg_time=Avg("brickstats__build_time"))
+        .annotate(avg_age=Avg("brickstats__min_recommended_age"))
+        .all()
+    )
+
+    max_bricks = queryset.aggregate(max_bricks=Max("quantity_of_bricks")).get(
+        "max_bricks", 9999999
+    )
+    max_time = int(
+        queryset.aggregate(max_time=Max("avg_time")).get("max_time", 9999999)
+    )
+    max_age = int(queryset.aggregate(max_age=Max("avg_age")).get("max_age", 9999999))
+
     set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
-    start_quantity = request.GET.get("start_quantity", 0)
-    end_quantity = request.GET.get("end_quantity", max_bricks)
+
+    start_quantity = zero_if_empty(request.GET.get("start_quantity"))
+    end_quantity = default_if_empty(request.GET.get("end_quantity"), max_bricks)
+
+    min_time = zero_if_empty(request.GET.get("min_time"))
+    max_time = default_if_empty(request.GET.get("max_time"), max_time)
+
+    min_age = zero_if_empty(request.GET.get("min_age"))
+    max_age = default_if_empty(request.GET.get("max_age"), max_age)
+
     theme = request.GET.get("theme")
-
-    if not start_quantity:
-        start_quantity = 0
-    else:
-        start_quantity = int(start_quantity)
-
-    if not end_quantity:
-        end_quantity = 99999999
-    else:
-        end_quantity = int(end_quantity)
 
     if start_quantity <= end_quantity:
         queryset = queryset.filter(
-            quantity_of_bricks__range=(start_quantity, end_quantity)
+            Q(quantity_of_bricks__range=(start_quantity, end_quantity)),
+            Q(avg_time__range=(min_time, max_time)) | Q(avg_time__isnull=True),
+            Q(avg_age__range=(min_age, max_age)) | Q(avg_age__isnull=True),
         )
 
     if theme:
@@ -130,6 +143,10 @@ def legoset_list(request):
             "page_obj": page_obj,
             "start_quantity": start_quantity,
             "end_quantity": end_quantity,
+            "min_time": min_time,
+            "max_time": max_time,
+            "min_age": min_age,
+            "max_age": max_age,
             "set_themes": set_themes,
             "selected_theme": theme,
         },
@@ -437,7 +454,15 @@ def get_review_data(brick_set: LegoSet, user: User):
 
 
 def maxsize_if_empty(_str):
-    return sys.maxsize if _str == "" else int(_str)
+    return sys.maxsize if not _str else int(_str)
+
+
+def default_if_empty(_str, default):
+    return default if not _str else int(_str)
+
+
+def zero_if_empty(_str):
+    return 0 if not _str else int(_str)
 
 
 def filter_collection(request):

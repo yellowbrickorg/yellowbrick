@@ -5,6 +5,9 @@
         <th scope="col">Name</th>
         <th scope="col">Theme</th>
         <th scope="col">Bricks count</th>
+        <th scope="col">Rating</th>
+        <th scope="col">Time spent</th>
+        <th scope="col">Min. age</th>
     </tr>
     </thead>
     <tbody>
@@ -17,6 +20,9 @@
             </td>
             <th scope="row">{{ legoset.theme }}</th>
             <th scope="row">{{ legoset.quantity_of_bricks }}</th>
+            <th scope="row">{{ legoset.avg_rating }}</th>
+            <th scope="row">{{ legoset.avg_time }}</th>
+            <th scope="row">{{ legoset.avg_age }}</th>
         </tr>
     {% empty %}
         No sets found.
