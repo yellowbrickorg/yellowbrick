@@ -127,26 +127,6 @@
                     </th>
                     <td>
                         <ul>
-                            {% for set in offer_context.offered_sets %}
-                                <li><img class="img-thumbnail me-2"
-                                         src="{{ set.legoset.image_link }}"
-                                         width="80">
-                                    <a href="{% url 'set_detail' set.legoset.id %}">
-                                        {{ set.legoset.name }}</a>
-                                    x {{ set.quantity }}</li>
-                            {% endfor %}
-                            {% for brick in offer_context.offered_bricks %}
-                                <li><img class="img-thumbnail me-2"
-                                         src="{{ brick.brick.image_link }}"
-                                         width="60">
-                                    <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
-                                    - {{ brick.brick.color.name }} x
-                                    {{ brick.quantity }}</li>
-                            {% endfor %}
-                        </ul>
-                    </td>
-                    <td>
-                        <ul>
                             {% for set in offer_context.wanted_sets %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ set.legoset.image_link }}"
@@ -161,6 +141,26 @@
                                          width="60">
                                     <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
                                     - {{ brick.0.color.name }} x
+                                    {{ brick.quantity }}</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        <ul>
+                            {% for set in offer_context.offered_sets %}
+                                <li><img class="img-thumbnail me-2"
+                                         src="{{ set.legoset.image_link }}"
+                                         width="80">
+                                    <a href="{% url 'set_detail' set.legoset.id %}">
+                                        {{ set.legoset.name }}</a>
+                                    x {{ set.quantity }}</li>
+                            {% endfor %}
+                            {% for brick in offer_context.offered_bricks %}
+                                <li><img class="img-thumbnail me-2"
+                                         src="{{ brick.brick.image_link }}"
+                                         width="60">
+                                    <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
+                                    - {{ brick.brick.color.name }} x
                                     {{ brick.quantity }}</li>
                             {% endfor %}
                         </ul>

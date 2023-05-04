@@ -47,7 +47,7 @@
                                     <div class="input-group">
                                         <input type="number"
                                                name="offer_set_{{ set.legoset.pk }}"
-                                               value="{{ 0 }}"
+                                               value="{{ set.quantity }}"
                                                min="0"
                                                max="{{ set.quantity }}"
                                                class="form-control">
@@ -65,7 +65,7 @@
                                     <div class="input-group">
                                         <input type="number"
                                                name="offer_brick_{{ brick.brick.pk }}"
-                                               value="{{ 0 }}"
+                                               value="{{ brick.quantity }}"
                                                min="0"
                                                max="{{ brick.quantity }}"
                                                class="form-control">
@@ -86,9 +86,9 @@
                                     <div class="input-group">
                                         <input type="number"
                                                name="want_set_{{ set.legoset.pk }}"
-                                               value="{{ 0 }}"
+                                               value="{{ set.quantity }}"
                                                min="0"
-                                               max="{{ set.legoset }}"
+                                               max="{{ set.quantity }}"
                                                class="form-control">
                                         <span class="input-group-text">/
                                             {{ set.quantity }}</span>
@@ -103,7 +103,7 @@
                                     <div class="input-group">
                                         <input type="number"
                                                name="want_brick_{{ brick.brick.pk }}"
-                                               value="{{ 0 }}"
+                                               value="{{ brick.quantity }}"
                                                min="0"
                                                max="{{ brick.quantity }}"
                                                class="form-control">
