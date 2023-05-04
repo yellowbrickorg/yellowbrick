@@ -106,7 +106,9 @@ class Countable(models.Model):
     def modify_quantity_or_delete(self, quantity):
         if self.quantity + quantity <= 0:
             self.delete()
+            return
         self.quantity += quantity
+        self.save()
 
 
 class BrickInSetQuantity(Countable):
