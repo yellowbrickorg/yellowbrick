@@ -1,25 +1,22 @@
 from django.contrib.auth import login as auth_login, logout as auth_logout, authenticate
-from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail, BadHeaderError
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 
-from bsf.forms import NewUserForm
+from bsf.forms import *
 from bsf.models import (
     Wishlist,
 )
-from bsf.models import UserCollection, User
 from .base import *
-
 
 def login(request):
     if request.user.is_authenticated:
         messages.error(request, "Already logged in. Logout to change account.")
         return redirect("index")
     elif request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
+        form = BootstrapAuthenticationForm(request, data=request.POST)
         if form.is_valid():
             username = form.cleaned_data.get("username")
             password = form.cleaned_data.get("password")
@@ -32,7 +29,7 @@ def login(request):
                 messages.error(request, "Username or password is incorrect.")
         else:
             messages.error(request, "Username or password is incorrect.")
-    form = AuthenticationForm()
+    form = BootstrapAuthenticationForm()
     context = base_context(request)
     context["login_form"] = form
     return render(
