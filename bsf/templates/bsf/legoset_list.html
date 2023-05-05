@@ -8,6 +8,7 @@
 
 {% block page_content %}
     <h1>LEGO sets</h1>
+    {% include "snippets/set_statfilter.html" with submit_path="legoset_list_filtered" extended=True %}
     {% include "snippets/legoset_table_snippet.html" with page_obj=page_obj %}
 
     <div class="mt-2">

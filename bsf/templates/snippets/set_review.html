@@ -1,0 +1,100 @@
+<ul class="list-group list-group-flush">
+    <li class="list-group-item d-lg-flex justify-content-evenly">
+        <div>
+            <p class="mb-0"><b>Rating</b></p>
+            <h3>
+                {% if likes == None %}
+                    ?/10
+                {% else %}
+                    {{ likes }}/10
+                {% endif %}
+            </h3>
+        </div>
+        <div>
+            <p class="mb-0"><b>Age</b></p>
+            <h3>
+                {% if age == None %}
+                    ?
+                {% else %}
+                    {{ age }}
+                {% endif %}
+            </h3>
+        </div>
+        <div>
+            <p class="mb-0"><b>Time to build</b></p>
+            <h3>
+                {% if time == None %}
+                    ?
+                {% else %}
+                    {{ time }} min
+                {% endif %}
+            </h3>
+        </div>
+        <div>
+            <p class="mb-0"><b>Reviews</b></p>
+            <h3>
+                {{ review_count }}
+            </h3>
+        </div>
+    </li>
+
+    <li class="list-group-item">
+        {% if request.user.is_authenticated %}
+            {% if review_exists %}
+                <p>
+                    You rated as {{ review_likes }}/10 with appropriate age of
+                    {{ review_age }} and {{ review_time }} minutes as a time spent
+                    building.
+                </p>
+                <form method="POST" action="{% url 'del_review' legoset.id %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="btn btn-outline-secondary">
+                        Delete review
+                    </button>
+                    <br>
+                </form>
+            {% else %}
+                <h5 class="mt-2">Leave a review</h5>
+                <form method="post" action="{% url 'add_review' legoset.id %}">
+                    {% csrf_token %}
+                    <div class="row g-3 mb-2">
+                        <div class="col-md">
+                            <label for="set_rating {{ user }} {{ legoset.id }}">Rating
+                                (0-10)</label>
+                            <input type="number" name="set_rating"
+                                   value="0"
+                                   id="set_rating {{ user }} {{ legoset.id }}"
+                                   min="0"
+                                   max="10"
+                                   class="form-control mb-2">
+                            <label for="set_time {{ user }} {{ legoset.id }}">Time spent
+                                in minutes (1-6000)</label>
+                            <input type="number" name="set_time"
+                                   value="0"
+                                   id="set_time {{ user }} {{ legoset.id }}"
+                                   min="1"
+                                   max="6000"
+                                   class="form-control">
+                        </div>
+                        <div class="col-md">
+                            <label for="set_age {{ user }} {{ legoset.id }}">Recommended
+                                age
+                                (0-100)</label>
+                            <input type="number" name="set_age"
+                                   value="0"
+                                   id="set_age {{ user }} {{ legoset.id }}"
+                                   min="0"
+                                   max="100"
+                                   class="form-control">
+                        </div>
+                    </div>
+                    <button type="submit"
+                            class="btn btn-outline-secondary">
+                        Submit
+                    </button>
+                </form>
+            {% endif %}
+            </li>
+        {% endif %}
+</ul>

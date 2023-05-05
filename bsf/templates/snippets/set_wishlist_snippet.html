@@ -1,31 +1,35 @@
 {% load subtraction %}
-{% if user_bricks %}
+{% if user_sets %}
     <ul class="list-group list-group-flush">
-        {% for brick_in_collection in user_bricks %}
-            {% with brick=brick_in_collection.brick %}
+        {% for legoset_in_w in user_sets %}
+            {% with legoset=legoset_in_w.legoset %}
                 <li class="list-group-item">
                     <div class="row g-3 align-items-center">
                         <div class="col-auto">
                             <img class="img-thumbnail"
-                                 src="{{ brick.image_link }}" width="80">
+                                 src="{{ legoset.image_link }}"
+                                 width="120">
                         </div>
                         <div class="col-auto me-auto">
                             <div class="mb-2">
-                                <a href="{% url 'brick_detail' brick %}">
-                                    {{ brick.part_num }}</a>
-                                - {{ brick.color.name }} x
-                                {{ brick_in_collection.quantity }}
+                                <a href="{% url 'set_detail' legoset.id %}">
+                                    {{ legoset.number }}</a>
+                                {{ legoset.name }} x
+                                {{ legoset_in_w.quantity }}
+                                </a>
                             </div>
                             <div class="d-flex">
-                                <form action="{% url 'add_brick' brick.brick_id %}"
+                                <form action="{% url 'add_set_to_wishlist' legoset.id side %}"
                                       method="post" class="me-2">
                                     {% csrf_token %}
+                                    <input type="hidden" name="next"
+                                           value="{{ request.path }}">
                                     <div class="input-group">
                                         <input type="number" name="quantity"
                                                value="1"
-                                               id="brickquantity{{ brick.brick_id }}"
+                                               id="setquantity{{ legoset.id }}-{{ side }}"
                                                min="0"
-                                               max="{{ 10000|subtract:brick_in_collection.quantity }}"
+                                               max="{{ 100|subtract:legoset_in_w.quantity }}"
                                                class="form-control">
                                         <button type="submit"
                                                 class="btn btn-outline-secondary">
@@ -33,37 +37,21 @@
                                         </button>
                                     </div>
                                 </form>
-                                <form action="{% url 'del_brick' brick.brick_id %}"
+                                <form action="{% url 'del_set_from_wishlist' legoset.id side %}"
                                       method="post" class="me-2">
                                     {% csrf_token %}
+                                    <input type="hidden" name="next"
+                                           value="{{ request.path }}">
                                     <div class="input-group">
                                         <input type="number" name="quantity"
                                                value="1"
-                                               id="brickdelquantity{{ set.brick_id }}"
+                                               id="setdelquantity{{ brick_set.id }}-{{ side }}"
                                                min="0"
-                                               max="{{ brick_in_collection.quantity }}"
+                                               max="{{ legoset_in_w.quantity }}"
                                                class="form-control">
                                         <button type="submit"
                                                 class="btn btn-outline-secondary">
                                             Remove
-                                        </button>
-                                    </div>
-                                </form>
-                                <form action="{% url 'add_brick_to_wishlist' brick.brick_id 0 %}"
-                                      method="post">
-                                    {% csrf_token %}
-                                    <div class="input-group">
-                                        <input type="hidden" name="next"
-                                               value="{{ request.path }}">
-                                        <input type="number" name="quantity"
-                                               value="1"
-                                               id="brickofferquantity{{ set.brick_id }}"
-                                               min="0"
-                                               max="{{ brick_in_collection.quantity }}"
-                                               class="form-control">
-                                        <button type="submit"
-                                                class="btn btn-outline-secondary">
-                                            Offer
                                         </button>
                                     </div>
                                 </form>
@@ -75,5 +63,5 @@
         {% endfor %}
     </ul>
 {% else %}
-    <p>You don't have any loose bricks.</p>
+    <p>You don't have any sets.</p>
 {% endif %}
