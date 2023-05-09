@@ -1,0 +1,13 @@
+{% autoescape off %}
+Hello {{ user }},
+
+{{ author }} has made you an exchange offer!
+
+{% for set in sets_in_offer %}- {{ set.get_side_display }} {{ set.quantity }} x {{ set.legoset.name }}{% endfor %}
+{% for brick in bricks_in_offer %}- {{ brick.get_side_display }} {{ brick.quantity }} x {{ brick.brick.part_num }}{% endfor %}
+
+In order to accept, refuse or submit a counteroffer, please log in to the platform.
+
+Cheers!
+yellowbrick
+{% endautoescape %}

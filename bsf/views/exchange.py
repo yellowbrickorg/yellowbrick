@@ -1,5 +1,4 @@
-from django.core.mail import send_mail, BadHeaderError
-from django.template.loader import render_to_string
+from django.db import transaction
 
 from bsf.models import (
     ExchangeOffer,
@@ -11,6 +10,7 @@ from bsf.models import (
     Wishlist,
 )
 from .base import *
+from .notifier import notify_about_new_offer
 
 
 def wishlist(request):
@@ -48,7 +48,8 @@ def add_brick_to_wishlist(request, id, side):
                         brick=brick, collection=collection
                     )
                     if brick_through.quantity + qty > bricks_in_collection.quantity:
-                        messages.error(request, "Can't offer more bricks than you have.")
+                        messages.error(request,
+                                       "Can't offer more bricks than you have.")
                         return redirect(request.POST.get("next", "/"))
                 brick_through.quantity = min(brick_through.quantity + qty, 10000)
                 brick_through.save()
@@ -196,6 +197,45 @@ def exchange(request):
     )
 
 
+def form_offered_bricks_and_sets_lists(request, exchange_offer, possible_offers):
+    bricks_in_offer = []
+    sets_in_offer = []
+
+    for side in [Side.OFFERED, Side.WANTED]:
+        side_disp = "offer" if side == Side.OFFERED else "want"
+        for brick in possible_offers[0][f"brick_quantity_{side_disp}ed"]:
+            amount = request.POST.get(
+                f"{side_disp}_brick_" + str(brick["brick"].brick_id))
+            if amount == "":
+                continue
+            amount = int(amount)
+            if amount > 0:
+                bioq = BrickInOfferQuantity(
+                    offer=exchange_offer,
+                    brick=brick["brick"],
+                    quantity=amount,
+                    side=side,
+                )
+                bricks_in_offer.append(bioq)
+
+        for legoset in possible_offers[0][f"set_quantity_{side_disp}ed"]:
+            amount = request.POST.get(f"{side_disp}_set_" + str(legoset["legoset"].id))
+            if amount == "":
+                continue
+            amount = int(amount)
+            if amount > 0:
+                sioq = SetInOfferQuantity(
+                    offer=exchange_offer,
+                    legoset=legoset["legoset"],
+                    quantity=amount,
+                    side=side,
+                )
+                sets_in_offer.append(sioq)
+
+    return bricks_in_offer, sets_in_offer
+
+
+@transaction.atomic
 def exchange_make_offer(request):
     logged_user = request.user
     if not logged_user.is_authenticated:
@@ -207,100 +247,23 @@ def exchange_make_offer(request):
     other_user = User.objects.get(username=other_user)
     possible_offers = generate_possible_offers(logged_user, other_user)
 
-    new_offer = ExchangeOffer(offer_author=request.user, offer_receiver=other_user)
+    exchange_offer = ExchangeOffer(offer_author=request.user, offer_receiver=other_user)
 
-    bricks_in_offer = []
-    sets_in_offer = []
-
-    for brick in possible_offers[0]["brick_quantity_offered"]:
-        """Bricks offered"""
-        amount = request.POST.get("offer_brick_" + str(brick["brick"].brick_id))
-        if amount == "":
-            continue
-        amount = int(amount)
-        if amount > 0:
-            bioq = BrickInOfferQuantity(
-                offer=new_offer,
-                brick=brick["brick"],
-                quantity=amount,
-                side=Side.OFFERED,
-            )
-            bricks_in_offer.append(bioq)
-
-    for brick in possible_offers[0]["brick_quantity_wanted"]:
-        """Bricks wanted"""
-        amount = request.POST.get("want_brick_" + str(brick["brick"].brick_id))
-        if amount == "":
-            continue
-        amount = int(amount)
-        if amount > 0:
-            bioq = BrickInOfferQuantity(
-                offer=new_offer, brick=brick["brick"], quantity=amount, side=Side.WANTED
-            )
-            bricks_in_offer.append(bioq)
-
-    for legoset in possible_offers[0]["set_quantity_offered"]:
-        """Sets offered"""
-        amount = request.POST.get("offer_set_" + str(legoset["legoset"].id))
-        if amount == "":
-            continue
-        amount = int(amount)
-        if amount > 0:
-            sioq = SetInOfferQuantity(
-                offer=new_offer,
-                legoset=legoset["legoset"],
-                quantity=amount,
-                side=Side.OFFERED,
-            )
-            bricks_in_offer.append(sioq)
-
-    for legoset in possible_offers[0]["set_quantity_wanted"]:
-        """Sets wanted"""
-        amount = request.POST.get("want_set_" + str(legoset["legoset"].id))
-        if amount == "":
-            continue
-        amount = int(amount)
-        if amount > 0:
-            sioq = SetInOfferQuantity(
-                offer=new_offer,
-                legoset=legoset["legoset"],
-                quantity=amount,
-                side=Side.WANTED,
-            )
-            bricks_in_offer.append(sioq)
+    bricks_in_offer, sets_in_offer \
+        = form_offered_bricks_and_sets_lists(request, exchange_offer, possible_offers)
 
     if len(bricks_in_offer) + len(sets_in_offer) == 0:
         messages.error(request, "Can't submit an empty offer.")
         return redirect("exchange")
 
-    new_offer.save()
+    exchange_offer.save()
     for bioq in bricks_in_offer:
         bioq.save()
 
     for sioq in sets_in_offer:
         sioq.save()
 
-    """ Send an email notifying the other person about the new offer """
-    subject = "New offer"
-    email_template_name = "bsf/new_offer_notification.txt"
-    c = {
-        "email": other_user.email,
-        "domain": "127.0.0.1:8000",
-        "user": other_user,
-        "author": logged_user,
-        "protocol": "http",
-    }
-    email = render_to_string(email_template_name, c)
-    try:
-        send_mail(
-            subject,
-            email,
-            "exchange@yellowbrick.com",
-            [other_user.email],
-            fail_silently=False,
-        )
-    except BadHeaderError:
-        pass
+    notify_about_new_offer(logged_user, other_user, sets_in_offer, bricks_in_offer)
 
     return redirect("exchange_offers")
 
@@ -391,6 +354,7 @@ def exchange_offers(request):
     )
 
 
+@transaction.atomic
 def exchange_items(request, offer):
     receivers_collection = UserCollection.objects.get(user=offer.offer_receiver)
     receivers_wishlist = Wishlist.objects.get(user=offer.offer_receiver)

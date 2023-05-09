@@ -1,0 +1,24 @@
+<html>
+<head>
+</head>
+<body>
+{% autoescape off %}
+    <h2>Hello {{ user }},</h2>
+    <p>{{ author }} has offered you an exchange!</p>
+    <ul>
+        {% for set in sets_in_offer %}
+            <li><img class="img-thumbnail me-2" src="{{ set.legoset.image_link }}"
+                     width="40">{{ set.get_side_display }} {{ set.quantity }}
+                x {{ set.legoset.name }}</li>{% endfor %}
+        {% for brick in bricks_in_offer %}
+            <li><img class="img-thumbnail me-2" src="{{ brick.brick.image_link }}"
+                     width="40">{{ brick.get_side_display }} {{ brick.quantity }}
+                x {{ brick.brick.part_num }}</li>{% endfor %}
+    </ul>
+    <p>In order to accept, refuse or submit a counteroffer, please log in to the
+        platform.</p>
+    <p>Cheers!</p>
+    <p>yellowbrick</p>
+{% endautoescape %}
+</body>
+</html>
