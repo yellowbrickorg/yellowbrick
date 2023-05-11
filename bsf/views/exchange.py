@@ -296,48 +296,8 @@ def exchange_offers(request):
     offers_made = ExchangeOffer.objects.filter(offer_author=logged_user)
     offers_received = ExchangeOffer.objects.filter(offer_receiver=logged_user)
 
-    offers_made_context = []
-    offers_received_context = []
-
-    for offer in offers_made:
-        offers_made_context.append(
-            {
-                "offer": offer,
-                "offered_sets": SetInOfferQuantity.objects.filter(
-                    offer=offer, side=Side.OFFERED
-                ),
-                "offered_bricks": BrickInOfferQuantity.objects.filter(
-                    offer=offer, side=Side.OFFERED
-                ),
-                "wanted_sets": SetInOfferQuantity.objects.filter(
-                    offer=offer, side=Side.WANTED
-                ),
-                "wanted_bricks": BrickInOfferQuantity.objects.filter(
-                    offer=offer, side=Side.WANTED
-                ),
-                "button_action": get_button_action_for(logged_user, offer),
-            }
-        )
-
-    for offer in offers_received:
-        offers_received_context.append(
-            {
-                "offer": offer,
-                "offered_sets": SetInOfferQuantity.objects.filter(
-                    offer=offer, side=Side.OFFERED
-                ),
-                "offered_bricks": BrickInOfferQuantity.objects.filter(
-                    offer=offer, side=Side.OFFERED
-                ),
-                "wanted_sets": SetInOfferQuantity.objects.filter(
-                    offer=offer, side=Side.WANTED
-                ),
-                "wanted_bricks": BrickInOfferQuantity.objects.filter(
-                    offer=offer, side=Side.WANTED
-                ),
-                "button_action": get_button_action_for(logged_user, offer),
-            }
-        )
+    offers_made_context = create_offers_context(logged_user, offers_made)
+    offers_received_context = create_offers_context(logged_user, offers_received)
 
     context = base_context(request)
     context.update(
@@ -352,6 +312,30 @@ def exchange_offers(request):
         template_name="bsf/exchange_offers.html",
         context=context,
     )
+
+
+def create_offers_context(logged_user, offers):
+    context = []
+    for offer in offers:
+        context.append(
+            {
+                "offer": offer,
+                "offered_sets": SetInOfferQuantity.objects.filter(
+                    offer=offer, side=Side.OFFERED
+                ),
+                "offered_bricks": BrickInOfferQuantity.objects.filter(
+                    offer=offer, side=Side.OFFERED
+                ),
+                "wanted_sets": SetInOfferQuantity.objects.filter(
+                    offer=offer, side=Side.WANTED
+                ),
+                "wanted_bricks": BrickInOfferQuantity.objects.filter(
+                    offer=offer, side=Side.WANTED
+                ),
+                "button_action": get_button_action_for(logged_user, offer),
+            }
+        )
+    return context
 
 
 @transaction.atomic
@@ -493,6 +477,18 @@ def exchange_delete_offer(request):
     return redirect("exchange_offers")
 
 
+def dict_offer_base(user):
+    return {
+        "user": user,
+        "brick_quantity_offered": [],
+        "brick_quantity_wanted": [],
+        "set_quantity_offered": [],
+        "set_quantity_wanted": [],
+        "sum_offered": 0,
+        "sum_wanted": 0,
+    }
+
+
 def generate_possible_offers(logged_user, other=None):
     """
     We are looking for users with whom we could trade bricks. They are sorted
@@ -506,96 +502,49 @@ def generate_possible_offers(logged_user, other=None):
 
     possible_offers = []
     if other is not None:
-        possible_offers = [
-            {
-                "user": User.objects.get(username=other),
-                "brick_quantity_offered": [],
-                "brick_quantity_wanted": [],
-                "set_quantity_offered": [],
-                "set_quantity_wanted": [],
-                "sum_offered": 0,
-                "sum_wanted": 0,
-            }
-        ]
+        possible_offers = [dict_offer_base(User.objects.get(username=other))]
     else:
-        for u in User.objects.all():
-            if u != logged_user:
-                possible_offers.append(
-                    {
-                        "user": u,
-                        "brick_quantity_offered": [],
-                        "brick_quantity_wanted": [],
-                        "set_quantity_offered": [],
-                        "set_quantity_wanted": [],
-                        "sum_offered": 0,
-                        "sum_wanted": 0,
-                    }
-                )
+        for user in User.objects.all():
+            if user != logged_user:
+                possible_offers.append(dict_offer_base(user))
 
-    for p_o in possible_offers:
-        other_wanted_bricks = p_o["user"].wishlist_bricks.filter(side=Side.WANTED)
-        other_offered_bricks = p_o["user"].wishlist_bricks.filter(side=Side.OFFERED)
-        other_wanted_sets = p_o["user"].wishlist_sets.filter(side=Side.WANTED)
-        other_offered_sets = p_o["user"].wishlist_sets.filter(side=Side.OFFERED)
+    for offers in possible_offers:
+        other_bricks_wishlist = offers["user"].wishlist_bricks.all()
+        other_sets_wishlist = offers["user"].wishlist_sets.all()
 
-        for brick_wanted in other_wanted_bricks:
-            """Can we offer 'brick_wanted'"""
-            if offered_bricks.filter(brick=brick_wanted.brick).exists():
-                bricks_to_trade = min(
-                    offered_bricks.filter(brick=brick_wanted.brick).get().quantity,
-                    brick_wanted.quantity,
+        for brick_wish in other_bricks_wishlist:
+            side_disp = "offer" if brick_wish.side == Side.OFFERED else "want"
+            opposite_list = wanted_bricks if brick_wish.side == Side.OFFERED \
+                else offered_bricks
+            qty = opposite_list.filter(brick=brick_wish.brick).count()
+            if qty > 0:
+                bricks_to_trade = min(qty, brick_wish.quantity)
+                offers[f"brick_quantity_{side_disp}ed"].append(
+                    {"brick": brick_wish.brick, "quantity": bricks_to_trade}
                 )
-                p_o["brick_quantity_offered"].append(
-                    {"brick": brick_wanted.brick, "quantity": bricks_to_trade}
-                )
-                p_o["sum_offered"] += bricks_to_trade
+                offers[f"sum_{side_disp}ed"] += bricks_to_trade
 
-        for brick_offered in other_offered_bricks:
-            """Do we want 'brick_offered'"""
-            if wanted_bricks.filter(brick=brick_offered.brick).exists():
-                bricks_to_trade = min(
-                    wanted_bricks.filter(brick=brick_offered.brick).get().quantity,
-                    brick_offered.quantity,
+        for set_wish in other_sets_wishlist:
+            side_disp = "offer" if set_wish.side == Side.OFFERED else "want"
+            opposite_list = wanted_sets if set_wish.side == Side.OFFERED \
+                else offered_sets
+            qty = opposite_list.filter(legoset=set_wish.legoset).count()
+            if qty > 0:
+                sets_to_trade = min(qty, set_wish.quantity)
+                offers[f"set_quantity_{side_disp}ed"].append(
+                    {"legoset": set_wish.legoset, "quantity": sets_to_trade}
                 )
-                p_o["brick_quantity_wanted"].append(
-                    {"brick": brick_offered.brick, "quantity": bricks_to_trade}
-                )
-                p_o["sum_wanted"] += bricks_to_trade
-
-        for set_wanted in other_wanted_sets:
-            """Can we offer 'set_wanted'"""
-            if offered_sets.filter(legoset=set_wanted.legoset).exists():
-                sets_to_trade = min(
-                    offered_sets.filter(legoset=set_wanted.legoset).get().quantity,
-                    set_wanted.quantity,
-                )
-                p_o["set_quantity_offered"].append(
-                    {"legoset": set_wanted.legoset, "quantity": sets_to_trade}
-                )
-                p_o["sum_offered"] += (
-                        sets_to_trade * set_wanted.legoset.number_of_bricks()
-                )
-
-        for set_offered in other_offered_sets:
-            """Do we want 'set_offered'"""
-            if wanted_sets.filter(legoset=set_offered.legoset).exists():
-                sets_to_trade = min(
-                    wanted_sets.filter(legoset=set_offered.legoset).get().quantity,
-                    set_offered.quantity,
-                )
-                p_o["set_quantity_wanted"].append(
-                    {"legoset": set_offered.legoset, "quantity": sets_to_trade}
-                )
-                p_o["sum_wanted"] += (
-                        sets_to_trade * set_offered.legoset.number_of_bricks()
+                offers[f"sum_{side_disp}ed"] += (
+                        sets_to_trade * set_wish.legoset.number_of_bricks()
                 )
 
     possible_offers = [
-        u for u in possible_offers if u["sum_offered"] + u["sum_wanted"] > 0
+        offers for offers in possible_offers if
+        offers["sum_offered"] + offers["sum_wanted"] > 0
     ]
     sorted(
         possible_offers,
-        key=lambda p_o: p_o["sum_offered"] + p_o["sum_wanted"],
+        key=lambda offers: offers["sum_offered"] + offers["sum_wanted"],
         reverse=True,
     )
     return possible_offers
