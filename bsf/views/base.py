@@ -123,13 +123,16 @@ def legoset_list(request):
         .all()
     )
 
-    max_bricks = queryset.aggregate(max_bricks=Max("quantity_of_bricks")).get(
-        "max_bricks", 9999999
+    max_bricks = default_if_empty(
+        queryset.aggregate(max_bricks=Max("quantity_of_bricks")).get("max_bricks"),
+        9999999,
     )
-    max_time = int(
-        queryset.aggregate(max_time=Max("avg_time")).get("max_time", 9999999)
+    max_time = default_if_empty(
+        queryset.aggregate(max_time=Max("avg_time")).get("max_time"), 9999999
     )
-    max_age = int(queryset.aggregate(max_age=Max("avg_age")).get("max_age", 9999999))
+    max_age = default_if_empty(
+        queryset.aggregate(max_age=Max("avg_age")).get("max_age"), 9999999
+    )
 
     set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
 

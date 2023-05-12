@@ -49,19 +49,19 @@ urlpatterns = [
     path("set/add_review/<int:id>", views.add_review, name="add_review"),
     path("set/del_review/<int:id>", views.del_review, name="del_review"),
     # Account management
-    path("login/", views.login, name="login"),
-    path("signup/", views.signup, name="signup"),
-    path("password_reset/", views.password_reset, name="password_reset"),
-    path("logout/", views.logout, name="logout"),
+    path("auth/login/", views.login, name="login"),
+    path("auth/signup/", views.signup, name="signup"),
+    path("auth/password_reset/", views.password_reset, name="password_reset"),
+    path("auth/logout/", views.logout, name="logout"),
     path(
-        "reset/<uidb64>/<token>/",
+        "auth/reset/<uidb64>/<token>/",
         auth_views.PasswordResetConfirmView.as_view(
             template_name="registration/password_reset_newpass.html"
         ),
         name="password_reset_confirm",
     ),
     path(
-        "reset/done/",
+        "auth/reset/done/",
         auth_views.PasswordResetCompleteView.as_view(
             template_name="registration/password_reset_sent.html"
         ),
