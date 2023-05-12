@@ -11,6 +11,7 @@ from bsf.models import (
 )
 from .base import *
 
+
 def login(request):
     if request.user.is_authenticated:
         messages.error(request, "Already logged in. Logout to change account.")

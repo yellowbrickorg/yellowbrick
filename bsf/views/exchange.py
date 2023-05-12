@@ -10,7 +10,12 @@ from bsf.models import (
     Wishlist,
 )
 from .base import *
-from .notifier import notify_about_new_offer
+from .notifier import (
+    notify_about_new_offer,
+    notify_about_offer_accepted,
+    notify_about_offer_refused,
+    notify_about_offer_exchanged,
+)
 
 
 def wishlist(request):
@@ -48,8 +53,9 @@ def add_brick_to_wishlist(request, id, side):
                         brick=brick, collection=collection
                     )
                     if brick_through.quantity + qty > bricks_in_collection.quantity:
-                        messages.error(request,
-                                       "Can't offer more bricks than you have.")
+                        messages.error(
+                            request, "Can't offer more bricks than you have."
+                        )
                         return redirect(request.POST.get("next", "/"))
                 brick_through.quantity = min(brick_through.quantity + qty, 10000)
                 brick_through.save()
@@ -205,7 +211,8 @@ def form_offered_bricks_and_sets_lists(request, exchange_offer, possible_offers)
         side_disp = "offer" if side == Side.OFFERED else "want"
         for brick in possible_offers[0][f"brick_quantity_{side_disp}ed"]:
             amount = request.POST.get(
-                f"{side_disp}_brick_" + str(brick["brick"].brick_id))
+                f"{side_disp}_brick_" + str(brick["brick"].brick_id)
+            )
             if amount == "":
                 continue
             amount = int(amount)
@@ -249,8 +256,9 @@ def exchange_make_offer(request):
 
     exchange_offer = ExchangeOffer(offer_author=request.user, offer_receiver=other_user)
 
-    bricks_in_offer, sets_in_offer \
-        = form_offered_bricks_and_sets_lists(request, exchange_offer, possible_offers)
+    bricks_in_offer, sets_in_offer = form_offered_bricks_and_sets_lists(
+        request, exchange_offer, possible_offers
+    )
 
     if len(bricks_in_offer) + len(sets_in_offer) == 0:
         messages.error(request, "Can't submit an empty offer.")
@@ -409,15 +417,18 @@ def exchange_offer_continue(request):
             if not is_author:
                 offer.receiver_state = ExchangeOffer.Status.ACCEPTED
                 messages.success(request, "Offer accepted!")
+                notify_about_offer_accepted(offer)
         case _, ExchangeOffer.Status.ACCEPTED:
             if is_author:
                 offer.author_state = ExchangeOffer.Status.EXCHANGED
             else:
                 offer.receiver_state = ExchangeOffer.Status.EXCHANGED
             messages.success(request, "Items marked as exchanged successfully!")
+            notify_about_offer_exchanged(offer, not is_author)
         case ExchangeOffer.Status.ACCEPTED, ExchangeOffer.Status.EXCHANGED:
             if is_author:
                 offer.author_state = ExchangeOffer.Status.EXCHANGED
+                notify_about_offer_exchanged(offer, not is_author)
 
     if (offer.author_state, offer.receiver_state) == (
             ExchangeOffer.Status.EXCHANGED,
@@ -463,6 +474,10 @@ def exchange_delete_offer(request):
         return redirect("index")
 
     offer = ExchangeOffer.objects.get(pk=int(offer_id))
+
+    if logged_user == offer.offer_receiver:
+        notify_about_offer_refused(offer)
+
     bioq_set = BrickInOfferQuantity.objects.filter(offer=offer)
     sioq_set = SetInOfferQuantity.objects.filter(offer=offer)
 
@@ -514,8 +529,9 @@ def generate_possible_offers(logged_user, other=None):
 
         for brick_wish in other_bricks_wishlist:
             side_disp = "offer" if brick_wish.side == Side.OFFERED else "want"
-            opposite_list = wanted_bricks if brick_wish.side == Side.OFFERED \
-                else offered_bricks
+            opposite_list = (
+                wanted_bricks if brick_wish.side == Side.OFFERED else offered_bricks
+            )
             qty = opposite_list.filter(brick=brick_wish.brick).count()
             if qty > 0:
                 bricks_to_trade = min(qty, brick_wish.quantity)
@@ -526,8 +542,9 @@ def generate_possible_offers(logged_user, other=None):
 
         for set_wish in other_sets_wishlist:
             side_disp = "offer" if set_wish.side == Side.OFFERED else "want"
-            opposite_list = wanted_sets if set_wish.side == Side.OFFERED \
-                else offered_sets
+            opposite_list = (
+                wanted_sets if set_wish.side == Side.OFFERED else offered_sets
+            )
             qty = opposite_list.filter(legoset=set_wish.legoset).count()
             if qty > 0:
                 sets_to_trade = min(qty, set_wish.quantity)
@@ -539,8 +556,9 @@ def generate_possible_offers(logged_user, other=None):
                 )
 
     possible_offers = [
-        offers for offers in possible_offers if
-        offers["sum_offered"] + offers["sum_wanted"] > 0
+        offers
+        for offers in possible_offers
+        if offers["sum_offered"] + offers["sum_wanted"] > 0
     ]
     sorted(
         possible_offers,

@@ -1,11 +1,9 @@
 {% autoescape off %}
-Hello {{ user }},
+Hello {{ author }},
 
-{{ author }} has made you an exchange offer!
+Unfortunately, {{ receiver }} has refused your offer, in which you:
 
 {% include 'bsf/exchange/offer_details_snippet.txt' with sets=sets_in_offer bricks=bricks_in_offer %}
-In order to accept, refuse or submit a counteroffer, please log in to the platform.
-
-Cheers!
+Have a nice day
 yellowbrick
 {% endautoescape %}
