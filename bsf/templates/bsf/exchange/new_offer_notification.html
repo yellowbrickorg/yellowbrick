@@ -1,0 +1,15 @@
+<html>
+<head>
+</head>
+<body>
+{% autoescape off %}
+    <h2>Hello {{ user }},</h2>
+    <p>{{ author }} has offered you an exchange!</p>
+    {% include 'bsf/exchange/offer_details_snippet.html' with sets=sets_in_offer bricks=bricks_in_offer %}
+    <p>In order to accept, refuse or submit a counteroffer, please log in to the
+        platform.</p>
+    <p>Cheers!</p>
+    <p>yellowbrick</p>
+{% endautoescape %}
+</body>
+</html>

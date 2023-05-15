@@ -1,0 +1,2 @@
+{% for set in sets %}- {{ set.get_side_display }} {{ set.quantity }} x {{ set.legoset.name }}{% endfor %}
+{% for brick in bricks %}- {{ brick.get_side_display }} {{ brick.quantity }} x {{ brick.brick.part_num }}{% endfor %}

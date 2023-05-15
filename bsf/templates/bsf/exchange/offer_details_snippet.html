@@ -1,0 +1,26 @@
+<table cellspacing="0" cellpadding="10" border="0">
+    {% for set in sets %}
+        <tr>
+            <td width="40">
+                <img class="img-thumbnail me-2" src="{{ set.legoset.image_link }}"
+                     width="40">
+            </td>
+            <td width="320">
+                {{ set.get_side_display }} {{ set.quantity }}
+                x {{ set.legoset.name }}
+            </td>
+        </tr>
+    {% endfor %}
+    {% for brick in bricks %}
+        <tr>
+            <td width="40">
+                <img class="img-thumbnail me-2" src="{{ brick.brick.image_link }}"
+                     width="40">
+            </td>
+            <td width="320">
+                {{ brick.get_side_display }} {{ brick.quantity }}
+                x {{ brick.brick.part_num }}
+            </td>
+        </tr>
+    {% endfor %}
+</table>

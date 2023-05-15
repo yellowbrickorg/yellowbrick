@@ -1,5 +1,5 @@
 import django.db.utils
-from .models import User
+from bsf.models import User
 from django.test import TestCase
 from django.db.models import Avg
 
@@ -13,7 +13,7 @@ from bsf.models import (
     BrickStats,
 )
 
-from . import views
+from bsf import views
 from bsf.views import (
     get_viable_sets,
     get_avg_likes,
