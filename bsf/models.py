@@ -124,6 +124,9 @@ class Countable(models.Model):
         self.reload()
         self.save()
 
+    def reload(self):
+        return
+
 class BrickInSetQuantity(Countable):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
