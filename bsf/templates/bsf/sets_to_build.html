@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load bootstrap5 %}
+{% load subtraction %}
+
+{% block page_meta %}
+    <title>LEGO sets you can build</title>
+{% endblock %}
+{% block page_content %}
+    <h1>Build page</h1>
+     <div class="card mt-3">
+        <div class="card-header">
+            Sets you can build!
+        </div>
+        <div class="card-body">
+            {% include "snippets/user_buildable_sets_snippet.html" with user_sets=buildable_sets %}
+        </div>
+    </div>
+{% endblock %}

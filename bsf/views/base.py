@@ -48,6 +48,20 @@ def base_context(request):
     return context
 
 
+def sets_to_build(request):
+    logged_user = request.user
+    if logged_user.is_authenticated:
+        buildable_sets = get_buildable_sets(logged_user)
+        print(buildable_sets)
+        context = base_context(request)
+        context.update({"buildable_sets": buildable_sets})
+        template = loader.get_template("bsf/sets_to_build.html")
+        return HttpResponse(template.render(context, request))
+    else:
+        messages.info(request, "You need to be logged in to access collections.")
+        return redirect("login")
+
+
 def collection(request):
     logged_user = request.user
     if logged_user.is_authenticated:
@@ -56,7 +70,6 @@ def collection(request):
         max_bricks = user_collection.sets.aggregate(
             max_bricks=Max("quantity_of_bricks")
         )["max_bricks"]
-        buildable_sets = get_buildable_sets(logged_user)
         if user_collection:
             theme = request.GET.get("theme")
             min_quantity = request.GET.get("start_quantity", 0)
@@ -100,7 +113,6 @@ def collection(request):
                 "selected_theme": theme,
                 "start_quantity": min_quantity,
                 "end_quantity": max_quantity,
-                "buildable_sets": buildable_sets,
             }
         )
         template = loader.get_template("bsf/collection.html")

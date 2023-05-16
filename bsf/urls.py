@@ -24,6 +24,7 @@ urlpatterns = [
         name="del_brick_from_wishlist",
     ),
     # /sets/
+    path("sets_to_build/", views.sets_to_build, name="sets_to_build"),
     path("sets/", views.legoset_list, name="sets"),
     path("sets/filter/", views.legoset_list, name="legoset_list_filtered"),
     path("sets/<int:pk>/", SetDetailView.as_view(), name="set_detail"),
