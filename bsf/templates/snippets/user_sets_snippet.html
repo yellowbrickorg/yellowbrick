@@ -15,7 +15,8 @@
                                 <a href="{% url 'set_detail' brick_set.id %}">
                                     {{ brick_set.number }}</a>
                                 {{ brick_set.name }} x
-                                {{ set_in_collection.quantity }}
+                                {{ set_in_collection.quantity }} in inventory, with
+                                {{ set_in_collection.in_use }} currently built.
                                 </a>
                             </div>
                             <div class="d-flex">
@@ -81,6 +82,40 @@
                                         <button type="submit"
                                                 class="btn btn-outline-secondary">
                                             Offer
+                                        </button>
+                                    </div>
+                                </form>
+                                <form action="{% url 'build_set' brick_set.id %}"
+                                      method="post">
+                                    <div class="input-group">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next"
+                                               value="{{ request.path }}">
+                                        <input type="number" name="quantity" value="0"
+                                               id="setbuiltquantity{{ brick_set.id }}"
+                                               min="0"
+                                               max="{{ set_in_collection.quantity|subtract:set_in_collection.in_use   }}"
+                                               class="form-control">
+                                        <button type="submit"
+                                                class="btn btn-outline-secondary">
+                                            Build
+                                        </button>
+                                    </div>
+                                </form>
+                                <form action="{% url 'dismantle_set' brick_set.id %}"
+                                      method="post">
+                                    <div class="input-group">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next"
+                                               value="{{ request.path }}">
+                                        <input type="number" name="quantity" value="0"
+                                               id="setdismantledquantity{{ brick_set.id }}"
+                                               min="0"
+                                               max="{{ set_in_collection.in_use }}"
+                                               class="form-control">
+                                        <button type="submit"
+                                                class="btn btn-outline-secondary">
+                                            Dismantle
                                         </button>
                                     </div>
                                 </form>

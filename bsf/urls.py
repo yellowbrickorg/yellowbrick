@@ -44,6 +44,8 @@ urlpatterns = [
         views.del_set_from_wishlist,
         name="del_set_from_wishlist",
     ),
+    path("set/build/<int:id>", views.build_set, name="build_set"),
+    path("set/dismantle/<int:id>", views.dismantle_set, name="dismantle_set"),
     path("set/del/<int:id>", views.del_set, name="del_set"),
     path("set/convert/<int:id>", views.convert, name="convert"),
     path("set/add_review/<int:id>", views.add_review, name="add_review"),

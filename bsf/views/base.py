@@ -244,14 +244,52 @@ def del_set(request, id):
             except (KeyError, SetInCollectionQuantity.DoesNotExist):
                 collection.sets.add(lego_set, through_defaults={"quantity": qty})
             else:
-                if set_through.quantity <= qty:
-                    collection.sets.remove(lego_set)
-                else:
-                    set_through.quantity -= qty
-                    set_through.save()
+                set_through.modify_quantity_or_delete(-qty)
         messages.success(
             request,
             f"Removed {qty} set(s) with set number {lego_set.id} from " f"collection.",
+        )
+        return HttpResponseRedirect(reverse("collection", args=()))
+    
+def build_set(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    try:
+        qty = int(request.POST.get("quantity", False))
+    except:
+        return HttpResponseRedirect(reverse("collection", args=()))
+    else:
+        logged_user = request.user
+        collection = UserCollection.objects.get(user=logged_user)
+        if qty > 0:
+            set_through = collection.sets.through.objects.get(
+                brick_set_id=id, collection=collection
+            )
+            set_through.modify_in_use(qty)
+                    
+        messages.success(
+            request,
+            f"Marked sets as built.",
+        )
+        return HttpResponseRedirect(reverse("collection", args=()))
+
+def dismantle_set(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    try:
+        qty = int(request.POST.get("quantity", False))
+    except:
+        return HttpResponseRedirect(reverse("collection", args=()))
+    else:
+        logged_user = request.user
+        collection = UserCollection.objects.get(user=logged_user)
+        if qty > 0:
+            set_through = collection.sets.through.objects.get(
+                brick_set_id=id, collection=collection
+            )
+            set_through.modify_in_use(-qty)
+                    
+        messages.success(
+            request,
+            f"Marked sets as dismantled.",
         )
         return HttpResponseRedirect(reverse("collection", args=()))
 
