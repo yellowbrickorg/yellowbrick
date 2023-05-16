@@ -75,6 +75,10 @@ class LegoSet(models.Model):
         return self.quantity_of_bricks
 
 
+class CustomLegoSet(LegoSet):
+    video_link = models.CharField(max_length=256)
+
+
 class UserCollection(models.Model):
     """
     Represents User's LEGO collection. Can contain whole sets or individual bricks.

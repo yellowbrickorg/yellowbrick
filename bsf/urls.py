@@ -34,6 +34,7 @@ urlpatterns = [
         name="add_brick_to_wishlist",
     ),
     path("set/add/<int:id>/", views.add_set, name="add_set"),
+    path("set/build/<int:id>/", views.build_set, name="build_set"),
     path(
         "set/add_set_to_wishlist/<int:id>/<int:side>",
         views.add_set_to_wishlist,

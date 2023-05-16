@@ -56,7 +56,7 @@ def collection(request):
         max_bricks = user_collection.sets.aggregate(
             max_bricks=Max("quantity_of_bricks")
         )["max_bricks"]
-
+        buildable_sets = get_buildable_sets(logged_user)
         if user_collection:
             theme = request.GET.get("theme")
             min_quantity = request.GET.get("start_quantity", 0)
@@ -100,6 +100,7 @@ def collection(request):
                 "selected_theme": theme,
                 "start_quantity": min_quantity,
                 "end_quantity": max_quantity,
+                "buildable_sets": buildable_sets,
             }
         )
         template = loader.get_template("bsf/collection.html")
@@ -327,9 +328,38 @@ def convert(request, id):
     return HttpResponseRedirect(reverse("collection", args=()))
 
 
+def build_set(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+
+    logged_user = request.user
+    collection = UserCollection.objects.get(user=logged_user)
+
+    bricks_of_user = BrickInCollectionQuantity.objects.filter(collection=collection)
+
+    brickinset_through = lego_set.bricks.through.objects.filter(brick_set=lego_set)
+    for brickth in brickinset_through:
+        brick_through = bricks_of_user.get(
+            brick_id=brickth.brick.brick_id, collection=collection
+        )
+        brick_through.quantity -= brickth.quantity
+        brick_through.save()
+
+    try:
+        set_through = collection.sets.through.objects.get(
+            brick_set=lego_set, collection=collection
+        )
+    except:
+        collection.sets.add(lego_set, through_defaults={"quantity": 1})
+    else:
+        set_through.quantity = min(set_through.quantity + 1, 100)
+        set_through.save()
+
+    return HttpResponseRedirect(reverse("collection", args=()))
+
+
 def check_set(
-        all_users_bricks,
-        lego_set: LegoSet,
+    all_users_bricks,
+    lego_set: LegoSet,
 ):
     max_diff = 0
     gdiff = 0
@@ -348,7 +378,7 @@ def get_dict_of_users_bricks(user: User, all_users_bricks=None):
     users_collection = UserCollection.objects.get(user=user)
 
     for brick_data in BrickInCollectionQuantity.objects.filter(
-            collection=users_collection
+        collection=users_collection
     ):
         q = brick_data.quantity
         if brick_data.brick in all_users_bricks:
@@ -402,6 +432,19 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
                     "general_diff": "-" if general_diff == sys.maxsize else gdiff,
                 }
             )
+
+    return viable_sets
+
+
+def get_buildable_sets(user: User):
+    viable_sets = []
+    all_users_bricks = {}
+    all_users_bricks = get_dict_of_users_bricks(user, all_users_bricks)
+
+    for lego_set in LegoSet.objects.all():
+        diff, gdiff = check_set(all_users_bricks, lego_set)
+        if diff == 0 and gdiff == 0:
+            viable_sets.append(lego_set)
 
     return viable_sets
 

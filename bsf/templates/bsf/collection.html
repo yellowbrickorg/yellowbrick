@@ -38,4 +38,13 @@
         </div>
     </div>
 
+    <div class="card mt-3">
+        <div class="card-header">
+            Sets You can build!
+        </div>
+        <div class="card-body">
+            {% include "snippets/user_buildable_sets_snippet.html" with buildabe_sets=buildable_sets %}
+        </div>
+    </div>
+
 {% endblock %}

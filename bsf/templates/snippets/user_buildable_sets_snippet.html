@@ -1,0 +1,38 @@
+{% load subtraction %}
+{% if user_sets %}
+    <ul class="list-group list-group-flush">
+        {% for brick_set in buildable_sets %}
+                <li class="list-group-item">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-auto">
+                            <img class="img-thumbnail"
+                                 src="{{ brick_set.image_link }}"
+                                 width="120">
+                        </div>
+                        <div class="col-auto me-auto">
+                            <div class="mb-2">
+                                <a href="{% url 'set_detail' brick_set.id %}">
+                                    {{ brick_set.number }}</a>
+                                {{ brick_set.name }}
+                                </a>
+                            </div>
+                        </div>
+                        <div class="d-flex">
+                            <form action="{% url 'build_set' brick_set.id %}"
+                                  method="post" class="me-2">
+                                {% csrf_token %}
+                                <div class="input-group">
+                                    <button type="submit"
+                                            class="btn btn-outline-secondary">
+                                        Build
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>You don't have any sets you can build.</p>
+{% endif %}
