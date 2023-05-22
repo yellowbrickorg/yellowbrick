@@ -52,7 +52,6 @@ def sets_to_build(request):
     logged_user = request.user
     if logged_user.is_authenticated:
         buildable_sets = get_buildable_sets(logged_user)
-        print(buildable_sets)
         context = base_context(request)
         context.update({"buildable_sets": buildable_sets})
         template = loader.get_template("bsf/sets_to_build.html")
@@ -346,25 +345,12 @@ def build_set(request, id):
     logged_user = request.user
     collection = UserCollection.objects.get(user=logged_user)
 
-    bricks_of_user = BrickInCollectionQuantity.objects.filter(collection=collection)
-
     brickinset_through = lego_set.bricks.through.objects.filter(brick_set=lego_set)
     for brickth in brickinset_through:
-        brick_through = bricks_of_user.get(
-            brick_id=brickth.brick.brick_id, collection=collection
-        )
-        brick_through.quantity -= brickth.quantity
-        brick_through.save()
+        brick = brickth.brick  # Assuming that brickth.brick is already a Brick instance
+        collection.modify_brick_quantity(brick, -brickth.quantity)
 
-    try:
-        set_through = collection.sets.through.objects.get(
-            brick_set=lego_set, collection=collection
-        )
-    except:
-        collection.sets.add(lego_set, through_defaults={"quantity": 1})
-    else:
-        set_through.quantity = min(set_through.quantity + 1, 100)
-        set_through.save()
+    collection.modify_set_quantity(lego_set, 1)
 
     return HttpResponseRedirect(reverse("collection", args=()))
 
