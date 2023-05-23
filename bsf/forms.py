@@ -4,7 +4,7 @@ from django.contrib.auth.forms import (
     PasswordResetForm,
     AuthenticationForm,
 )
-from .models import User
+from .models import User, LegoSet, Brick, BrickInSetQuantity
 from django import forms
 from django.forms.widgets import PasswordInput, TextInput
 
@@ -53,3 +53,14 @@ class PassResetForm(PasswordResetForm):
     class Meta:
         model = User
         fields = "email"
+
+
+class LegoSetForm(forms.ModelForm):
+    class Meta:
+        model = LegoSet
+        fields = ["name", "image_link", "custom_video_link"]
+
+
+class BrickQuantityForm(forms.Form):
+    brick = forms.ModelChoiceField(queryset=Brick.objects.all(), required=True)
+    quantity = forms.IntegerField(required=True)

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% load bootstrap5 %}
+
+{% block page_meta %}
+    <title>Add Custom Lego Set</title>
+{% endblock %}
+
+{% block page_content %}
+    <div class="container">
+        <h1 class="my-4">Add Custom Lego Set</h1>
+        <form method="post" class="form-group">
+        {% csrf_token %}
+        {% for field in lego_set_form %}
+            <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                {{ field }}
+            </div>
+        {% endfor %}
+        <div id="brick-form-container">
+            {% for form in brick_quantity_formset %}
+                <div class="brick-form">
+                    <div class="mb-3">
+                        <label for="{{ form.brick.id_for_label }}" class="form-label">{{ form.brick.label }}</label>
+                        {{ form.brick }}
+                        <img id="brick-image-{{ forloop.counter0 }}" src="" alt="" style="max-height: 100px;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.quantity.id_for_label }}" class="form-label">{{ form.quantity.label }}</label>
+                        {{ form.quantity }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" id="add-brick-button" class="btn btn-secondary">Add Brick</button>
+        <br>
+        <button type="submit" class="btn btn-outline-success">Submit</button>
+    </form>
+    </div>
+
+
+
+    {% block javascript %}
+    <script>
+     $(document).ready(function() {
+        $('#add-brick-button').click(function() {
+            let newForm = $('.brick-form:last').clone(true);
+            let newImage = newForm.find('img');
+            newImage.attr("src", "");  // Clear the image src in the new form
+            newImage.attr("alt", "");  // Clear the alt text in the new form
+            $('#brick-form-container').append(newForm);
+        });
+    });
+
+
+    var getBrickImageUrl = "{% url 'get_brick_image' %}";
+
+    // Use event delegation to bind the event listener to #brick-form-container
+    $('#brick-form-container').on('change', '.brick-form select', function() {
+        let brickId = $(this).val();
+        let imageDisplay = $(this).parent().find('img');
+        $.ajax({
+            url: getBrickImageUrl,
+            data: {
+                'brick_id': brickId
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.image_url) {
+                    imageDisplay.attr("src", data.image_url);
+                    imageDisplay.attr("alt", "Brick image");
+                    imageDisplay.css("display", "inline");  // Make the image visible
+                } else {
+                    imageDisplay.attr("src", "");
+                    imageDisplay.attr("alt", "");
+                    imageDisplay.css("display", "none");  // Hide the image if there is no source URL
+                }
+            }
+        });
+    });
+
+
+
+
+    </script>
+    {% endblock %}
+{% endblock %}

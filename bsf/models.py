@@ -62,6 +62,7 @@ class LegoSet(models.Model):
     inventory_id = models.IntegerField()
     theme = models.CharField(max_length=256)
     quantity_of_bricks = models.IntegerField()
+    custom_video_link = models.CharField(max_length=256, null=True)
 
     def get_absolute_url(self):
         from django.urls import reverse
@@ -73,10 +74,6 @@ class LegoSet(models.Model):
 
     def number_of_bricks(self):
         return self.quantity_of_bricks
-
-
-class CustomLegoSet(LegoSet):
-    video_link = models.CharField(max_length=256)
 
 
 class UserCollection(models.Model):

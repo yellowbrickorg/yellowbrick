@@ -2,15 +2,18 @@ import sys
 
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.http import HttpResponse, HttpResponseRedirect
+from django.forms import formset_factory
+from django.http import HttpResponse, HttpResponseRedirect, QueryDict, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template import loader
 from django.urls import reverse
 from django.db.models import Avg
 from django.db.models import Q
 from django.views.generic import ListView, DetailView
-
+from django import forms
 from django.db.models import Max
+
+from bsf.forms import LegoSetForm, BrickQuantityForm
 from bsf.models import (
     Brick,
     LegoSet,
@@ -632,3 +635,56 @@ class SetDetailView(ContextDetailView):
                     }
                 )
         return context
+
+
+def add_custom_lego_set(request):
+    logged_user = request.user
+    if not logged_user.is_authenticated:
+        return redirect("login")
+
+    context = base_context(request)
+    BrickQuantityFormSet = formset_factory(BrickQuantityForm, extra=1)
+    if request.method == "POST":
+        lego_set_form = LegoSetForm(request.POST)
+        if lego_set_form.is_valid():
+            lego_set = lego_set_form.save(commit=False)
+
+            # Get the bricks and quantities data
+            bricks_data = dict(QueryDict(request.body).lists())
+            brick_ids = bricks_data.get("form-0-brick", [])
+            quantities = bricks_data.get("form-0-quantity", [])
+
+            lego_set.theme = "Custom"
+            lego_set.inventory_id = 1
+            lego_set.number = "Custom Set"
+            lego_set.quantity_of_bricks = 0
+            for quantity in quantities:
+                lego_set.quantity_of_bricks += int(quantity)
+
+            lego_set.save()
+
+            for brick_id, quantity in zip(brick_ids, quantities):
+                # Retrieve the Brick instance and add it to the set
+                brick = Brick.objects.get(pk=brick_id)
+                lego_set.bricks.add(brick, through_defaults={"quantity": int(quantity)})
+
+            return redirect("sets")
+    context.update(
+        {
+            "lego_set_form": LegoSetForm(),
+            "brick_quantity_formset": BrickQuantityFormSet(),
+        }
+    )
+    return render(request, "bsf/add_custom_lego_set.html", context)
+
+
+def get_brick_image(request):
+    brick_id = request.GET.get("brick_id", None)
+    data = {"image_url": ""}
+    if brick_id:
+        try:
+            brick = Brick.objects.get(brick_id=brick_id)
+            data["image_url"] = brick.image_link
+        except Brick.DoesNotExist:
+            pass
+    return JsonResponse(data)

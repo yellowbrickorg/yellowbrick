@@ -23,8 +23,10 @@ urlpatterns = [
         views.del_brick_from_wishlist,
         name="del_brick_from_wishlist",
     ),
+    path("get_brick_image/", views.get_brick_image, name="get_brick_image"),
     # /sets/
     path("sets_to_build/", views.sets_to_build, name="sets_to_build"),
+    path("add_custom_lego_set/", views.add_custom_lego_set, name="add_custom_lego_set"),
     path("sets/", views.legoset_list, name="sets"),
     path("sets/filter/", views.legoset_list, name="legoset_list_filtered"),
     path("sets/<int:pk>/", SetDetailView.as_view(), name="set_detail"),
