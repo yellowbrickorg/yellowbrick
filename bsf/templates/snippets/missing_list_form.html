@@ -1,0 +1,38 @@
+<ul class="list-group list-group-flush">
+    {% for brick_in_set in bricks_in_set %}
+        {% with brick=brick_in_set.brick %}
+            <li class="list-group-item">
+                <div class="d-flex align-items-center">
+                    <img class="img-thumbnail" src="{{ brick.image_link }}"
+                         width="80">
+                    <div class="col-auto ms-3 me-auto">
+                        <a href="{% url 'brick_detail' brick.brick_id %}">
+                            {{ brick.part_num }}</a>
+                        - {{ brick.color.name }} x
+                        {{ brick_in_set.quantity }}
+                    </div>
+                    <div class="col-6">
+                        {% if request.user.is_authenticated %}
+                            <form action="
+{% url 'mark_missing' legoset_id=legoset.id brick_id=brick.brick_id %}"
+                                  method="post">
+                                {% csrf_token %}
+                                <div class="input-group">
+                                    <input class="form-control" type="number"
+                                           name="quantity" value="0"
+                                           id="quantity{{ brick.brick_id }}">
+                                    <button type="submit"
+                                            class="btn btn-outline-secondary">Mark
+                                        as missing
+                                    </button>
+                                </div>
+                            </form>
+                            </div>
+                            </div>
+                        {% endif %}
+            </li>
+        {% endwith %}
+    {% empty %}
+        <li>No bricks found.</li>
+    {% endfor %}
+</ul>

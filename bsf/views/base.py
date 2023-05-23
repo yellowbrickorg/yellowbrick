@@ -19,7 +19,7 @@ from bsf.models import (
     BrickInSetQuantity,
     SetInWishlistQuantity,
     BrickInWishlistQuantity,
-    BrickStats,
+    BrickStats, OwnedLegoSet,
 )
 from bsf.models import UserCollection, User
 
@@ -72,9 +72,9 @@ def collection(request):
             else:
                 max_quantity = int(max_quantity)
 
-            user_sets = user_collection.sets.through.objects.filter(
-                collection=user_collection
-            )
+            user_sets = user_collection.setincollectionquantity_set.all()
+            owned_sets = user_collection.ownedlegoset_set.all()
+
             if theme:
                 user_sets = user_sets.filter(brick_set__theme=theme)
 
@@ -94,6 +94,7 @@ def collection(request):
         context.update(
             {
                 "user_sets": user_sets,
+                "owned_sets": owned_sets,
                 "user_bricks": user_bricks,
                 "logged_user": logged_user,
                 "set_themes": set_themes,
@@ -549,11 +550,6 @@ class BrickListView(ContextListView):
     model = Brick
 
 
-class SetListView(ContextListView):
-    paginate_by = 15
-    model = LegoSet
-
-
 class FilterListView(ContextListView):
     paginate_by = 15
     model = LegoSet
@@ -591,3 +587,34 @@ class SetDetailView(ContextDetailView):
                     }
                 )
         return context
+
+
+def missing_bricks(request, legoset_id):
+    context = base_context(request)
+    context.update(
+        {
+            "legoset": LegoSet.objects.get(id=legoset_id),
+            "bricks_in_set": BrickInSetQuantity.objects.filter(brick_set_id=legoset_id),
+        })
+    template = loader.get_template("bsf/missing_bricks.html")
+    return HttpResponse(template.render(context, request))
+
+
+def mark_missing(request, legoset_id, brick_id):
+    legoset = LegoSet.objects.get(id=legoset_id)
+    brick = Brick.objects.get(brick_id=brick_id)
+    logged_user = request.user
+    try:
+        quantity = int(request.POST.get("quantity", False))
+        legoset.transform_to_owned_with_missing_brick(logged_user, brick,
+                                                      quantity)
+        messages.success(request, "Successfully marked the brick as missing.")
+        return HttpResponseRedirect(reverse("collection", args=()))
+    except KeyError:
+        messages.error(request, "Failed to mark brick as missing.")
+        return HttpResponseRedirect(reverse("collection", args=()))
+
+
+def edit_missing(request, legoset_id, brick_id):
+    # TODO implement owned.modify_missing_quantity
+    pass

@@ -1,0 +1,63 @@
+{% load subtraction %}
+{% if owned_sets %}
+    <ul class="list-group list-group-flush">
+        {% for brick_set in owned_sets %}
+            {% with brick_set=brick_set %}
+                <li class="list-group-item">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-auto">
+                            <img class="img-thumbnail"
+                                 src="{{ brick_set.image_link }}"
+                                 width="120">
+                        </div>
+                        <div class="col-auto me-auto">
+                            <div class="mb-2">
+                                <a href="{% url 'set_detail' brick_set.id %}">
+                                    {{ brick_set.number }}</a>
+                                {{ brick_set.name }}
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary
+                                dropdown-toggle"
+                                        type="button" data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                    Manage
+                                </button>
+                                <ul class="dropdown-menu p-2">
+                                    <li>
+                                        <form action="{% url 'convert' brick_set.id %}"
+                                              method="post">
+                                            {% csrf_token %}
+                                            <div class="input-group">
+                                                <input type="number" name="quantity"
+                                                       value="1"
+                                                       id="convertquantity{{ brick_set.id }}"
+                                                       min="0"
+                                                       max="{{ quantity }}"
+                                                       class="form-control">
+                                                <button type="submit"
+                                                        class="btn btn-outline-secondary">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <a type="submit"
+                                           class="btn btn-outline-secondary"
+                                           href="
+                                                {% url 'missing_bricks' brick_set.id %}">
+                                            Missing bricks wizard
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            {% endwith %}
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>You don't have any sets.</p>
+{% endif %}

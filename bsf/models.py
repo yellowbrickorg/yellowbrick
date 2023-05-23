@@ -87,6 +87,11 @@ class LegoSet(models.Model):
 
         return reverse("set_detail", kwargs={"pk": self.id})
 
+    def transform_to_owned_with_missing_brick(self, owner, brick, quantity):
+        owned = OwnedLegoSet.initialize(self, owner)
+        owned.mark_as_missing(brick, quantity)
+        return owned
+
     def __str__(self):
         return f"{self.number} - {self.name}"
 
@@ -100,42 +105,6 @@ class BrickInSetQuantity(Countable):
 
     def __str__(self):
         return f"{self.quantity} x {self.brick} in set {self.brick_set.number}"
-
-
-class OwnedLegoSet(LegoSet):
-    """
-    Represents a LEGO set owned by a User. Is able to track which bricks are missing
-    from the original set.
-    """
-    owner = models.OneToOneField(User, on_delete=models.CASCADE)
-
-    @staticmethod
-    def initialize(legoset, owner):
-        owned = OwnedLegoSet(legoset_ptr=legoset, owner=owner)
-        owned.__dict__.update(legoset.__dict__)
-        owned.save()
-        return owned
-
-    def mark_as_missing(self, brick, quantity):
-        missing_brick = self.missingbrick_set.filter(brick=brick).first()
-
-        brickinset = super().brickinsetquantity_set.filter(brick=brick).first()
-
-        if not missing_brick:
-            MissingBrick.objects.create(owned_set=self, brick=brick,
-                                        quantity=quantity, overlays=brickinset)
-        else:
-            missing_brick.modify_quantity_or_delete(quantity)
-
-    def real_bricks_set(self):
-        return super().brickinsetquantity_set.annotate(real_quantity=Coalesce(F(
-            "quantity") - F("missingbrick__quantity"), F("quantity")))
-
-
-class MissingBrick(Countable):
-    owned_set = models.ForeignKey(OwnedLegoSet, on_delete=models.CASCADE)
-    brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
-    overlays = models.ForeignKey(BrickInSetQuantity, on_delete=models.CASCADE)
 
 
 class UserCollection(models.Model):
@@ -165,6 +134,52 @@ class UserCollection(models.Model):
 
     def __str__(self):
         return f"Collection of {self.user.username}"
+
+
+class OwnedLegoSet(LegoSet):
+    """
+    Represents a LEGO set owned by a User. Is able to track which bricks are missing
+    from the original set.
+    """
+    collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE,
+                                   unique=False)
+
+    @staticmethod
+    def initialize(legoset, owner):
+        """
+        Transform and initialize an OwnedLegoSet from a LegoSet that owner has in
+        collection and remove it from it.
+        """
+        owned = OwnedLegoSet(legoset_ptr=legoset, collection=owner.usercollection)
+        owned.__dict__.update(legoset.__dict__)
+        owned.save()
+        owner.usercollection.setincollectionquantity_set.get(
+            brick_set=legoset).modify_quantity_or_delete(-1)
+        return owned
+
+    def mark_as_missing(self, brick, quantity):
+        missing_brick = self.missingbrick_set.filter(brick=brick).first()
+
+        brickinset = super().brickinsetquantity_set.filter(brick=brick).first()
+
+        if not missing_brick:
+            MissingBrick.objects.create(owned_set=self, brick=brick,
+                                        quantity=quantity, overlays=brickinset)
+        else:
+            missing_brick.modify_quantity_or_delete(quantity)
+
+    def real_bricks_set(self):
+        return super().brickinsetquantity_set.annotate(real_quantity=Coalesce(F(
+            "quantity") - F("missingbrick__quantity"), F("quantity")))
+
+    def __str__(self):
+        return f"{self.number} - {self.name} (Owned)"
+
+
+class MissingBrick(Countable):
+    owned_set = models.ForeignKey(OwnedLegoSet, on_delete=models.CASCADE)
+    brick = models.ForeignKey(Brick, on_delete=models.CASCADE)
+    overlays = models.ForeignKey(BrickInSetQuantity, on_delete=models.CASCADE)
 
 
 class BrickInCollectionQuantity(Countable):

@@ -51,22 +51,42 @@ class CollectionFilterTestCase(TestCase):
 
         self.user1 = User.objects.create(username="Janusz")
         user_collection = UserCollection.objects.create(user=self.user1)
+        user_collection.sets.add(self.lego_set1, through_defaults={"quantity": 2})
+        user_collection.sets.add(self.lego_set2, through_defaults={"quantity": 3})
+
         user_collection.bricks.add(self.brick1, through_defaults={"quantity": 2})
         user_collection.bricks.add(self.brick2, through_defaults={"quantity": 5})
 
         self.owned_lego_set1 = OwnedLegoSet.initialize(self.lego_set1, self.user1)
+        self.owned_lego_set2 = OwnedLegoSet.initialize(self.lego_set2, self.user1)
+
+    def modify_quantities(self, brick1_qty, brick2_qty):
+        self.owned_lego_set1.mark_as_missing(self.brick1, brick1_qty)
+        self.owned_lego_set1.mark_as_missing(self.brick2, brick2_qty)
+
+    def assert_quantities(self, brick1_diff, brick2_diff):
+        query = self.owned_lego_set1.real_bricks_set()
+        brick1 = query.get(brick=self.brick1)
+        brick2 = query.get(brick=self.brick2)
+
+        self.assertEqual(brick1.quantity - brick1.real_quantity, brick1_diff)
+        self.assertEqual(brick2.quantity - brick2.real_quantity, brick2_diff)
 
     def test_no_bricks_should_be_missing(self):
-        print(self.owned_lego_set1.real_bricks_set().values())
+        self.modify_quantities(0, 0)
 
     def test_bricks_should_be_missing(self):
         for i in range(1, 5):
-            self.owned_lego_set1.mark_as_missing(self.brick1, 2)
-            self.owned_lego_set1.mark_as_missing(self.brick2, 1)
+            self.modify_quantities(2, 1)
+            self.assert_quantities(2 * i, i)
 
-            query = self.owned_lego_set1.real_bricks_set()
-            brick1 = query.get(brick=self.brick1)
-            brick2 = query.get(brick=self.brick2)
+    def test_no_bricks_should_be_missing_after_modification(self):
+        self.modify_quantities(2, 1)
+        self.modify_quantities(-2, -1)
+        self.assert_quantities(0, 0)
 
-            self.assertEqual(brick1.quantity - brick1.real_quantity, 2 * i)
-            self.assertEqual(brick2.quantity - brick2.real_quantity, i)
+    def test_owned_set_should_be_in_collection(self):
+        self.assertEqual(
+            self.user1.usercollection.setincollectionquantity_set.first().quantity, 1)
+        self.assertTrue(
+            self.user1.usercollection.ownedlegoset_set.contains(self.owned_lego_set1))
