@@ -471,17 +471,40 @@ def get_avg_time(reviews):
     return avg_time
 
 
+def get_avg_rating(reviews):
+    avg_rating = reviews.aggregate(Avg("instruction_rating"))["instruction_rating__avg"]
+    if avg_rating != None:
+        avg_rating = round(avg_rating, 0)
+        if avg_rating == 1:
+            avg_rating = "Bad"
+        elif avg_rating == 2:
+            avg_rating = "Medium"
+        elif avg_rating == 3:
+            avg_rating = "Good"
+    return avg_rating
+
+
 def get_review_exists(brick_set: LegoSet, user: User):
     review = BrickStats.objects.filter(brick_set=brick_set, user=user)
     return review.exists()
 
 
 def get_review_data(brick_set: LegoSet, user: User):
-    return (
+    data = (
         BrickStats.objects.filter(brick_set=brick_set, user=user)
-        .values("likes", "min_recommended_age", "build_time")
+        .values("likes", "min_recommended_age", "build_time", "instruction_rating")
         .first()
     )
+
+    if data and data["instruction_rating"] is not None:
+        if data["instruction_rating"] == 1:
+            data["instruction_rating"] = "Bad"
+        elif data["instruction_rating"] == 2:
+            data["instruction_rating"] = "Medium"
+        elif data["instruction_rating"] == 3:
+            data["instruction_rating"] = "Good"
+
+    return data
 
 
 def maxsize_if_empty(_str):
@@ -619,6 +642,8 @@ class SetDetailView(ContextDetailView):
                 "age": get_avg_age(all_reviews),
                 "time": get_avg_time(all_reviews),
                 "review_count": all_reviews.count(),
+                "instruction_rating": get_avg_rating(all_reviews),
+                "reviews": all_reviews,
             }
         )
         if self.request.user.id:
@@ -632,6 +657,7 @@ class SetDetailView(ContextDetailView):
                         "review_likes": review_data["likes"],
                         "review_age": review_data["min_recommended_age"],
                         "review_time": review_data["build_time"],
+                        "review_rating": review_data["instruction_rating"],
                     }
                 )
         return context

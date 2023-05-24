@@ -365,6 +365,8 @@ class BrickStats(models.Model):
     likes = models.IntegerField()
     min_recommended_age = models.IntegerField()
     build_time = models.IntegerField()
+    instruction_rating = models.IntegerField()
+    review_text = models.TextField(null=True, blank=True)
 
     def __str__(self) -> str:
         return (

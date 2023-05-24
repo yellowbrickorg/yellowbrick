@@ -8,9 +8,14 @@ from .base import *
 def add_review(request, id):
     lego_set = get_object_or_404(LegoSet, id=id)
     try:
+        instruction_rating_mapping = {"Bad": 1, "Medium": 2, "Good": 3}
+
         rating = int(request.POST.get("set_rating", False))
         age = int(request.POST.get("set_age", False))
         time = int(float(request.POST.get("set_time", False)) * 10)
+        instruction_rating = request.POST.get("instruction_rating", False)
+        instruction_rating = instruction_rating_mapping.get(instruction_rating, None)
+        review_text = request.POST.get("review_text", None)
     except:
         messages.error(
             request,
@@ -25,6 +30,8 @@ def add_review(request, id):
             likes=rating,
             min_recommended_age=age,
             build_time=time,
+            instruction_rating=instruction_rating,
+            review_text=review_text,
         )
         messages.success(
             request,

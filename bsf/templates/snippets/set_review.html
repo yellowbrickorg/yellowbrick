@@ -20,6 +20,16 @@
                 {% endif %}
             </h3>
         </div>
+         <div>
+            <p class="mb-0"><b>Instruction Quality</b></p>
+            <h3>
+                {% if instruction_rating == None %}
+                    ?
+                {% else %}
+                    {{ instruction_rating }}
+                {% endif %}
+            </h3>
+        </div>
         <div>
             <p class="mb-0"><b>Time to build</b></p>
             <h3>
@@ -43,8 +53,8 @@
             {% if review_exists %}
                 <p>
                     You rated as {{ review_likes }}/10 with appropriate age of
-                    {{ review_age }} and {{ review_time }} minutes as a time spent
-                    building.
+                    {{ review_age }}, {{ review_time }} minutes as a time spent
+                    building and instruction as {{ review_rating }}.
                 </p>
                 <form method="POST" action="{% url 'del_review' legoset.id %}">
                     {% csrf_token %}
@@ -87,6 +97,16 @@
                                    min="0"
                                    max="100"
                                    class="form-control">
+                            <label for="instruction_rating {{ user }} {{ legoset.id }}">Instruction Quality</label>
+                                <select name="instruction_rating" id="instruction_rating {{ user }} {{ legoset.id }}" class="form-control">
+                                    <option value="Bad">Bad</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Good">Good</option>
+                                </select>
+                        </div>
+                        <div class="row">
+                            <label for="review_text">Review</label>
+                            <textarea id="review_text" name="review_text"></textarea>
                         </div>
                     </div>
                     <button type="submit"
