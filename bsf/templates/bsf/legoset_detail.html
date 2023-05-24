@@ -82,16 +82,22 @@
                 </div>
             </div>
             <div class="card mt-3">
-                    <div class="card-header">
-                        Reviews
-                    </div>
-                    <div class="card-body">
-                            {% for review in reviews %}
-                                <p>{{ review.user.username }} says: </p>
-                                <p>{{ review.review_text }}</p>
-                            {% endfor %}
-                    </div>
+                <div class="card-header">
+                    Reviews
                 </div>
+                <div class="card-body">
+                    {% for review in reviews %}
+                        {% if review.review_text %}
+                            <div class="card mb-3 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ review.user.username }}:</h5>
+                                    <p class="card-text">{{ review.review_text }}</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
 
         </div>
     </div>

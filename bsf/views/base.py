@@ -684,17 +684,30 @@ def add_custom_lego_set(request):
             lego_set.inventory_id = 1
             lego_set.number = "Custom Set"
             lego_set.quantity_of_bricks = 0
-            for quantity in quantities:
-                lego_set.quantity_of_bricks += int(quantity)
 
-            lego_set.save()
+            try:
+                if not all(brick_ids) or not all(quantities):
+                    raise ValueError("All fields must be filled.")
+            except:
+                messages.error(
+                    request,
+                    f"Failed to add custom set",
+                )
+                return redirect(add_custom_lego_set)
+            else:
+                for quantity in quantities:
+                    lego_set.quantity_of_bricks += int(quantity)
 
-            for brick_id, quantity in zip(brick_ids, quantities):
-                # Retrieve the Brick instance and add it to the set
-                brick = Brick.objects.get(pk=brick_id)
-                lego_set.bricks.add(brick, through_defaults={"quantity": int(quantity)})
+                lego_set.save()
 
-            return redirect("sets")
+                for brick_id, quantity in zip(brick_ids, quantities):
+                    # Retrieve the Brick instance and add it to the set
+                    brick = Brick.objects.get(pk=brick_id)
+                    lego_set.bricks.add(
+                        brick, through_defaults={"quantity": int(quantity)}
+                    )
+
+                return redirect("sets")
     context.update(
         {
             "lego_set_form": LegoSetForm(),

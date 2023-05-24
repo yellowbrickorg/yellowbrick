@@ -112,6 +112,19 @@ class Command(BaseCommand):
         lego_set4.bricks.add(brick2, through_defaults={"quantity": 25})
         lego_set4.bricks.add(brick3, through_defaults={"quantity": 10})
 
+        lego_set5 = LegoSet.objects.create(
+            number="Custom Set",
+            name="MINI AT-AT",
+            image_link="https://ideascdn.lego.com/media/generate/lego_ci/3d79a674-18ed-45ac-bd84-c65ad670ee4b/resize:950:633/webp",
+            inventory_id=5,
+            theme="Custom",
+            quantity_of_bricks=101,
+            custom_video_link="https://www.youtube.com/watch?v=HULnqQL_ZQc&list=PLLfuSLvPnjX94s-639jxx80QfkDw2CC7J&index=1",
+        )
+
+        lego_set5.bricks.add(brick2, through_defaults={"quantity": 25})
+        lego_set5.bricks.add(brick3, through_defaults={"quantity": 15})
+
         user1 = User.objects.create_user("marian", "marian@mimuw.edu.pl", "123456")
         user1_collection = UserCollection.objects.create(user=user1)
         user1_collection.bricks.add(brick1, through_defaults={"quantity": 20})
@@ -134,6 +147,7 @@ class Command(BaseCommand):
             likes=8,
             min_recommended_age=18,
             build_time=30,
+            instruction_rating=2,
         )
 
         stat2 = BrickStats.objects.create(
@@ -142,6 +156,7 @@ class Command(BaseCommand):
             likes=5,
             min_recommended_age=30,
             build_time=40,
+            instruction_rating=3,
         )
 
         stat2 = BrickStats.objects.create(
@@ -150,6 +165,7 @@ class Command(BaseCommand):
             likes=10,
             min_recommended_age=5,
             build_time=50,
+            instruction_rating=1,
         )
 
         self.stdout.write(self.style.SUCCESS("Successfully created demo database"))
