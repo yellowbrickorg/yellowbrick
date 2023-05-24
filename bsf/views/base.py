@@ -337,7 +337,7 @@ def check_set(
 
     for brick_data in BrickInSetQuantity.objects.filter(brick_set=lego_set):
         q_needed = brick_data.quantity
-        q_collected = all_users_bricks.get(brick_data.brick, 0)
+        q_collected = all_users_bricks.get(brick_data.brick_id, 0)
         diff = q_needed - q_collected
         max_diff = max(max_diff, diff)
         gdiff += max(0, diff)
@@ -353,9 +353,9 @@ def get_dict_of_users_bricks(user: User, all_users_bricks=None):
     ):
         q = brick_data.quantity
         if brick_data.brick in all_users_bricks:
-            all_users_bricks[brick_data.brick] += q
+            all_users_bricks[brick_data.brick_id] += q
         else:
-            all_users_bricks[brick_data.brick] = q
+            all_users_bricks[brick_data.brick_id] = q
     return all_users_bricks
 
 
@@ -367,9 +367,20 @@ def get_dict_of_users_bricks_from_sets(user: User, all_users_bricks=None):
         for brick_data in BrickInSetQuantity.objects.filter(brick_set=users_set):
             q = brick_data.quantity * set_data.quantity
             if brick_data.brick in all_users_bricks:
-                all_users_bricks[brick_data.brick] += q
+                all_users_bricks[brick_data.brick_id] += q
             else:
-                all_users_bricks[brick_data.brick] = q
+                all_users_bricks[brick_data.brick_id] = q
+    return all_users_bricks
+
+
+def get_dict_of_users_bricks_from_owned(user: User, all_users_bricks=None):
+    for owned_set in user.usercollection.ownedlegoset_set.all():
+        for brick_data in owned_set.real_bricks_set():
+            q = brick_data[1]
+            if brick_data[0] in all_users_bricks:
+                all_users_bricks[brick_data[0]] += q
+            else:
+                all_users_bricks[brick_data[0]] = q
     return all_users_bricks
 
 
@@ -392,6 +403,7 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
     all_users_bricks = {}
     all_users_bricks = get_dict_of_users_bricks(user, all_users_bricks)
     all_users_bricks = get_dict_of_users_bricks_from_sets(user, all_users_bricks)
+    all_users_bricks = get_dict_of_users_bricks_from_owned(user, all_users_bricks)
 
     for lego_set in LegoSet.objects.all():
         diff, gdiff = check_set(all_users_bricks, lego_set)

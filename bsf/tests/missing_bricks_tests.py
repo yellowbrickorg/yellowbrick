@@ -6,6 +6,7 @@ from bsf.models import (
     Brick,
     LegoSet, OwnedLegoSet, UserCollection,
 )
+from bsf.views import get_viable_sets
 
 
 class CollectionFilterTestCase(TestCase):
@@ -52,13 +53,12 @@ class CollectionFilterTestCase(TestCase):
         self.user1 = User.objects.create(username="Janusz")
         user_collection = UserCollection.objects.create(user=self.user1)
         user_collection.sets.add(self.lego_set1, through_defaults={"quantity": 2})
-        user_collection.sets.add(self.lego_set2, through_defaults={"quantity": 3})
+        user_collection.sets.add(self.lego_set2, through_defaults={"quantity": 1})
 
-        user_collection.bricks.add(self.brick1, through_defaults={"quantity": 2})
-        user_collection.bricks.add(self.brick2, through_defaults={"quantity": 5})
-
-        self.owned_lego_set1 = OwnedLegoSet.initialize(self.lego_set1, self.user1)
-        self.owned_lego_set2 = OwnedLegoSet.initialize(self.lego_set2, self.user1)
+        self.owned_lego_set1 = OwnedLegoSet.add_to_collection(self.lego_set1,
+                                                              self.user1)
+        self.owned_lego_set2 = OwnedLegoSet.add_to_collection(self.lego_set2,
+                                                              self.user1)
 
     def modify_quantities(self, brick1_qty, brick2_qty):
         self.owned_lego_set1.mark_as_missing(self.brick1, brick1_qty)
@@ -90,3 +90,27 @@ class CollectionFilterTestCase(TestCase):
             self.user1.usercollection.setincollectionquantity_set.first().quantity, 1)
         self.assertTrue(
             self.user1.usercollection.ownedlegoset_set.contains(self.owned_lego_set1))
+
+    def test_user1_has_two_copies_of_set1(self):
+        OwnedLegoSet.add_to_collection(self.lego_set1, self.user1)
+        self.assertEqual(self.user1.usercollection.ownedlegoset_set.filter(
+            realizes=self.lego_set1).count(), 2)
+
+    def test_user1_has_no_generic_sets_after_add(self):
+        self.assertEqual(self.user1.usercollection.sets.count(), 1)
+        # Add another copy of lego set 1
+        another_copy = OwnedLegoSet.add_to_collection(self.lego_set1, self.user1)
+        self.assertEqual(self.user1.usercollection.sets.count(), 0)
+
+    def test_user1_can_not_build_set1_but_can_build_set2(self):
+        self.owned_lego_set1.mark_as_missing(self.brick1, 8)
+        self.owned_lego_set1.mark_as_missing(self.brick2, 3)
+
+        another_copy = OwnedLegoSet.add_to_collection(self.lego_set1, self.user1)
+        another_copy.mark_as_missing(self.brick1, 10)
+        another_copy.mark_as_missing(self.brick2, 5)
+
+        self.assertEqual(
+            get_viable_sets(self.user1, 0, 0),
+            [{"lego_set": self.lego_set2, "single_diff": 0, "general_diff": 0}]
+        )

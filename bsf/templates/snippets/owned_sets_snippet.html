@@ -1,8 +1,8 @@
 {% load subtraction %}
 {% if owned_sets %}
     <ul class="list-group list-group-flush">
-        {% for brick_set in owned_sets %}
-            {% with brick_set=brick_set %}
+        {% for owned_set in owned_sets %}
+            {% with brick_set=owned_set.realizes %}
                 <li class="list-group-item">
                     <div class="row g-3 align-items-center">
                         <div class="col-auto">

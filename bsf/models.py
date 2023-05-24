@@ -88,7 +88,7 @@ class LegoSet(models.Model):
         return reverse("set_detail", kwargs={"pk": self.id})
 
     def transform_to_owned_with_missing_brick(self, owner, brick, quantity):
-        owned = OwnedLegoSet.initialize(self, owner)
+        owned = OwnedLegoSet.add_to_collection(self, owner)
         owned.mark_as_missing(brick, quantity)
         return owned
 
@@ -136,23 +136,23 @@ class UserCollection(models.Model):
         return f"Collection of {self.user.username}"
 
 
-class OwnedLegoSet(LegoSet):
+class OwnedLegoSet(models.Model):
     """
     Represents a LEGO set owned by a User. Is able to track which bricks are missing
     from the original set.
     """
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE,
                                    unique=False)
+    realizes = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
 
     @staticmethod
-    def initialize(legoset, owner):
+    def add_to_collection(legoset, owner):
         """
         Transform and initialize an OwnedLegoSet from a LegoSet that owner has in
         collection and remove it from it.
         """
-        owned = OwnedLegoSet(legoset_ptr=legoset, collection=owner.usercollection)
-        owned.__dict__.update(legoset.__dict__)
-        owned.save()
+        owned = OwnedLegoSet.objects.create(realizes=legoset,
+                                            collection=owner.usercollection)
         owner.usercollection.setincollectionquantity_set.get(
             brick_set=legoset).modify_quantity_or_delete(-1)
         return owned
@@ -160,20 +160,31 @@ class OwnedLegoSet(LegoSet):
     def mark_as_missing(self, brick, quantity):
         missing_brick = self.missingbrick_set.filter(brick=brick).first()
 
-        brickinset = super().brickinsetquantity_set.filter(brick=brick).first()
+        brickinset = self.realizes.brickinsetquantity_set.filter(brick=brick).first()
 
-        if not missing_brick:
-            MissingBrick.objects.create(owned_set=self, brick=brick,
-                                        quantity=quantity, overlays=brickinset)
+        if brickinset.quantity >= quantity:
+            if not missing_brick:
+                MissingBrick.objects.create(owned_set=self, brick=brick,
+                                            quantity=brickinset.quantity - quantity,
+                                            overlays=brickinset)
+            else:
+                missing_brick.modify_quantity_or_delete(quantity)
         else:
-            missing_brick.modify_quantity_or_delete(quantity)
+            raise ValueError("Quantity to mark as missing is bigger than "
+                             "the original quantity in set")
 
     def real_bricks_set(self):
-        return super().brickinsetquantity_set.annotate(real_quantity=Coalesce(F(
-            "quantity") - F("missingbrick__quantity"), F("quantity")))
+        missing_bricks = self.missingbrick_set.values_list("brick")
+        untouched_bricks = self.realizes.brickinsetquantity_set.exclude(
+            brick__in=missing_bricks)
+        untouched_tuple = untouched_bricks.values_list("brick", "quantity")
+        missing_tuple = self.missingbrick_set.filter(
+            brick__in=missing_bricks).values_list(
+            "brick", "quantity")
+        return untouched_tuple.union(missing_tuple)
 
     def __str__(self):
-        return f"{self.number} - {self.name} (Owned)"
+        return f"{self.realizes.number} - {self.realizes.name} (Owned, id={self.id})"
 
 
 class MissingBrick(Countable):
