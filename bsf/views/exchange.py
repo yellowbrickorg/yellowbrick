@@ -8,6 +8,7 @@ from bsf.models import (
     SetInCollectionQuantity,
     Side,
     Wishlist,
+    ExchangeChain,
 )
 from .base import *
 from .notifier import (
@@ -254,7 +255,14 @@ def exchange_make_offer(request):
     other_user = User.objects.get(username=other_user)
     possible_offers = generate_possible_offers(logged_user, other_user)
 
-    exchange_offer = ExchangeOffer(offer_author=request.user, offer_receiver=other_user)
+    exchange_chain = ExchangeChain(initial_author=request.user, initial_receiver=other_user)
+
+    exchange_offer = ExchangeOffer(
+        offer_author=request.user,
+        offer_receiver=other_user,
+        exchange_chain=exchange_chain,
+        which_in_order=1
+    )
 
     bricks_in_offer, sets_in_offer = form_offered_bricks_and_sets_lists(
         request, exchange_offer, possible_offers
@@ -264,6 +272,7 @@ def exchange_make_offer(request):
         messages.error(request, "Can't submit an empty offer.")
         return redirect("exchange")
 
+    exchange_chain.save()
     exchange_offer.save()
     for bioq in bricks_in_offer:
         bioq.save()
@@ -301,8 +310,7 @@ def exchange_offers(request):
         messages.error(request, "You need to be logged in to access brick exchange.")
         return redirect("index")
 
-    offers_made = ExchangeOffer.objects.filter(offer_author=logged_user)
-    offers_received = ExchangeOffer.objects.filter(offer_receiver=logged_user)
+    offers_made, offers_received = get_related_offers(logged_user)
 
     offers_made_context = create_offers_context(logged_user, offers_made)
     offers_received_context = create_offers_context(logged_user, offers_received)
@@ -474,20 +482,11 @@ def exchange_delete_offer(request):
         return redirect("index")
 
     offer = ExchangeOffer.objects.get(pk=int(offer_id))
+    offer.receiver_state = ExchangeOffer.Status.REFUSED
+    offer.save()
 
     if logged_user == offer.offer_receiver:
         notify_about_offer_refused(offer)
-
-    bioq_set = BrickInOfferQuantity.objects.filter(offer=offer)
-    sioq_set = SetInOfferQuantity.objects.filter(offer=offer)
-
-    for bioq in bioq_set:
-        bioq.delete()
-
-    for sioq in sioq_set:
-        sioq.delete()
-
-    offer.delete()
 
     return redirect("exchange_offers")
 
@@ -566,3 +565,162 @@ def generate_possible_offers(logged_user, other=None):
         reverse=True,
     )
     return possible_offers
+
+
+def get_related_offers(user):
+    offers_made = []
+    offers_received = []
+
+    chains = []
+    for chain in ExchangeChain.objects.filter(initial_author = user):
+        chains.append(chain)
+
+    for chain in ExchangeChain.objects.filter(initial_receiver = user):
+        chains.append(chain)
+
+    for chain in chains:
+        offer = chain.get_last_offer()
+        """ We don't show refused offers as if they were deleted """
+        if offer.receiver_state != ExchangeOffer.Status.REFUSED:
+            if offer.offer_author == user:
+                offers_made.append(offer)
+            else:
+                offers_received.append(offer)
+    return offers_made, offers_received
+
+
+def offer_details(request):
+    logged_user = request.user
+    if not logged_user.is_authenticated:
+        messages.error(request, "You need to be logged in to access brick exchange.")
+        return redirect("index")
+    
+    offer_id = request.POST.get("offer_id")
+    if offer_id is None:
+        messages.error(request, "Offer not found.")
+        return redirect("index")
+    offer_clicked = ExchangeOffer.objects.get(id=offer_id)
+    counteroffer_jump = ( request.POST.get("counteroffer") is not None )
+    chain = offer_clicked.exchange_chain
+    all_offers = chain.related_offers.all()
+    sorted(all_offers, key=lambda offer : offer.which_in_order)
+
+    all_offers_context = []
+    authored = ( chain.initial_author == logged_user )
+    for offer in all_offers:
+        if authored:
+            all_offers_context.append(
+                {
+                    "offer": offer,
+                    "offered_sets": SetInOfferQuantity.objects.filter(
+                        offer=offer, side=Side.OFFERED
+                    ),
+                    "offered_bricks": BrickInOfferQuantity.objects.filter(
+                        offer=offer, side=Side.OFFERED
+                    ),
+                    "wanted_sets": SetInOfferQuantity.objects.filter(
+                        offer=offer, side=Side.WANTED
+                    ),
+                    "wanted_bricks": BrickInOfferQuantity.objects.filter(
+                        offer=offer, side=Side.WANTED
+                    ),
+                }
+            )
+        else:
+            all_offers_context.append(
+                {
+                    "offer": offer,
+                    "offered_sets": SetInOfferQuantity.objects.filter(
+                        offer=offer, side=Side.WANTED
+                    ),
+                    "offered_bricks": BrickInOfferQuantity.objects.filter(
+                        offer=offer, side=Side.WANTED
+                    ),
+                    "wanted_sets": SetInOfferQuantity.objects.filter(
+                        offer=offer, side=Side.OFFERED
+                    ),
+                    "wanted_bricks": BrickInOfferQuantity.objects.filter(
+                        offer=offer, side=Side.OFFERED
+                    ),
+                }
+            )
+        authored = not authored
+    
+    """
+    sprawdzanie czy mozna robic kontroferte i dodawanie do kontekstu
+    nie wiem 
+    """
+    last_offer = all_offers[len(all_offers) - 1]
+    may_counteroffer = False
+    if last_offer.offer_author != logged_user and last_offer.receiver_state == ExchangeOffer.Status.PENDING:
+        may_counteroffer = True
+    
+    other_user = None
+    if offer_clicked.offer_author == logged_user:
+        other_user = offer_clicked.offer_receiver
+    else:
+        other_user = offer_clicked.offer_author
+    possible_offer = generate_possible_offers(logged_user, other_user)
+
+    context = {
+        "other_user" : other_user,
+        "offers_history" : all_offers_context,
+        "may_counteroffer" : may_counteroffer,
+        "possible_offer" : possible_offer[0],
+        "jump_to_counteroffer" : counteroffer_jump,
+        "chain_id" : chain.id,
+    }
+
+    return render(
+        request=request,
+        context=context,
+        template_name="bsf/exchange/offer_details.html",
+    )
+
+
+def counteroffer_continue(request):
+    logged_user = request.user
+    if not logged_user.is_authenticated:
+        messages.error(request, "You need to be logged in to access brick exchange.")
+        return redirect("index")
+    
+    chain_id = request.POST.get("chain_id")
+    if chain_id is None:
+        messages.error(request, "Offer not found.")
+        return redirect("index")
+    chain = ExchangeChain.objects.get(id = chain_id)
+
+    other_user = None
+    if chain.initial_author == logged_user:
+        other_user = chain.initial_receiver
+    else:
+        other_user = chain.initial_author
+
+    possible_offers = generate_possible_offers(logged_user, other_user)
+
+    exchange_offer = ExchangeOffer(
+        offer_author=logged_user,
+        offer_receiver=other_user,
+        exchange_chain=chain,
+        which_in_order=chain.get_next_number(),
+    )
+
+    bricks_in_offer, sets_in_offer = form_offered_bricks_and_sets_lists(
+        request, exchange_offer, possible_offers
+    )
+
+    if len(bricks_in_offer) + len(sets_in_offer) == 0:
+        messages.error(request, "Can't submit an empty offer.")
+        return redirect("exchange_offers")
+
+    chain.save()
+    exchange_offer.save()
+    for bioq in bricks_in_offer:
+        bioq.save()
+
+    for sioq in sets_in_offer:
+        sioq.save()
+    
+    notify_about_new_offer(logged_user, other_user, sets_in_offer, bricks_in_offer)
+
+    return redirect("exchange_offers")

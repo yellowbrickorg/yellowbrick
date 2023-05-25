@@ -257,6 +257,36 @@ class SetInWishlistQuantity(Countable):
         )
 
 
+class ExchangeChain(models.Model):
+    """
+    Represents a chain of exchanges allowing users to make counteroffers
+    and to track them.
+    """
+    initial_author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="authored_chains"
+    )
+    initial_receiver = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="received_chains"
+    )
+
+    def get_last_offer(self):
+        offers = ExchangeOffer.objects.filter(exchange_chain = self).order_by("-which_in_order")
+        return offers[0]
+    
+    def get_next_number(self):
+        offers = ExchangeOffer.objects.filter(exchange_chain = self)
+        ret = 2
+        for offer in offers:
+            if offer.which_in_order + 1 > ret:
+                ret = offer.which_in_order + 1
+        return ret
+
+    def __str__(self):
+        return (
+            "ExchangeChain beetwen " + self.initial_author.username + " and " + self.initial_receiver.username
+        )
+
+
 class ExchangeOffer(models.Model):
     """
     Represents an offer that 'offer_author' made to 'offer_receiver'
@@ -264,6 +294,9 @@ class ExchangeOffer(models.Model):
     Attributes:
         offer_author :
         offer_receiver :
+        exchange_chain :
+        which_in_order : which in order of all offers being part of the same
+                         exchange chain between two users
     """
 
     offer_author = models.ForeignKey(
@@ -277,11 +310,15 @@ class ExchangeOffer(models.Model):
         PENDING = 0, _("Pending")
         ACCEPTED = 1, _("Accepted")
         EXCHANGED = 2, _("Exchanged")
+        REFUSED = 3, _("Refused")
 
     author_state = models.IntegerField(choices=Status.choices, default=Status.ACCEPTED)
     receiver_state = models.IntegerField(choices=Status.choices, default=Status.PENDING)
 
     exchanged = models.BooleanField(default=False)
+
+    exchange_chain = models.ForeignKey(ExchangeChain, related_name="related_offers", on_delete=models.CASCADE)
+    which_in_order = models.PositiveIntegerField()
 
     class Meta:
         constraints = [

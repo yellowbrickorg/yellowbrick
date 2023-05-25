@@ -71,6 +71,15 @@
                         </ul>
                     </td>
                     <td>
+                        <form action="{% url "offer_details" %}"
+                                method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="offer_id"
+                                   value={{ offer_context.offer.id }}>
+                            <button class="btn btn-primary" type="submit">
+                                Offer details
+                            </button>
+                        </form>
                         {% if offer_context.button_action %}
                             <form action="{% url "exchange_offer_continue" %}"
                                   method="post">
@@ -166,6 +175,15 @@
                         </ul>
                     </td>
                     <td>
+                        <form action="{% url "offer_details" %}"
+                                method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="offer_id"
+                                   value={{ offer_context.offer.id }}>
+                            <button class="btn btn-primary" type="submit">
+                                Offer details
+                            </button>
+                        </form>
                         {% if offer_context.button_action %}
                             <form action="{% url "exchange_offer_continue" %}"
                                   method="post">
@@ -190,6 +208,18 @@
                                 <button class="btn btn-primary" type="submit">
                                     {% if not offer_context.offer.exchanged %}
                                         Refuse
+                                    {% endif %}
+                                </button>
+                            </form>
+                            <form action="{% url "offer_details" %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="offer_id"
+                                       value={{ offer_context.offer.id }}>
+                                <input type="hidden" name="counteroffer"
+                                       value="true">
+                                <button class="btn btn-primary" type="submit">
+                                    {% if not offer_context.offer.exchanged %}
+                                        Counteroffer
                                     {% endif %}
                                 </button>
                             </form>
