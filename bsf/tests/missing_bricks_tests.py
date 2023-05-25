@@ -4,7 +4,7 @@ from django.test import TestCase
 from bsf.models import (
     Color,
     Brick,
-    LegoSet, OwnedLegoSet, UserCollection,
+    LegoSet, OwnedLegoSet, UserCollection, MissingBrick,
 )
 from bsf.views import get_viable_sets
 
@@ -67,11 +67,15 @@ class CollectionFilterTestCase(TestCase):
     def assert_quantities(self, brick1_diff, brick2_diff):
         query = self.owned_lego_set1.missing_bricks_set()
 
-        b1 = query.get(brick_id=self.brick1.brick_id)
-        b2 = query.get(brick_id=self.brick2.brick_id)
+        if brick1_diff > 0:
+            self.assertTrue(query.filter(brick_id=self.brick1.brick_id).exists())
+            b1 = query.get(brick_id=self.brick1.brick_id)
+            self.assertEqual(b1.quantity, brick1_diff)
 
-        self.assertEqual(b1.quantity, brick1_diff)
-        self.assertEqual(b2.quantity, brick2_diff)
+        if brick2_diff > 0:
+            self.assertTrue(query.filter(brick_id=self.brick2.brick_id).exists())
+            b2 = query.get(brick_id=self.brick2.brick_id)
+            self.assertEqual(b2.quantity, brick2_diff)
 
     def test_no_bricks_should_be_missing(self):
         self.modify_quantities(0, 0)
