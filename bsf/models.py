@@ -6,7 +6,7 @@ from django.db.models import F
 
 
 class Countable(models.Model):
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(default=1)
 
     class Meta:
         abstract = True
@@ -158,10 +158,19 @@ class OwnedLegoSet(models.Model):
             brick_set=legoset).modify_quantity_or_delete(-1)
         return owned
 
+    def convert_back_to_generic_set(self, owner):
+        if self.realizes in owner.usercollection.sets.all():
+            owner.usercollection.setincollectionquantity_set.get(
+                brick_set=self.realizes).modify_quantity_or_delete(1)
+        else:
+            owner.usercollection.sets.add(self.realizes)
+
+        self.delete()
+
     def get_absolute_url(self):
         from django.urls import reverse
 
-        return reverse("owned_set", kwargs={"pk": self.id})
+        return reverse("owned_set", kwargs={"owned_id": self.id})
 
     def mark_as_missing(self, brick, quantity):
         missing_brick = self.missingbrick_set.filter(brick=brick).first()

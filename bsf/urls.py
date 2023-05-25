@@ -18,6 +18,10 @@ urlpatterns = [
          name="mark_missing"),
     path("collection/owned/<int:owned_id>/found", views.mark_found,
          name="mark_found"),
+    path("collection/<int:legoset_id>/convert", views.set_convert_to_owned,
+         name="set_convert_to_owned"),
+    path("collection/owned/<int:owned_id>/convert", views.owned_convert_back,
+         name="owned_convert_back"),
 
     path("wishlist", views.wishlist, name="wishlist"),
     # /bricks/

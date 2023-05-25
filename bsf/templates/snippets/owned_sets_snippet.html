@@ -26,22 +26,11 @@
                                 </button>
                                 <ul class="dropdown-menu p-2">
                                     <li>
-                                        <form action="{% url 'convert' brick_set.id %}"
-                                              method="post">
-                                            {% csrf_token %}
-                                            <div class="input-group">
-                                                <input type="number" name="quantity"
-                                                       value="1"
-                                                       id="convertquantity{{ brick_set.id }}"
-                                                       min="0"
-                                                       max="{{ quantity }}"
-                                                       class="form-control">
-                                                <button type="submit"
-                                                        class="btn btn-outline-secondary">
-                                                    Remove
-                                                </button>
-                                            </div>
-                                        </form>
+                                        <a type="submit"
+                                           class="btn btn-outline-secondary"
+                                           href="{% url 'owned_convert_back' owned_set.id %}">
+                                            Convert back
+                                        </a>
                                     </li>
                                     <li>
                                         <a type="submit"

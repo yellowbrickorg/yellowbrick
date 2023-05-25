@@ -12,8 +12,8 @@
     </span></h2>
         <p class="my-3">
             We are terribly sorry that you've lost some bricks :( Although, we can still
-        make your life easier&#8482 by allowing you to track which bricks have run
-        away (or stolen, pulled in by a vacuum cleaner, got eaten by a dog, run by a
+            make your life easier&#8482 by allowing you to track which bricks have run
+            away (or stolen, pulled in by a vacuum cleaner, got eaten by a dog, run by a
             car etc.).
         </p>
 
@@ -47,9 +47,15 @@
                                 what
                                 sets are for, right?</p>
                         {% endif %}
+                    </div>
                 </div>
+
+                <a type="submit"
+                   class="btn btn-outline-secondary mt-3"
+                   href="{% url 'owned_convert_back' owned_id=owned.id %}">
+                    Convert back to normal
+                </a>
             </div>
         </div>
-    </div>
     {% endwith %}
 {% endblock %}
