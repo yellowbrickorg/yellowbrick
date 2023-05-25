@@ -96,17 +96,21 @@
                                    id="set_age {{ user }} {{ legoset.id }}"
                                    min="0"
                                    max="100"
-                                   class="form-control">
+                                   class="form-control mb-2">
                             <label for="instruction_rating {{ user }} {{ legoset.id }}">Instruction Quality</label>
                                 <select name="instruction_rating" id="instruction_rating {{ user }} {{ legoset.id }}" class="form-control">
-                                    <option value="Bad">Bad</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="Good">Good</option>
+                                    <option value="Very Confusing">Very Confusing</option>
+                                    <option value="Somewhat Clear">Somewhat Clear</option>
+                                    <option value="Average">Average</option>
+                                    <option value="Mostly Clear">Mostly Clear</option>
+                                    <option value="Extremely Clear">Extremely Clear</option>
                                 </select>
                         </div>
                         <div class="row">
-                            <label for="review_text">Review</label>
-                            <textarea id="review_text" name="review_text"></textarea>
+                            <div class="form-group">
+                                <label for="review_text">Review</label>
+                                <textarea class="form-control" id="review_text" name="review_text" rows="3"></textarea>
+                            </div>
                         </div>
                     </div>
                     <button type="submit"

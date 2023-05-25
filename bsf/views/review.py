@@ -8,7 +8,13 @@ from .base import *
 def add_review(request, id):
     lego_set = get_object_or_404(LegoSet, id=id)
     try:
-        instruction_rating_mapping = {"Bad": 1, "Medium": 2, "Good": 3}
+        instruction_rating_mapping = {
+            "Very Confusing": 1,
+            "Somewhat Clear": 2,
+            "Average": 3,
+            "Mostly Clear": 4,
+            "Extremely Clear": 5,
+        }
 
         rating = int(request.POST.get("set_rating", False))
         age = int(request.POST.get("set_age", False))

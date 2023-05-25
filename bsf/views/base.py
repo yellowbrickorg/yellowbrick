@@ -172,6 +172,8 @@ def legoset_list(request):
     if theme:
         queryset = queryset.filter(theme=theme)
 
+    queryset = queryset.filter(visibility=True)
+
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -471,16 +473,26 @@ def get_avg_time(reviews):
     return avg_time
 
 
+def get_rating_string(avg_rating):
+    avg_rating = round(avg_rating, 0)
+    if avg_rating == 1:
+        avg_rating = "Very Confusing"
+    elif avg_rating == 2:
+        avg_rating = "Somewhat Clear"
+    elif avg_rating == 3:
+        avg_rating = "Average"
+    elif avg_rating == 4:
+        avg_rating = "Mostly Clear"
+    elif avg_rating == 5:
+        avg_rating = "Extremely Clear"
+    return avg_rating
+
+
 def get_avg_rating(reviews):
     avg_rating = reviews.aggregate(Avg("instruction_rating"))["instruction_rating__avg"]
     if avg_rating != None:
-        avg_rating = round(avg_rating, 0)
-        if avg_rating == 1:
-            avg_rating = "Bad"
-        elif avg_rating == 2:
-            avg_rating = "Medium"
-        elif avg_rating == 3:
-            avg_rating = "Good"
+        avg_rating = get_rating_string(avg_rating)
+
     return avg_rating
 
 
@@ -497,13 +509,7 @@ def get_review_data(brick_set: LegoSet, user: User):
     )
 
     if data and data["instruction_rating"] is not None:
-        if data["instruction_rating"] == 1:
-            data["instruction_rating"] = "Bad"
-        elif data["instruction_rating"] == 2:
-            data["instruction_rating"] = "Medium"
-        elif data["instruction_rating"] == 3:
-            data["instruction_rating"] = "Good"
-
+        data["instruction_rating"] = get_rating_string(data["instruction_rating"])
     return data
 
 
@@ -664,9 +670,19 @@ class SetDetailView(ContextDetailView):
 
 
 def convert_to_embed_url(url):
-    video_id = url.split("v=")[1]
-    embed_url = f"//www.youtube.com/embed/{video_id}"
-    return embed_url
+    # Check if the URL is already an embed URL
+    if "youtube.com/embed" in url:
+        return url
+
+    # If it isn't, convert it
+    try:
+        video_id = url.split("v=")[1]
+        embed_url = f"//www.youtube.com/embed/{video_id}"
+        return embed_url
+    except IndexError:
+        # Handle error in case there's no 'v=' in the URL
+        print("URL could not be converted to YouTube embed format.")
+        return url
 
 
 def add_custom_lego_set(request):
@@ -690,11 +706,12 @@ def add_custom_lego_set(request):
             lego_set.inventory_id = 1
             lego_set.number = "Custom Set"
             lego_set.quantity_of_bricks = 0
-            lego_set.custom_video_link = convert_to_embed_url(
-                lego_set.custom_video_link
-            )
+            lego_set.author = logged_user
 
             try:
+                lego_set.custom_video_link = convert_to_embed_url(
+                    lego_set.custom_video_link
+                )
                 if not all(brick_ids) or not all(quantities):
                     raise ValueError("All fields must be filled.")
             except:
@@ -717,13 +734,68 @@ def add_custom_lego_set(request):
                     )
 
                 return redirect("sets")
+
     context.update(
         {
+            "users_sets": LegoSet.objects.filter(author=logged_user),
             "lego_set_form": LegoSetForm(),
             "brick_quantity_formset": BrickQuantityFormSet(),
         }
     )
     return render(request, "bsf/add_custom_lego_set.html", context)
+
+
+def edit_custom_lego_set(request, lego_set_id):
+    logged_user = request.user
+    if not logged_user.is_authenticated:
+        return redirect("login")
+
+    context = base_context(request)
+    lego_set = get_object_or_404(LegoSet, id=lego_set_id)
+    if request.method == "POST":
+        form = LegoSetForm(request.POST, instance=lego_set)
+        if form.is_valid():
+            if lego_set.author == logged_user:
+                lego_set = form.save(commit=False)
+                lego_set.custom_video_link = convert_to_embed_url(
+                    lego_set.custom_video_link
+                )
+                lego_set.save()
+                messages.success(request, "Lego set updated successfully!")
+                return redirect("set_detail", pk=lego_set.id)
+            else:
+                messages.error(request, "You are not authorized to edit this lego set")
+    else:
+        form = LegoSetForm(instance=lego_set)
+
+    context.update({"form": form, "lego_set": lego_set})
+    return render(request, "bsf/edit_lego_set.html", context)
+
+
+def delete_custom_lego_set(request, pk):
+    lego_set = get_object_or_404(LegoSet, pk=pk)
+    if request.user == lego_set.author:
+        lego_set.visibility = False
+        lego_set.save()
+        messages.success(request, "Lego set has been hidden successfully.")
+    else:
+        messages.error(request, "You are not authorized to hide this Lego set.")
+    return redirect(
+        "add_custom_lego_set"
+    )  # Or wherever you want to redirect after hiding
+
+
+def unhide_custom_lego_set(request, pk):
+    lego_set = get_object_or_404(LegoSet, pk=pk)
+    if request.user == lego_set.author:
+        lego_set.visibility = True
+        lego_set.save()
+        messages.success(request, "Lego set has been made public successfully.")
+    else:
+        messages.error(request, "You are not authorized to unhide this Lego set.")
+    return redirect(
+        "add_custom_lego_set"
+    )  # Or wherever you want to redirect after unhiding
 
 
 def get_brick_image(request):
