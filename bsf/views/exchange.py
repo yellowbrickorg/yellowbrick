@@ -249,12 +249,15 @@ def exchange_make_offer(request):
         messages.error(request, "You need to be logged in to access brick exchange.")
         return redirect("index")
     other_user = request.POST.get("other_user")
+    offered_cash = int(request.POST.get("offered_cash"))
+    received_cash = int(request.POST.get("received_cash"))
     if other_user is None:
         return redirect("index")
     other_user = User.objects.get(username=other_user)
     possible_offers = generate_possible_offers(logged_user, other_user)
 
-    exchange_offer = ExchangeOffer(offer_author=request.user, offer_receiver=other_user)
+    exchange_offer = ExchangeOffer(offer_author=request.user, offer_receiver=other_user,
+                                   cash=offered_cash-received_cash)
 
     bricks_in_offer, sets_in_offer = form_offered_bricks_and_sets_lists(
         request, exchange_offer, possible_offers
@@ -279,21 +282,24 @@ def exchange_make_offer(request):
 def get_button_action_for(user, offer):
     is_author = offer.offer_author == user
 
-    match offer.author_state, offer.receiver_state:
-        case ExchangeOffer.Status.EXCHANGED, ExchangeOffer.Status.EXCHANGED:
-            return None
-        case ExchangeOffer.Status.ACCEPTED, ExchangeOffer.Status.PENDING:
+    if offer.author_state == ExchangeOffer.Status.EXCHANGED \
+        and offer.receiver_state == ExchangeOffer.Status.EXCHANGED:
+        return None
+    if offer.author_state == ExchangeOffer.Status.ACCEPTED \
+        and offer.receiver_state == ExchangeOffer.Status.PENDING:
             if is_author:
                 return None
             else:
                 return "Accept"
-        case ExchangeOffer.Status.ACCEPTED, ExchangeOffer.Status.ACCEPTED:
+    if offer.author_state == ExchangeOffer.Status.ACCEPTED \
+         and offer.receiver_state == ExchangeOffer.Status.ACCEPTED:
             return "Exchange"
-        case ExchangeOffer.Status.EXCHANGED, ExchangeOffer.Status.ACCEPTED:
+    if offer.author_state == ExchangeOffer.Status.EXCHANGED \
+         and offer.receiver_state == ExchangeOffer.Status.ACCEPTED:
             return None if is_author else "Exchange"
-        case ExchangeOffer.Status.ACCEPTED, ExchangeOffer.Status.EXCHANGED:
+    if offer.author_state == ExchangeOffer.Status.ACCEPTED \
+         and offer.receiver_state == ExchangeOffer.Status.EXCHANGED:
             return None if not is_author else "Exchange"
-
 
 def exchange_offers(request):
     logged_user = request.user
@@ -341,6 +347,8 @@ def create_offers_context(logged_user, offers):
                     offer=offer, side=Side.WANTED
                 ),
                 "button_action": get_button_action_for(logged_user, offer),
+                "offered_cash": max(offer.cash, 0),
+                "received_cash": max(offer.cash * (-1), 0),
             }
         )
     return context
@@ -412,20 +420,20 @@ def exchange_offer_continue(request):
     offer = ExchangeOffer.objects.get(pk=int(offer_id))
     is_author = offer.offer_author == logged_user
 
-    match offer.author_state, offer.receiver_state:
-        case _, ExchangeOffer.Status.PENDING:
-            if not is_author:
-                offer.receiver_state = ExchangeOffer.Status.ACCEPTED
-                messages.success(request, "Offer accepted!")
-                notify_about_offer_accepted(offer)
-        case _, ExchangeOffer.Status.ACCEPTED:
-            if is_author:
-                offer.author_state = ExchangeOffer.Status.EXCHANGED
-            else:
-                offer.receiver_state = ExchangeOffer.Status.EXCHANGED
-            messages.success(request, "Items marked as exchanged successfully!")
-            notify_about_offer_exchanged(offer, not is_author)
-        case ExchangeOffer.Status.ACCEPTED, ExchangeOffer.Status.EXCHANGED:
+    if offer.receiver_state == ExchangeOffer.Status.PENDING:
+        if not is_author:
+            offer.receiver_state = ExchangeOffer.Status.ACCEPTED
+            messages.success(request, "Offer accepted!")
+            notify_about_offer_accepted(offer)
+    elif offer.receiver_state == ExchangeOffer.Status.ACCEPTED:
+        if is_author:
+            offer.author_state = ExchangeOffer.Status.EXCHANGED
+        else:
+            offer.receiver_state = ExchangeOffer.Status.EXCHANGED
+        messages.success(request, "Items marked as exchanged successfully!")
+        notify_about_offer_exchanged(offer, not is_author)
+    elif offer.author_state == ExchangeOffer.Status.ACCEPTED \
+         and offer.receiver_state == ExchangeOffer.Status.EXCHANGED:
             if is_author:
                 offer.author_state = ExchangeOffer.Status.EXCHANGED
                 notify_about_offer_exchanged(offer, not is_author)
