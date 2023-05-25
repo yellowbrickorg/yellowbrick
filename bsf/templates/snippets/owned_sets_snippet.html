@@ -14,7 +14,8 @@
                             <div class="mb-2">
                                 <a href="{% url 'set_detail' brick_set.id %}">
                                     {{ brick_set.number }}</a>
-                                {{ brick_set.name }}
+                                {{ brick_set.name }} ({{ owned_set.missing_total }}
+                                missing)
                             </div>
                             <div class="dropdown">
                                 <button class="btn btn-outline-secondary
@@ -46,7 +47,7 @@
                                         <a type="submit"
                                            class="btn btn-outline-secondary"
                                            href="
-                                                {% url 'missing_bricks' brick_set.id %}">
+                                                {% url 'owned_set' owned_set.id %}">
                                             Missing bricks wizard
                                         </a>
                                     </li>

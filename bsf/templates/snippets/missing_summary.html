@@ -1,10 +1,14 @@
 <ul class="list-group list-group-flush">
-    {% for brick_in_set in bricks_in_set %}
+    {% for brick_in_set in bricks_missing %}
         {% with brick=brick_in_set.brick %}
             <li class="list-group-item">
                 <div class="d-flex align-items-center">
-                    <img class="img-thumbnail" src="{{ brick.image_link }}"
-                         width="80">
+                    <div class="position-relative">
+                        <img class="img-thumbnail" src="{{ brick.image_link }}"
+                             width="80">
+                        <span class="position-absolute top-100 start-100
+                        translate-middle badge rounded-pill bg-dark">?</span>
+                    </div>
                     <div class="col-auto ms-3 me-auto">
                         <a href="{% url 'brick_detail' brick.brick_id %}">
                             {{ brick.part_num }}</a>
@@ -12,7 +16,7 @@
                         {{ brick_in_set.quantity }}
                     </div>
                     <div class="col-5">
-                        <form action="{% url 'mark_missing' owned_id=owned.id %}"
+                        <form action="{% url 'mark_found' owned_id=owned.id %}"
                               method="post">
                             {% csrf_token %}
                             <div class="input-group">
@@ -22,8 +26,7 @@
                                        name="quantity" value="0"
                                        id="quantity{{ brick.brick_id }}">
                                 <button type="submit"
-                                        class="btn btn-outline-secondary">Mark
-                                    as missing
+                                        class="btn btn-outline-secondary">Mark as found
                                 </button>
                             </div>
                         </form>

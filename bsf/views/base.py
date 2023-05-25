@@ -337,7 +337,7 @@ def check_set(
 
     for brick_data in BrickInSetQuantity.objects.filter(brick_set=lego_set):
         q_needed = brick_data.quantity
-        q_collected = all_users_bricks.get(brick_data.brick_id, 0)
+        q_collected = all_users_bricks.get(brick_data.brick, 0)
         diff = q_needed - q_collected
         max_diff = max(max_diff, diff)
         gdiff += max(0, diff)
@@ -353,9 +353,9 @@ def get_dict_of_users_bricks(user: User, all_users_bricks=None):
     ):
         q = brick_data.quantity
         if brick_data.brick in all_users_bricks:
-            all_users_bricks[brick_data.brick_id] += q
+            all_users_bricks[brick_data.brick] += q
         else:
-            all_users_bricks[brick_data.brick_id] = q
+            all_users_bricks[brick_data.brick] = q
     return all_users_bricks
 
 
@@ -367,20 +367,25 @@ def get_dict_of_users_bricks_from_sets(user: User, all_users_bricks=None):
         for brick_data in BrickInSetQuantity.objects.filter(brick_set=users_set):
             q = brick_data.quantity * set_data.quantity
             if brick_data.brick in all_users_bricks:
-                all_users_bricks[brick_data.brick_id] += q
+                all_users_bricks[brick_data.brick] += q
             else:
-                all_users_bricks[brick_data.brick_id] = q
+                all_users_bricks[brick_data.brick] = q
     return all_users_bricks
 
 
 def get_dict_of_users_bricks_from_owned(user: User, all_users_bricks=None):
     for owned_set in user.usercollection.ownedlegoset_set.all():
-        for brick_data in owned_set.real_bricks_set():
-            q = brick_data[1]
-            if brick_data[0] in all_users_bricks:
-                all_users_bricks[brick_data[0]] += q
+        for brick_data in owned_set.realizes.brickinsetquantity_set.all():
+            q = brick_data.quantity
+            if brick_data.brick in all_users_bricks:
+                all_users_bricks[brick_data.brick] += q
             else:
-                all_users_bricks[brick_data[0]] = q
+                all_users_bricks[brick_data.brick] = q
+
+        for brick_data in owned_set.missing_bricks_set():
+            q = brick_data.quantity
+            all_users_bricks[brick_data.brick] -= q
+
     return all_users_bricks
 
 
@@ -601,32 +606,36 @@ class SetDetailView(ContextDetailView):
         return context
 
 
-def missing_bricks(request, legoset_id):
+def owned_set(request, owned_id):
+    owned = OwnedLegoSet.objects.get(id=owned_id)
     context = base_context(request)
     context.update(
         {
-            "legoset": LegoSet.objects.get(id=legoset_id),
-            "bricks_in_set": BrickInSetQuantity.objects.filter(brick_set_id=legoset_id),
+            "owned": owned,
+            "bricks_in_set": owned.realizes.brickinsetquantity_set.all(),
+            "bricks_missing": owned.missing_bricks_set()
         })
-    template = loader.get_template("bsf/missing_bricks.html")
+    template = loader.get_template("bsf/owned_set.html")
     return HttpResponse(template.render(context, request))
 
 
-def mark_missing(request, legoset_id, brick_id):
-    legoset = LegoSet.objects.get(id=legoset_id)
+def _missing_bricks_modifier(request, owned_id, sign):
+    brick_id = request.POST.get('brick_id')
     brick = Brick.objects.get(brick_id=brick_id)
-    logged_user = request.user
+    owned = OwnedLegoSet.objects.get(id=owned_id)
     try:
         quantity = int(request.POST.get("quantity", False))
-        legoset.transform_to_owned_with_missing_brick(logged_user, brick,
-                                                      quantity)
+        owned.mark_as_missing(brick, sign * quantity)
         messages.success(request, "Successfully marked the brick as missing.")
-        return HttpResponseRedirect(reverse("collection", args=()))
+        return HttpResponseRedirect(reverse(owned))
     except KeyError:
         messages.error(request, "Failed to mark brick as missing.")
         return HttpResponseRedirect(reverse("collection", args=()))
 
 
-def edit_missing(request, legoset_id, brick_id):
-    # TODO implement owned.modify_missing_quantity
-    pass
+def mark_missing(request, owned_id):
+    return _missing_bricks_modifier(request, owned_id, 1)
+
+
+def mark_found(request, owned_id):
+    return _missing_bricks_modifier(request, owned_id, -1)

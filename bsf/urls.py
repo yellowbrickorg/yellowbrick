@@ -10,12 +10,15 @@ urlpatterns = [
     path("collection/", views.collection, name="collection"),
     # /filter/
     path("filter/", views.filter_collection, name="filter"),
-    # /my_bricks/
+    # /collection/
     path("collection", views.collection, name="collection"),
-    path("collection/missing_bricks/<int:legoset_id>", views.missing_bricks,
-         name="missing_bricks"),
-    path("collection/missing_bricks/<int:legoset_id>/mark/<int:brick_id>",
-         views.mark_missing, name="mark_missing"),
+    path("collection/owned/<int:owned_id>", views.owned_set,
+         name="owned_set"),
+    path("collection/owned/<int:owned_id>/missing", views.mark_missing,
+         name="mark_missing"),
+    path("collection/owned/<int:owned_id>/found", views.mark_found,
+         name="mark_found"),
+
     path("wishlist", views.wishlist, name="wishlist"),
     # /bricks/
     path("bricks/", BrickListView.as_view(), name="brick_list"),

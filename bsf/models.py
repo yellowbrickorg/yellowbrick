@@ -144,6 +144,7 @@ class OwnedLegoSet(models.Model):
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE,
                                    unique=False)
     realizes = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
+    missing_total = models.PositiveIntegerField(default=0)
 
     @staticmethod
     def add_to_collection(legoset, owner):
@@ -157,6 +158,11 @@ class OwnedLegoSet(models.Model):
             brick_set=legoset).modify_quantity_or_delete(-1)
         return owned
 
+    def get_absolute_url(self):
+        from django.urls import reverse
+
+        return reverse("owned_set", kwargs={"pk": self.id})
+
     def mark_as_missing(self, brick, quantity):
         missing_brick = self.missingbrick_set.filter(brick=brick).first()
 
@@ -165,23 +171,28 @@ class OwnedLegoSet(models.Model):
         if brickinset.quantity >= quantity:
             if not missing_brick:
                 MissingBrick.objects.create(owned_set=self, brick=brick,
-                                            quantity=brickinset.quantity - quantity,
+                                            quantity=quantity,
                                             overlays=brickinset)
             else:
-                missing_brick.modify_quantity_or_delete(quantity)
+                missing_brick.quantity += quantity
+                if missing_brick.quantity > brickinset.quantity or \
+                        missing_brick.quantity < 0:
+                    raise ValueError("Quantity is out of range")
+
+                missing_brick.save()
+
+            self.missing_total += quantity
+            self.save()
         else:
             raise ValueError("Quantity to mark as missing is bigger than "
                              "the original quantity in set")
 
-    def real_bricks_set(self):
-        missing_bricks = self.missingbrick_set.values_list("brick")
-        untouched_bricks = self.realizes.brickinsetquantity_set.exclude(
-            brick__in=missing_bricks)
-        untouched_tuple = untouched_bricks.values_list("brick", "quantity")
-        missing_tuple = self.missingbrick_set.filter(
-            brick__in=missing_bricks).values_list(
-            "brick", "quantity")
-        return untouched_tuple.union(missing_tuple)
+    def missing_bricks_set(self):
+        """
+        Returns a list of tuples (brick_id, quantity) that form the original lego set
+        with quantities appropriately reduced if bricks are missing.
+        """
+        return self.missingbrick_set.all()
 
     def __str__(self):
         return f"{self.realizes.number} - {self.realizes.name} (Owned, id={self.id})"

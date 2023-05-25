@@ -65,12 +65,13 @@ class CollectionFilterTestCase(TestCase):
         self.owned_lego_set1.mark_as_missing(self.brick2, brick2_qty)
 
     def assert_quantities(self, brick1_diff, brick2_diff):
-        query = self.owned_lego_set1.real_bricks_set()
-        brick1 = query.get(brick=self.brick1)
-        brick2 = query.get(brick=self.brick2)
+        query = self.owned_lego_set1.missing_bricks_set()
 
-        self.assertEqual(brick1.quantity - brick1.real_quantity, brick1_diff)
-        self.assertEqual(brick2.quantity - brick2.real_quantity, brick2_diff)
+        b1 = query.get(brick_id=self.brick1.brick_id)
+        b2 = query.get(brick_id=self.brick2.brick_id)
+
+        self.assertEqual(b1.quantity, brick1_diff)
+        self.assertEqual(b2.quantity, brick2_diff)
 
     def test_no_bricks_should_be_missing(self):
         self.modify_quantities(0, 0)
@@ -114,3 +115,9 @@ class CollectionFilterTestCase(TestCase):
             get_viable_sets(self.user1, 0, 0),
             [{"lego_set": self.lego_set2, "single_diff": 0, "general_diff": 0}]
         )
+
+    def test_xd(self):
+        self.owned_lego_set1.mark_as_missing(self.brick2, 3)
+        query = self.owned_lego_set1.missing_bricks_set()
+        for f in query:
+            print(f, f.quantity)
