@@ -183,12 +183,9 @@ class OwnedLegoSet(models.Model):
                                             quantity=quantity,
                                             overlays=brickinset)
             else:
-                missing_brick.quantity += quantity
-                if missing_brick.quantity > brickinset.quantity or \
-                        missing_brick.quantity < 0:
+                missing_brick.modify_quantity_or_delete(quantity)
+                if missing_brick.quantity > brickinset.quantity:
                     raise ValueError("Quantity is out of range")
-
-                missing_brick.save()
 
             self.missing_total += quantity
             self.save()
