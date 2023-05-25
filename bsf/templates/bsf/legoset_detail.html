@@ -15,7 +15,7 @@
             {% if legoset.custom_video_link %}
             <div class="card mt-4">
                 <div style="position:relative; padding-bottom:56.25%; overflow:hidden;">
-                    <iframe class="img-thumbnail shadow" src="https://www.youtube.com/embed/{{ legoset.custom_video_link }}" allowfullscreen frameborder="0" style="position:absolute; top:0; left:0; width:100%; height:100%;"></iframe>
+                    <iframe class="img-thumbnail shadow" src="{{ legoset.custom_video_link }}" allowfullscreen frameborder="0" style="position:absolute; top:0; left:0; width:100%; height:100%;"></iframe>
                 </div>
             </div>
             {% endif %}

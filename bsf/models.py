@@ -63,6 +63,8 @@ class LegoSet(models.Model):
     theme = models.CharField(max_length=256)
     quantity_of_bricks = models.IntegerField()
     custom_video_link = models.CharField(max_length=256, null=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    visibility = models.BooleanField(default=True)
 
     def get_absolute_url(self):
         from django.urls import reverse

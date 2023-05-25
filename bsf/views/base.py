@@ -663,6 +663,12 @@ class SetDetailView(ContextDetailView):
         return context
 
 
+def convert_to_embed_url(url):
+    video_id = url.split("v=")[1]
+    embed_url = f"//www.youtube.com/embed/{video_id}"
+    return embed_url
+
+
 def add_custom_lego_set(request):
     logged_user = request.user
     if not logged_user.is_authenticated:
@@ -684,6 +690,9 @@ def add_custom_lego_set(request):
             lego_set.inventory_id = 1
             lego_set.number = "Custom Set"
             lego_set.quantity_of_bricks = 0
+            lego_set.custom_video_link = convert_to_embed_url(
+                lego_set.custom_video_link
+            )
 
             try:
                 if not all(brick_ids) or not all(quantities):

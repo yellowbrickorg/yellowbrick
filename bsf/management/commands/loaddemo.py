@@ -119,7 +119,7 @@ class Command(BaseCommand):
             inventory_id=5,
             theme="Custom",
             quantity_of_bricks=101,
-            custom_video_link="https://www.youtube.com/watch?v=HULnqQL_ZQc&list=PLLfuSLvPnjX94s-639jxx80QfkDw2CC7J&index=1",
+            custom_video_link="//www.youtube.com/embed/HULnqQL_ZQc",
         )
 
         lego_set5.bricks.add(brick2, through_defaults={"quantity": 25})
