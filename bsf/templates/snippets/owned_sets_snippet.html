@@ -1,0 +1,53 @@
+{% load subtraction %}
+{% if owned_sets %}
+    <ul class="list-group list-group-flush">
+        {% for owned_set in owned_sets %}
+            {% with brick_set=owned_set.realizes %}
+                <li class="list-group-item">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-auto">
+                            <img class="img-thumbnail"
+                                 src="{{ brick_set.image_link }}"
+                                 width="120">
+                        </div>
+                        <div class="col-auto me-auto">
+                            <div class="mb-2">
+                                <a href="{% url 'set_detail' brick_set.id %}">
+                                    {{ brick_set.number }}</a>
+                                {{ brick_set.name }} ({{ owned_set.missing_total }}
+                                missing)
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary
+                                dropdown-toggle"
+                                        type="button" data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                    Manage
+                                </button>
+                                <ul class="dropdown-menu p-2">
+                                    <li>
+                                        <a type="submit"
+                                           class="btn btn-outline-secondary"
+                                           href="{% url 'owned_convert_back' owned_set.id %}">
+                                            Convert back
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a type="submit"
+                                           class="btn btn-outline-secondary"
+                                           href="
+                                                {% url 'owned_set' owned_set.id %}">
+                                            Missing bricks wizard
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            {% endwith %}
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>You don't have any sets.</p>
+{% endif %}

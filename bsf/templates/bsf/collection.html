@@ -19,13 +19,22 @@
     </p>
 
     <div class="card mt-3">
-
         <div class="card-header">
             Sets
         </div>
         <div class="card-body">
             {% include "snippets/set_statfilter.html" with submit_path="collection" %}
             {% include "snippets/user_sets_snippet.html" with user_sets=user_sets %}
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            Sets with missing bricks
+        </div>
+        <div class="card-body">
+            {#            {% include "snippets/set_statfilter.html" with submit_path="collection" %} TODO ? #}
+            {% include "snippets/owned_sets_snippet.html" with owned_sets=owned_sets %}
         </div>
     </div>
 

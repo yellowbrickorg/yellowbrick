@@ -1,7 +1,8 @@
-from django.urls import path
-from . import views
-from .views import BrickListView, BrickDetailView, SetListView, SetDetailView
 from django.contrib.auth import views as auth_views
+from django.urls import path
+
+from . import views
+from .views import BrickListView, BrickDetailView, SetDetailView
 
 urlpatterns = [
     # /
@@ -10,8 +11,21 @@ urlpatterns = [
     path("collection/", views.collection, name="collection"),
     # /filter/
     path("filter/", views.filter_collection, name="filter"),
-    # /my_bricks/
+    # /collection/
     path("collection", views.collection, name="collection"),
+
+    # /collection/o<> - owned sets management
+    path("collection/o<int:owned_id>", views.owned_set,
+         name="owned_set"),
+    path("collection/o<int:owned_id>/missing", views.mark_missing,
+         name="mark_missing"),
+    path("collection/o<int:owned_id>/found", views.mark_found,
+         name="mark_found"),
+    path("collection/<int:legoset_id>/convert", views.set_convert_to_owned,
+         name="set_convert_to_owned"),
+    path("collection/o<int:owned_id>/convert", views.owned_convert_back,
+         name="owned_convert_back"),
+
     path("wishlist", views.wishlist, name="wishlist"),
     # /bricks/
     path("bricks/", BrickListView.as_view(), name="brick_list"),

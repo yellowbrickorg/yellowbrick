@@ -19,7 +19,7 @@ from bsf.models import (
     BrickInSetQuantity,
     SetInWishlistQuantity,
     BrickInWishlistQuantity,
-    BrickStats,
+    BrickStats, OwnedLegoSet,
 )
 from bsf.models import UserCollection, User
 
@@ -72,9 +72,9 @@ def collection(request):
             else:
                 max_quantity = int(max_quantity)
 
-            user_sets = user_collection.sets.through.objects.filter(
-                collection=user_collection
-            )
+            user_sets = user_collection.setincollectionquantity_set.all()
+            owned_sets = user_collection.ownedlegoset_set.all()
+
             if theme:
                 user_sets = user_sets.filter(brick_set__theme=theme)
 
@@ -94,6 +94,7 @@ def collection(request):
         context.update(
             {
                 "user_sets": user_sets,
+                "owned_sets": owned_sets,
                 "user_bricks": user_bricks,
                 "logged_user": logged_user,
                 "set_themes": set_themes,
@@ -372,6 +373,22 @@ def get_dict_of_users_bricks_from_sets(user: User, all_users_bricks=None):
     return all_users_bricks
 
 
+def get_dict_of_users_bricks_from_owned(user: User, all_users_bricks=None):
+    for owned_set in user.usercollection.ownedlegoset_set.all():
+        for brick_data in owned_set.realizes.brickinsetquantity_set.all():
+            q = brick_data.quantity
+            if brick_data.brick in all_users_bricks:
+                all_users_bricks[brick_data.brick] += q
+            else:
+                all_users_bricks[brick_data.brick] = q
+
+        for brick_data in owned_set.missing_bricks_set():
+            q = brick_data.quantity
+            all_users_bricks[brick_data.brick] -= q
+
+    return all_users_bricks
+
+
 def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsize):
     """
     Args:
@@ -391,6 +408,7 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
     all_users_bricks = {}
     all_users_bricks = get_dict_of_users_bricks(user, all_users_bricks)
     all_users_bricks = get_dict_of_users_bricks_from_sets(user, all_users_bricks)
+    all_users_bricks = get_dict_of_users_bricks_from_owned(user, all_users_bricks)
 
     for lego_set in LegoSet.objects.all():
         diff, gdiff = check_set(all_users_bricks, lego_set)
@@ -549,11 +567,6 @@ class BrickListView(ContextListView):
     model = Brick
 
 
-class SetListView(ContextListView):
-    paginate_by = 15
-    model = LegoSet
-
-
 class FilterListView(ContextListView):
     paginate_by = 15
     model = LegoSet
@@ -591,3 +604,53 @@ class SetDetailView(ContextDetailView):
                     }
                 )
         return context
+
+
+def owned_set(request, owned_id):
+    owned = OwnedLegoSet.objects.get(id=owned_id)
+    context = base_context(request)
+    context.update(
+        {
+            "owned": owned,
+            "bricks_in_set": owned.realizes.brickinsetquantity_set.all(),
+            "bricks_missing": owned.missing_bricks_set()
+        })
+    template = loader.get_template("bsf/owned_set.html")
+    return HttpResponse(template.render(context, request))
+
+
+def set_convert_to_owned(request, legoset_id):
+    legoset = LegoSet.objects.get(id=legoset_id)
+    owned = OwnedLegoSet.add_to_collection(legoset, request.user)
+    messages.success(request, "Successfully converted to a set with (possibly) missing "
+                              "bricks.")
+    return HttpResponseRedirect(owned.get_absolute_url())
+
+
+def owned_convert_back(request, owned_id):
+    owned = OwnedLegoSet.objects.get(id=owned_id)
+    owned.convert_back_to_generic_set(request.user)
+    messages.success(request, "Successfully converted to generic set.")
+    return HttpResponseRedirect(reverse("collection", args=()))
+
+
+def _missing_bricks_modifier(request, owned_id, sign):
+    brick_id = request.POST.get('brick_id')
+    brick = Brick.objects.get(brick_id=brick_id)
+    owned = OwnedLegoSet.objects.get(id=owned_id)
+    try:
+        quantity = int(request.POST.get("quantity", False))
+        owned.mark_as_missing(brick, sign * quantity)
+        messages.success(request, "Successfully marked the brick as missing.")
+        return HttpResponseRedirect(owned.get_absolute_url())
+    except KeyError:
+        messages.error(request, "Failed to mark brick as missing.")
+        return HttpResponseRedirect(reverse("collection", args=()))
+
+
+def mark_missing(request, owned_id):
+    return _missing_bricks_modifier(request, owned_id, 1)
+
+
+def mark_found(request, owned_id):
+    return _missing_bricks_modifier(request, owned_id, -1)
