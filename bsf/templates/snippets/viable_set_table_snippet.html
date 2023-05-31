@@ -1,4 +1,7 @@
 {% if viable_sets %}
+    <h1>
+        Viable sets:
+    </h1>
     <table class="table">
         <thead>
         <tr>
@@ -6,6 +9,7 @@
             <th scope="col">Name</th>
             <th scope="col">Single</th>
             <th scope="col">Total</th>
+            <th scope="col">Generate sets to disassemble<th>
         </tr>
         </thead>
         <tbody>
@@ -24,6 +28,9 @@
                 <td>
                     {{ viable.general_diff }}
                 </td>
+                <td>
+                    <button class="btn btn-outline-secondary" type="submit" name="disassemble_set" value="{{viable.lego_set.id}}"> Check </button>
+                <td>
             </tr>
         {% endfor %}
         </tbody>

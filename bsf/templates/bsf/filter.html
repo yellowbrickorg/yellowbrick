@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load bootstrap5 %}
 
 {% block page_meta %}
     <title>Filter</title>
@@ -14,11 +15,13 @@
         collection can lack in total by inputting a number in
         "Total brick difference" input slot.
     </p>
+    
+    <form action="{% url 'filter_run' %}" method="post">        
+    {% csrf_token %}
 
     <div class="card mb-3">
         <div class="card-body">
-            <form action="{% url 'filter_run' %}" method="post">
-                {% csrf_token %}
+
                 <div class="d-md-flex align-items-center mb-3">
                     <span class="col-md-6 me-2">Single/total difference:</span>
                     <input type="number" name="single_diff" id="single_diff"
@@ -33,14 +36,14 @@
                            aria-label="Total"
                            class="form-control">
                 </div>
-                <div class="d-md-flex align-items-center">
+                <div class="d-md-flex align-items-center mb-3">
                     <span class="col-auto me-2">Bricks count:</span>
                     <div class="d-flex col-md-3 align-items-center">
                         <input type="number" name="start_quantity" id="start_quantity"
                                value="{{ start_quantity }}" min="{{ min_quantity }}"
                                max="{{ max_quantity }}" placeholder="Min quantity"
                                class="form-control">
-                        <span class="mx-3">&ndash;</span>
+                        <span class="mx-2">&ndash;</span>
                         <input type="number" name="end_quantity" id="end_quantity"
                                value="{{ end_quantity }}" min="{{ min_quantity }}"
                                max="{{ max_quantity }}" placeholder="Max quantity"
@@ -56,14 +59,27 @@
                                     {% if theme == selected_theme %}selected{% endif %}>{{ theme }}</option>
                         {% endfor %}
                     </select>
-
-                    <button class="btn btn-outline-secondary" type="submit">Submit
-                    </button>
                 </div>
-            </form>
+                <div class="d-md-flex align-items-center">
+                        <label class="form-check-label" for="excludeBuild">
+                            Exclude currently build sets from your collection:
+                        </label>
+                        <input class="form-check-input mx-md-2" type="checkbox" id="exclude_build" name="exclude_build"
+                            value = "on" {% if checked_exclude == "on" %}checked{% endif %} >
+                        <br>
+
+                        <button class="btn btn-outline-secondary" type="submit">Submit
+                        </button>
+                </div>             
         </div>
     </div>
 
+    {% include "snippets/ways_to_build_set.html" %}
+
     {% include "snippets/viable_set_table_snippet.html" with viable_sets=viable_sets %}
 
+    </form>
+
+
 {% endblock %}
+
