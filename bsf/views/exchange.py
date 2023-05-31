@@ -182,6 +182,26 @@ def del_brick_from_wishlist(request, brick_id, side):
         )
     return redirect(request.POST.get("next", "/"))
 
+def get_exchange_filters(request):
+    filter_sets_offers = request.POST.getlist("filter_sets_offers", False)
+    filter_bricks_offers = request.POST.getlist("filter_bricks_offers", False)
+    filter_sets_wishlist = request.POST.getlist("filter_sets_wishlist", False)
+    filter_bricks_wishlist = request.POST.getlist("filter_bricks_wishlist", False)
+    if not filter_sets_offers:
+        filter_sets_offers = []
+    if not filter_bricks_offers:
+        filter_bricks_offers = []
+    if not filter_sets_wishlist:
+        filter_sets_wishlist = []
+    if not filter_bricks_wishlist:
+        filter_bricks_wishlist = []
+
+    return {
+        "filter_sets_offers": filter_sets_offers,
+        "filter_bricks_offers": filter_bricks_offers,
+        "filter_sets_wishlist": filter_sets_wishlist,
+        "filter_bricks_wishlist": filter_bricks_wishlist,
+    }
 
 def exchange(request):
     logged_user = request.user
