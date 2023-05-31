@@ -1,3 +1,4 @@
+import copy
 from django.db import transaction
 
 from bsf.models import (
@@ -187,6 +188,7 @@ def get_exchange_filters(request):
     filter_bricks_offers = request.POST.getlist("filter_bricks_offers", False)
     filter_sets_wishlist = request.POST.getlist("filter_sets_wishlist", False)
     filter_bricks_wishlist = request.POST.getlist("filter_bricks_wishlist", False)
+
     if not filter_sets_offers:
         filter_sets_offers = []
     if not filter_bricks_offers:
@@ -203,6 +205,75 @@ def get_exchange_filters(request):
         "filter_bricks_wishlist": filter_bricks_wishlist,
     }
 
+def apply_filter(exchange_filters : dict, possible_offers : list):
+    updated_possible_offers = copy.deepcopy(possible_offers)
+
+    print(possible_offers)
+
+    for offer in possible_offers:
+        missing = False
+
+
+        wanted_sets = offer['set_quantity_wanted']
+        for filtered_wanted_set_id in exchange_filters['filter_sets_wishlist']:
+            present = False
+            
+            for set in wanted_sets:
+                if set['legoset'].pk == int(filtered_wanted_set_id):
+                    present = True
+                    break
+            
+            if not present:
+                missing = True
+                break
+        
+        if not missing:
+            offered_sets = offer['set_quantity_offered']
+            for filtered_offered_set_id in exchange_filters['filter_sets_offers']:
+                present = False
+                
+                for set in offered_sets:
+                    if set['legoset'].pk == int(filtered_offered_set_id):
+                        present = True
+                        break
+                
+                if not present:
+                    missing = True
+                    break
+
+        if not missing:
+            offered_bricks = offer['brick_quantity_offered']
+            for filtered_offered_brick_id in exchange_filters['filter_bricks_offers']:
+                present = False
+                
+                for brick in offered_bricks:
+                    if brick['brick'].pk == int(filtered_offered_brick_id):
+                        present = True
+                        break
+                
+                if not present:
+                    missing = True
+                    break
+        
+        if not missing:
+            wanted_bricks = offer['brick_quantity_wanted']
+            for filtered_wanted_brick_id in exchange_filters['filter_bricks_wishlist']:
+                present = False
+                
+                for brick in wanted_bricks:
+                    if brick['brick'].pk == int(filtered_wanted_brick_id):
+                        present = True
+                        break
+                
+                if not present:
+                    missing = True
+                    break
+        
+        if missing:
+            updated_possible_offers.remove(offer)
+
+    return updated_possible_offers
+
 def exchange(request):
     logged_user = request.user
     if not logged_user.is_authenticated:
@@ -210,10 +281,16 @@ def exchange(request):
         return redirect("index")
 
     possible_offers = generate_possible_offers(logged_user)
+
+    exchange_filters = get_exchange_filters(request)
+
+    viable_possible_offers = apply_filter(exchange_filters, possible_offers)
+
+
     context = base_context(request)
     context.update(
         {
-            "possible_offers": possible_offers,
+            "possible_offers": viable_possible_offers,
         }
     )
     return render(
@@ -556,7 +633,7 @@ def generate_possible_offers(logged_user, other=None):
         other_sets_wishlist = offers["user"].wishlist_sets.all()
 
         for brick_wish in other_bricks_wishlist:
-            side_disp = "offer" if brick_wish.side == Side.OFFERED else "want"
+                
             opposite_list = (
                 wanted_bricks if brick_wish.side == Side.OFFERED else offered_bricks
             )
