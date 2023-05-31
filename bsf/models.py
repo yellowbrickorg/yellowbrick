@@ -362,12 +362,19 @@ class SetInOfferQuantity(Countable):
 
 
 class BrickStats(models.Model):
+    class InstructionQuality(models.IntegerChoices):
+        VCONFUSING = 0, _("Very confusing")
+        SMWCLEAR = 1, _("Somewhat clear")
+        MEDIOCRE = 2, _("Mediocre")
+        MOSTCLEAR = 3, _("Mostly clear")
+        EXTCLEAR = 4, _("Extremely clear")
+
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     likes = models.IntegerField()
     min_recommended_age = models.IntegerField()
     build_time = models.IntegerField()
-    instruction_rating = models.IntegerField()
+    instruction_rating = models.IntegerField(choices=InstructionQuality.choices)
     review_text = models.TextField(null=True, blank=True)
 
     def __str__(self) -> str:

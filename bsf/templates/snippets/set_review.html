@@ -20,7 +20,7 @@
                 {% endif %}
             </h3>
         </div>
-         <div>
+        <div>
             <p class="mb-0"><b>Instruction Quality</b></p>
             <h3>
                 {% if instruction_rating == None %}
@@ -97,19 +97,23 @@
                                    min="0"
                                    max="100"
                                    class="form-control mb-2">
-                            <label for="instruction_rating {{ user }} {{ legoset.id }}">Instruction Quality</label>
-                                <select name="instruction_rating" id="instruction_rating {{ user }} {{ legoset.id }}" class="form-control">
-                                    <option value="Very Confusing">Very Confusing</option>
-                                    <option value="Somewhat Clear">Somewhat Clear</option>
-                                    <option value="Average">Average</option>
-                                    <option value="Mostly Clear">Mostly Clear</option>
-                                    <option value="Extremely Clear">Extremely Clear</option>
-                                </select>
+                            <label for="instruction_rating {{ user }} {{ legoset.id }}">Instruction
+                                Quality</label>
+                            <select name="instruction_rating"
+                                    id="instruction_rating {{ user }} {{ legoset.id }}"
+                                    class="form-control">
+                                <option value="0">Very confusing</option>
+                                <option value="1">Somewhat clear</option>
+                                <option value="2">Average</option>
+                                <option value="3">Mostly clear</option>
+                                <option value="4">Extremely clear</option>
+                            </select>
                         </div>
                         <div class="row">
                             <div class="form-group">
                                 <label for="review_text">Review</label>
-                                <textarea class="form-control" id="review_text" name="review_text" rows="3"></textarea>
+                                <textarea class="form-control" id="review_text"
+                                          name="review_text" rows="3"></textarea>
                             </div>
                         </div>
                     </div>

@@ -361,8 +361,8 @@ def build_set(request, id):
 
 
 def check_set(
-    all_users_bricks,
-    lego_set: LegoSet,
+        all_users_bricks,
+        lego_set: LegoSet,
 ):
     max_diff = 0
     gdiff = 0
@@ -381,7 +381,7 @@ def get_dict_of_users_bricks(user: User, all_users_bricks=None):
     users_collection = UserCollection.objects.get(user=user)
 
     for brick_data in BrickInCollectionQuantity.objects.filter(
-        collection=users_collection
+            collection=users_collection
     ):
         q = brick_data.quantity
         if brick_data.brick in all_users_bricks:
@@ -475,16 +475,17 @@ def get_avg_time(reviews):
 
 def get_rating_string(avg_rating):
     avg_rating = round(avg_rating, 0)
-    if avg_rating == 1:
-        avg_rating = "Very Confusing"
-    elif avg_rating == 2:
-        avg_rating = "Somewhat Clear"
-    elif avg_rating == 3:
-        avg_rating = "Average"
-    elif avg_rating == 4:
-        avg_rating = "Mostly Clear"
-    elif avg_rating == 5:
-        avg_rating = "Extremely Clear"
+    match avg_rating:
+        case 0:
+            avg_rating = "Very confusing"
+        case 1:
+            avg_rating = "Somewhat clear"
+        case 2:
+            avg_rating = "Average"
+        case 3:
+            avg_rating = "Mostly clear"
+        case 4:
+            avg_rating = "Extremely clear"
     return avg_rating
 
 
