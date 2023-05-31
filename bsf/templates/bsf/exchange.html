@@ -36,7 +36,7 @@
                         </th>
                         <td>
                             Total of {{ po.sum_offered }} bricks.
-                            <ul>
+                            <ul class="list-unstyled">
                                 {% for set in po.set_quantity_offered %}
                                     <li>
                                         <img class="img-thumbnail me-2"
@@ -55,6 +55,7 @@
                                             {{ set.quantity }}</span>
                                     </div>
                                 {% endfor %}
+                                <br>
                                 {% for brick in po.brick_quantity_offered %}
                                     <li><img class="img-thumbnail me-2"
                                              src="{{ brick.brick.image_link }}"
@@ -73,10 +74,16 @@
                                     </div>
                                 {% endfor %}
                             </ul>
+                            <label for="cash">Offered cash (USD):</label>
+                            <input type="number"
+                            name="offered_cash"
+                            value="0"
+                            min="0"
+                            class="form-control">
                         </td>
                         <td>
                             Total of {{ po.sum_wanted }} bricks.
-                            <ul>
+                            <ul class="list-unstyled">
                                 {% for set in po.set_quantity_wanted %}
                                     <li><img class="img-thumbnail me-2"
                                              src="{{ set.legoset.image_link }}"
@@ -94,6 +101,7 @@
                                             {{ set.quantity }}</span>
                                     </div>
                                 {% endfor %}
+                                <br>
                                 {% for brick in po.brick_quantity_wanted %}
                                     <li><img class="img-thumbnail me-2"
                                              src="{{ brick.brick.image_link }}"
@@ -111,6 +119,12 @@
                                     </div>
                                 {% endfor %}
                             </ul>
+                            <label for="cash">Received cash (USD):</label>
+                            <input type="number"
+                            name="received_cash"
+                            value="0"
+                            min="0"
+                            class="form-control">
                         </td>
                         <td>
                             <button class="btn btn-primary" type="submit">Submit an

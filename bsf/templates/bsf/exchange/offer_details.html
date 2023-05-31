@@ -36,6 +36,7 @@
                                     {{ set.legoset.name }}</a>
                                 x {{ set.quantity }}</li>
                         {% endfor %}
+                        <br>
                         {% for brick in offer_context.offered_bricks %}
                             <li><img class="img-thumbnail me-2"
                                         src="{{ brick.brick.image_link }}"
@@ -56,6 +57,7 @@
                                     {{ set.legoset.name }}</a>
                                 x {{ set.quantity }}</li>
                         {% endfor %}
+                        <br>
                         {% for brick in offer_context.wanted_bricks %}
                             <li><img class="img-thumbnail me-2"
                                         src="{{ brick.brick.image_link }}"
@@ -87,7 +89,7 @@
                         <input type="hidden" name="chain_id"
                             value="{{ chain_id }}">
                         <td>
-                            <ul>
+                            <ul class="list-unstyled">
                                 {% for set in possible_offer.set_quantity_offered %}
                                     <li>
                                         <img class="img-thumbnail me-2"
@@ -106,6 +108,7 @@
                                             {{ set.quantity }}</span>
                                     </div>
                                 {% endfor %}
+                                <br>
                                 {% for brick in possible_offer.brick_quantity_offered %}
                                     <li><img class="img-thumbnail me-2"
                                             src="{{ brick.brick.image_link }}"
@@ -124,9 +127,15 @@
                                     </div>
                                 {% endfor %}
                             </ul>
+                            <label for="cash">Offered cash (USD):</label>
+                            <input type="number"
+                            name="offered_cash"
+                            value="0"
+                            min="0"
+                            class="form-control">
                         </td>
                         <td>
-                            <ul>
+                            <ul class="list-unstyled">
                                 {% for set in possible_offer.set_quantity_wanted %}
                                     <li><img class="img-thumbnail me-2"
                                             src="{{ set.legoset.image_link }}"
@@ -144,6 +153,7 @@
                                             {{ set.quantity }}</span>
                                     </div>
                                 {% endfor %}
+                                <br>
                                 {% for brick in possible_offer.brick_quantity_wanted %}
                                     <li><img class="img-thumbnail me-2"
                                             src="{{ brick.brick.image_link }}"
@@ -161,6 +171,12 @@
                                     </div>
                                 {% endfor %}
                             </ul>
+                            <label for="cash">Received cash (USD):</label>
+                            <input type="number"
+                            name="received_cash"
+                            value="0"
+                            min="0"
+                            class="form-control">
                         </td>
                         <td>
                             <button class="btn btn-primary" type="submit">
