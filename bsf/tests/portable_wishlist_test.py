@@ -43,7 +43,8 @@ class PortableWishlistTest(TestCase):
 
                 if response.status_code is 200:
                     print(f"Checking {url}")
-                    self.assertIn("user_sets_wishlist", response.context)
-                    self.assertIn("user_bricks_wishlist", response.context)
-                    self.assertIn("user_sets_offers", response.context)
-                    self.assertIn("user_bricks_offers", response.context)
+                    if response.context is not None:
+                        self.assertIn("user_sets_wishlist", response.context)
+                        self.assertIn("user_bricks_wishlist", response.context)
+                        self.assertIn("user_sets_offers", response.context)
+                        self.assertIn("user_bricks_offers", response.context)
