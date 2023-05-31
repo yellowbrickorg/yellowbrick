@@ -37,7 +37,25 @@ urlpatterns = [
         views.del_brick_from_wishlist,
         name="del_brick_from_wishlist",
     ),
+    path("get_brick_image/", views.get_brick_image, name="get_brick_image"),
     # /sets/
+    path("sets_to_build/", views.sets_to_build, name="sets_to_build"),
+    path("add_custom_lego_set/", views.add_custom_lego_set, name="add_custom_lego_set"),
+    path(
+        "edit_lego_set/<int:lego_set_id>/",
+        views.edit_custom_lego_set,
+        name="edit_lego_set",
+    ),
+    path(
+        "delete_custom_lego_set/<int:pk>/",
+        views.delete_custom_lego_set,
+        name="delete_custom_lego_set",
+    ),
+    path(
+        "unhide_lego_set/<int:pk>/",
+        views.unhide_custom_lego_set,
+        name="unhide_lego_set",
+    ),
     path("sets/", views.legoset_list, name="sets"),
     path("sets/filter/", views.legoset_list, name="legoset_list_filtered"),
     path("sets/<int:pk>/", SetDetailView.as_view(), name="set_detail"),
@@ -48,6 +66,7 @@ urlpatterns = [
         name="add_brick_to_wishlist",
     ),
     path("set/add/<int:id>/", views.add_set, name="add_set"),
+    path("set/build/<int:id>/", views.build_set, name="build_set"),
     path(
         "set/add_set_to_wishlist/<int:id>/<int:side>",
         views.add_set_to_wishlist,

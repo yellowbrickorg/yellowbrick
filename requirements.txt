@@ -25,3 +25,4 @@ sqlparse==0.4.3
 tomli==2.0.1
 typing_extensions==4.5.0
 yarl==1.8.2
+django-widget-tweaks==1.4.12

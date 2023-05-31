@@ -81,6 +81,9 @@ class LegoSet(models.Model):
     inventory_id = models.IntegerField()
     theme = models.CharField(max_length=256)
     quantity_of_bricks = models.IntegerField()
+    custom_video_link = models.CharField(max_length=256, null=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    visibility = models.BooleanField(default=True)
 
     def get_absolute_url(self):
         from django.urls import reverse
@@ -443,11 +446,20 @@ class SetInOfferQuantity(Countable):
 
 
 class BrickStats(models.Model):
+    class InstructionQuality(models.IntegerChoices):
+        VCONFUSING = 0, _("Very confusing")
+        SMWCLEAR = 1, _("Somewhat clear")
+        MEDIOCRE = 2, _("Mediocre")
+        MOSTCLEAR = 3, _("Mostly clear")
+        EXTCLEAR = 4, _("Extremely clear")
+
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     likes = models.IntegerField()
     min_recommended_age = models.IntegerField()
     build_time = models.IntegerField()
+    instruction_rating = models.IntegerField(choices=InstructionQuality.choices)
+    review_text = models.TextField(null=True, blank=True)
 
     def __str__(self) -> str:
         return (

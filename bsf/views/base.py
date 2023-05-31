@@ -2,15 +2,18 @@ import sys
 
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.http import HttpResponse, HttpResponseRedirect
+from django.forms import formset_factory
+from django.http import HttpResponse, HttpResponseRedirect, QueryDict, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template import loader
 from django.urls import reverse
 from django.db.models import Avg
 from django.db.models import Q
 from django.views.generic import ListView, DetailView
-
+from django import forms
 from django.db.models import Max
+
+from bsf.forms import LegoSetForm, BrickQuantityForm
 from bsf.models import (
     Brick,
     LegoSet,
@@ -48,6 +51,19 @@ def base_context(request):
     return context
 
 
+def sets_to_build(request):
+    logged_user = request.user
+    if logged_user.is_authenticated:
+        buildable_sets = get_buildable_sets(logged_user)
+        context = base_context(request)
+        context.update({"buildable_sets": buildable_sets})
+        template = loader.get_template("bsf/sets_to_build.html")
+        return HttpResponse(template.render(context, request))
+    else:
+        messages.info(request, "You need to be logged in to access collections.")
+        return redirect("login")
+
+
 def collection(request):
     logged_user = request.user
     if logged_user.is_authenticated:
@@ -56,7 +72,6 @@ def collection(request):
         max_bricks = user_collection.sets.aggregate(
             max_bricks=Max("quantity_of_bricks")
         )["max_bricks"]
-
         if user_collection:
             theme = request.GET.get("theme")
             min_quantity = request.GET.get("start_quantity", 0)
@@ -157,6 +172,8 @@ def legoset_list(request):
 
     if theme:
         queryset = queryset.filter(theme=theme)
+
+    queryset = queryset.filter(visibility=True)
 
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get("page")
@@ -328,6 +345,22 @@ def convert(request, id):
     return HttpResponseRedirect(reverse("collection", args=()))
 
 
+def build_set(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+
+    logged_user = request.user
+    collection = UserCollection.objects.get(user=logged_user)
+
+    brickinset_through = lego_set.bricks.through.objects.filter(brick_set=lego_set)
+    for brickth in brickinset_through:
+        brick = brickth.brick  # Assuming that brickth.brick is already a Brick instance
+        collection.modify_brick_quantity(brick, -brickth.quantity)
+
+    collection.modify_set_quantity(lego_set, 1)
+
+    return HttpResponseRedirect(reverse("collection", args=()))
+
+
 def check_set(
         all_users_bricks,
         lego_set: LegoSet,
@@ -424,6 +457,19 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
     return viable_sets
 
 
+def get_buildable_sets(user: User):
+    viable_sets = []
+    all_users_bricks = {}
+    all_users_bricks = get_dict_of_users_bricks(user, all_users_bricks)
+
+    for lego_set in LegoSet.objects.all():
+        diff, gdiff = check_set(all_users_bricks, lego_set)
+        if diff == 0 and gdiff == 0:
+            viable_sets.append(lego_set)
+
+    return viable_sets
+
+
 def get_avg_likes(reviews):
     avg_likes = reviews.aggregate(Avg("likes"))["likes__avg"]
     if avg_likes != None:
@@ -445,17 +491,45 @@ def get_avg_time(reviews):
     return avg_time
 
 
+def get_rating_string(avg_rating):
+    avg_rating = round(avg_rating, 0)
+    match avg_rating:
+        case 0:
+            avg_rating = "Very confusing"
+        case 1:
+            avg_rating = "Somewhat clear"
+        case 2:
+            avg_rating = "Average"
+        case 3:
+            avg_rating = "Mostly clear"
+        case 4:
+            avg_rating = "Extremely clear"
+    return avg_rating
+
+
+def get_avg_rating(reviews):
+    avg_rating = reviews.aggregate(Avg("instruction_rating"))["instruction_rating__avg"]
+    if avg_rating != None:
+        avg_rating = get_rating_string(avg_rating)
+
+    return avg_rating
+
+
 def get_review_exists(brick_set: LegoSet, user: User):
     review = BrickStats.objects.filter(brick_set=brick_set, user=user)
     return review.exists()
 
 
 def get_review_data(brick_set: LegoSet, user: User):
-    return (
+    data = (
         BrickStats.objects.filter(brick_set=brick_set, user=user)
-        .values("likes", "min_recommended_age", "build_time")
+        .values("likes", "min_recommended_age", "build_time", "instruction_rating")
         .first()
     )
+
+    if data and data["instruction_rating"] is not None:
+        data["instruction_rating"] = get_rating_string(data["instruction_rating"])
+    return data
 
 
 def maxsize_if_empty(_str):
@@ -588,6 +662,8 @@ class SetDetailView(ContextDetailView):
                 "age": get_avg_age(all_reviews),
                 "time": get_avg_time(all_reviews),
                 "review_count": all_reviews.count(),
+                "instruction_rating": get_avg_rating(all_reviews),
+                "reviews": all_reviews,
             }
         )
         if self.request.user.id:
@@ -601,9 +677,151 @@ class SetDetailView(ContextDetailView):
                         "review_likes": review_data["likes"],
                         "review_age": review_data["min_recommended_age"],
                         "review_time": review_data["build_time"],
+                        "review_rating": review_data["instruction_rating"],
                     }
                 )
         return context
+
+
+def convert_to_embed_url(url):
+    # Check if the URL is already an embed URL
+    if "youtube.com/embed" in url:
+        return url
+
+    # If it isn't, convert it
+    try:
+        video_id = url.split("v=")[1]
+        embed_url = f"//www.youtube.com/embed/{video_id}"
+        return embed_url
+    except IndexError:
+        # Handle error in case there's no 'v=' in the URL
+        print("URL could not be converted to YouTube embed format.")
+        return url
+
+
+def add_custom_lego_set(request):
+    logged_user = request.user
+    if not logged_user.is_authenticated:
+        return redirect("login")
+
+    context = base_context(request)
+    BrickQuantityFormSet = formset_factory(BrickQuantityForm, extra=1)
+    if request.method == "POST":
+        lego_set_form = LegoSetForm(request.POST)
+        if lego_set_form.is_valid():
+            lego_set = lego_set_form.save(commit=False)
+
+            # Get the bricks and quantities data
+            bricks_data = dict(QueryDict(request.body).lists())
+            brick_ids = bricks_data.get("form-0-brick", [])
+            quantities = bricks_data.get("form-0-quantity", [])
+
+            lego_set.theme = "Custom"
+            lego_set.inventory_id = 1
+            lego_set.number = "Custom Set"
+            lego_set.quantity_of_bricks = 0
+            lego_set.author = logged_user
+
+            try:
+                lego_set.custom_video_link = convert_to_embed_url(
+                    lego_set.custom_video_link
+                )
+                if not all(brick_ids) or not all(quantities):
+                    raise ValueError("All fields must be filled.")
+            except:
+                messages.error(
+                    request,
+                    f"Failed to add custom set",
+                )
+                return redirect(add_custom_lego_set)
+            else:
+                for quantity in quantities:
+                    lego_set.quantity_of_bricks += int(quantity)
+
+                lego_set.save()
+
+                for brick_id, quantity in zip(brick_ids, quantities):
+                    # Retrieve the Brick instance and add it to the set
+                    brick = Brick.objects.get(pk=brick_id)
+                    lego_set.bricks.add(
+                        brick, through_defaults={"quantity": int(quantity)}
+                    )
+
+                return redirect("sets")
+
+    context.update(
+        {
+            "users_sets": LegoSet.objects.filter(author=logged_user),
+            "lego_set_form": LegoSetForm(),
+            "brick_quantity_formset": BrickQuantityFormSet(),
+        }
+    )
+    return render(request, "bsf/add_custom_lego_set.html", context)
+
+
+def edit_custom_lego_set(request, lego_set_id):
+    logged_user = request.user
+    if not logged_user.is_authenticated:
+        return redirect("login")
+
+    context = base_context(request)
+    lego_set = get_object_or_404(LegoSet, id=lego_set_id)
+    if request.method == "POST":
+        form = LegoSetForm(request.POST, instance=lego_set)
+        if form.is_valid():
+            if lego_set.author == logged_user:
+                lego_set = form.save(commit=False)
+                lego_set.custom_video_link = convert_to_embed_url(
+                    lego_set.custom_video_link
+                )
+                lego_set.save()
+                messages.success(request, "Lego set updated successfully!")
+                return redirect("set_detail", pk=lego_set.id)
+            else:
+                messages.error(request, "You are not authorized to edit this lego set")
+    else:
+        form = LegoSetForm(instance=lego_set)
+
+    context.update({"form": form, "lego_set": lego_set})
+    return render(request, "bsf/edit_lego_set.html", context)
+
+
+def delete_custom_lego_set(request, pk):
+    lego_set = get_object_or_404(LegoSet, pk=pk)
+    if request.user == lego_set.author:
+        lego_set.visibility = False
+        lego_set.save()
+        messages.success(request, "Lego set has been hidden successfully.")
+    else:
+        messages.error(request, "You are not authorized to hide this Lego set.")
+    return redirect(
+        "add_custom_lego_set"
+    )  # Or wherever you want to redirect after hiding
+
+
+def unhide_custom_lego_set(request, pk):
+    lego_set = get_object_or_404(LegoSet, pk=pk)
+    if request.user == lego_set.author:
+        lego_set.visibility = True
+        lego_set.save()
+        messages.success(request, "Lego set has been made public successfully.")
+    else:
+        messages.error(request, "You are not authorized to unhide this Lego set.")
+    return redirect(
+        "add_custom_lego_set"
+    )  # Or wherever you want to redirect after unhiding
+
+
+def get_brick_image(request):
+    brick_id = request.GET.get("brick_id", None)
+    data = {"image_url": ""}
+    if brick_id:
+        try:
+            brick = Brick.objects.get(brick_id=brick_id)
+            data["image_url"] = brick.image_link
+        except Brick.DoesNotExist:
+            pass
+    return JsonResponse(data)
 
 
 def owned_set(request, owned_id):

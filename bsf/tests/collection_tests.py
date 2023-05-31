@@ -82,6 +82,7 @@ class CollectionFilterTestCase(TestCase):
             likes=7,
             min_recommended_age=15,
             build_time=1,
+            instruction_rating=2,
         )
         self.stat2 = BrickStats.objects.create(
             user=self.user2,
@@ -89,6 +90,7 @@ class CollectionFilterTestCase(TestCase):
             likes=5,
             min_recommended_age=20,
             build_time=2,
+            instruction_rating=2,
         )
         self.stat3 = BrickStats.objects.create(
             user=self.user3,
@@ -96,6 +98,7 @@ class CollectionFilterTestCase(TestCase):
             likes=10,
             min_recommended_age=8,
             build_time=3,
+            instruction_rating=2,
         )
 
     def test_user_can_have_only_one_collection(self):

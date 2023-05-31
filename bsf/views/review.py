@@ -11,6 +11,8 @@ def add_review(request, id):
         rating = int(request.POST.get("set_rating", False))
         age = int(request.POST.get("set_age", False))
         time = int(float(request.POST.get("set_time", False)) * 10)
+        instruction_rating = request.POST.get("instruction_rating", False)
+        review_text = request.POST.get("review_text", None)
     except:
         messages.error(
             request,
@@ -25,6 +27,8 @@ def add_review(request, id):
             likes=rating,
             min_recommended_age=age,
             build_time=time,
+            instruction_rating=instruction_rating,
+            review_text=review_text,
         )
         messages.success(
             request,
