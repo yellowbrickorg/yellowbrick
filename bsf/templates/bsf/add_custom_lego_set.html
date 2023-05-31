@@ -9,6 +9,8 @@
 {% endblock %}
 
 {% block page_content %}
+
+
     <div class="container">
         <h1 class="my-4">Add Custom Lego Set</h1>
         <div class="row">
@@ -75,12 +77,17 @@
 
     {% block javascript %}
         <script>
+
+
+
          $(document).ready(function() {
             $('#add-brick-button').click(function() {
                 let newForm = $('.brick-form:last').clone(true);
                 let newImage = newForm.find('img');
+                let newQuantity = newForm.find('input[name$="quantity"]');
                 newImage.attr("src", "");  // Clear the image src in the new form
                 newImage.attr("alt", "");  // Clear the alt text in the new form
+                newQuantity.val('');
                 $('#brick-form-container').append(newForm);
             });
         });

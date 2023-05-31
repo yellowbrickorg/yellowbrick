@@ -6,11 +6,11 @@
     {# Load the tag library #}
     {% load bootstrap5 %}
 
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     {# Load CSS and JavaScript #}
     {% bootstrap_css %}
     {% bootstrap_javascript %}
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -18,8 +18,9 @@
 <div class="container my-4">
     {# Display django.contrib.messages as Bootstrap alerts #}
     {% bootstrap_messages %}
-
     {% block page_content %}{% endblock %}
+    <!-- Latest compiled and minified JavaScript -->
+
 </div>
 
 {% include "snippets/wishlist_offcanvas.html" %}
