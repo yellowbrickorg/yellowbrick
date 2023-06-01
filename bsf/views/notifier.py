@@ -3,7 +3,8 @@ from django.template.loader import render_to_string
 from ..constants import SENDER_EMAIL, DOMAIN_ADDR
 
 
-def notify_about_new_offer(author, receiver, sets_in_offer, bricks_in_offer):
+def notify_about_new_offer(author, receiver, sets_in_offer, bricks_in_offer, cash,
+                           is_a_counter):
     """
     Sends an email notifying the other person about the new offer
 
@@ -12,19 +13,33 @@ def notify_about_new_offer(author, receiver, sets_in_offer, bricks_in_offer):
         receiver : offer receiver
         sets_in_offer : list of related SetsInOffer
         bricks_in_offer : list of related BricksInOffer
+        cash : amount of cash to be offered/requested. cash > 0
+            denotes author' offer, cash < 0 denotes author's request
+        is_a_counter : indicates whether an offer is a counteroffer
     """
-    subject = f"New offer from {author}"
+    subject = f"Counter offer from {author}" \
+        if is_a_counter else f"New offer from {author}"
+
     context = {
         "email": receiver.email,
         "domain": DOMAIN_ADDR,
         "user": receiver,
         "sets_in_offer": sets_in_offer,
         "bricks_in_offer": bricks_in_offer,
+        "cash": cash,
         "author": author,
         "protocol": "http",
     }
-    message = render_to_string("bsf/exchange/new_offer_notification.txt", context)
-    html_message = render_to_string("bsf/exchange/new_offer_notification.html", context)
+    if is_a_counter:
+        message = render_to_string("bsf/exchange/offer_countered_notification.txt",
+                                   context)
+        html_message = render_to_string(
+            "bsf/exchange/offer_countered_notification.html", context)
+    else:
+        message = render_to_string("bsf/exchange/new_offer_notification.txt", context)
+        html_message = render_to_string("bsf/exchange/new_offer_notification.html",
+                                        context)
+
     try:
         send_mail(
             subject=subject,
@@ -52,6 +67,8 @@ def _notify_about_offer_response(offer, is_accepted):
         "receiver": offer.offer_receiver,
         "sets_in_offer": offer.setinofferquantity_set.all(),
         "bricks_in_offer": offer.brickinofferquantity_set.all(),
+        "offered_cash": offer.offered_cash(),
+        "wanted_cash": offer.wanted_cash(),
         "protocol": "http",
     }
     message = render_to_string(
@@ -71,7 +88,6 @@ def _notify_about_offer_response(offer, is_accepted):
         )
     except BadHeaderError:
         pass
-
 
 def notify_about_offer_accepted(offer):
     _notify_about_offer_response(offer, True)
