@@ -633,7 +633,7 @@ def generate_possible_offers(logged_user, other=None):
         other_sets_wishlist = offers["user"].wishlist_sets.all()
 
         for brick_wish in other_bricks_wishlist:
-                
+            side_disp = "want" if brick_wish.side == Side.OFFERED else "offer"
             opposite_list = (
                 wanted_bricks if brick_wish.side == Side.OFFERED else offered_bricks
             )
@@ -646,7 +646,7 @@ def generate_possible_offers(logged_user, other=None):
                 offers[f"sum_{side_disp}ed"] += bricks_to_trade
 
         for set_wish in other_sets_wishlist:
-            side_disp = "offer" if set_wish.side == Side.OFFERED else "want"
+            side_disp = "want" if set_wish.side == Side.OFFERED else "offer"
             opposite_list = (
                 wanted_sets if set_wish.side == Side.OFFERED else offered_sets
             )
