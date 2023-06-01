@@ -19,7 +19,11 @@ class Countable(models.Model):
             self.delete()
             return
         self.quantity += quantity
+        self.reload()
         self.save()
+
+    def reload(self):
+        return
 
 
 class Color(models.Model):
@@ -135,6 +139,12 @@ class UserCollection(models.Model):
         elif quantity > 0:
             brick_collection.create(brick=brick, quantity=quantity, collection=self)
 
+    def modify_build_set_quantity(self, brick_set, quantity):
+        set_collection = SetInCollectionQuantity.objects.filter(collection=self)
+        if set_collection.filter(brick_set=brick_set).exists():
+            set_collection.get(brick_set=brick_set).modify_build_quantity(quantity)
+
+
     def __str__(self):
         return f"Collection of {self.user.username}"
 
@@ -227,6 +237,17 @@ class BrickInCollectionQuantity(Countable):
 class SetInCollectionQuantity(Countable):
     brick_set = models.ForeignKey(LegoSet, on_delete=models.CASCADE)
     collection = models.ForeignKey(UserCollection, on_delete=models.CASCADE)
+    in_use = models.IntegerField(default=0)
+
+    def modify_in_use(self, quantity):
+        self.in_use += quantity
+        self.reload()
+        self.save()
+
+    def reload(self):
+        self.in_use = max(self.in_use, 0)
+        self.in_use = min(self.in_use, self.quantity)
+        self.save()
 
     def __str__(self):
         return (

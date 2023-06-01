@@ -1,4 +1,4 @@
-import sys
+import sys, copy
 
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -26,6 +26,7 @@ from bsf.models import (
 )
 from bsf.models import UserCollection, User
 
+MAX_DEPTH = 3
 
 def base_context(request):
     logged_user = request.user
@@ -116,6 +117,7 @@ def collection(request):
                 "selected_theme": theme,
                 "start_quantity": min_quantity,
                 "end_quantity": max_quantity,
+                "checked_exclude": "off",
             }
         )
         template = loader.get_template("bsf/collection.html")
@@ -262,14 +264,52 @@ def del_set(request, id):
             except (KeyError, SetInCollectionQuantity.DoesNotExist):
                 collection.sets.add(lego_set, through_defaults={"quantity": qty})
             else:
-                if set_through.quantity <= qty:
-                    collection.sets.remove(lego_set)
-                else:
-                    set_through.quantity -= qty
-                    set_through.save()
+                set_through.modify_quantity_or_delete(-qty)
         messages.success(
             request,
             f"Removed {qty} set(s) with set number {lego_set.id} from " f"collection.",
+        )
+        return HttpResponseRedirect(reverse("collection", args=()))
+
+def build_set(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    try:
+        qty = int(request.POST.get("quantity", False))
+    except:
+        return HttpResponseRedirect(reverse("collection", args=()))
+    else:
+        logged_user = request.user
+        collection = UserCollection.objects.get(user=logged_user)
+        if qty > 0:
+            set_through = collection.sets.through.objects.get(
+                brick_set_id=id, collection=collection
+            )
+            set_through.modify_in_use(qty)
+
+        messages.success(
+            request,
+            f"Marked sets as built.",
+        )
+        return HttpResponseRedirect(reverse("collection", args=()))
+
+def dismantle_set(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    try:
+        qty = int(request.POST.get("quantity", False))
+    except:
+        return HttpResponseRedirect(reverse("collection", args=()))
+    else:
+        logged_user = request.user
+        collection = UserCollection.objects.get(user=logged_user)
+        if qty > 0:
+            set_through = collection.sets.through.objects.get(
+                brick_set_id=id, collection=collection
+            )
+            set_through.modify_in_use(-qty)
+
+        messages.success(
+            request,
+            f"Marked sets as dismantled.",
         )
         return HttpResponseRedirect(reverse("collection", args=()))
 
@@ -392,17 +432,24 @@ def get_dict_of_users_bricks(user: User, all_users_bricks=None):
     return all_users_bricks
 
 
-def get_dict_of_users_bricks_from_sets(user: User, all_users_bricks=None):
+def get_dict_of_users_bricks_from_sets(user: User, all_users_bricks=None, exclude_built_sets=""):
     users_collection = UserCollection.objects.get(user=user)
 
     for set_data in SetInCollectionQuantity.objects.filter(collection=users_collection):
         users_set = set_data.brick_set
-        for brick_data in BrickInSetQuantity.objects.filter(brick_set=users_set):
-            q = brick_data.quantity * set_data.quantity
-            if brick_data.brick in all_users_bricks:
-                all_users_bricks[brick_data.brick] += q
-            else:
-                all_users_bricks[brick_data.brick] = q
+
+        sets_counted = set_data.quantity
+        if exclude_built_sets == "on":
+            sets_counted -= set_data.in_use
+
+        if sets_counted > 0:
+            for brick_data in BrickInSetQuantity.objects.filter(brick_set=users_set):
+                q = brick_data.quantity * sets_counted
+                if brick_data.brick in all_users_bricks:
+                    all_users_bricks[brick_data.brick] += q
+                else:
+                    all_users_bricks[brick_data.brick] = q
+
     return all_users_bricks
 
 
@@ -422,7 +469,7 @@ def get_dict_of_users_bricks_from_owned(user: User, all_users_bricks=None):
     return all_users_bricks
 
 
-def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsize):
+def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsize, exclude_built_sets=""):
     """
     Args:
         user: nazwa uzytkowanika
@@ -440,8 +487,8 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
 
     all_users_bricks = {}
     all_users_bricks = get_dict_of_users_bricks(user, all_users_bricks)
-    all_users_bricks = get_dict_of_users_bricks_from_sets(user, all_users_bricks)
     all_users_bricks = get_dict_of_users_bricks_from_owned(user, all_users_bricks)
+    all_users_bricks = get_dict_of_users_bricks_from_sets(user, all_users_bricks, exclude_built_sets)
 
     for lego_set in LegoSet.objects.all():
         diff, gdiff = check_set(all_users_bricks, lego_set)
@@ -469,6 +516,205 @@ def get_buildable_sets(user: User):
 
     return viable_sets
 
+def get_lacking_bricks(all_users_bricks, analyzed_set : LegoSet):
+    lacking_bricks_DTO = []
+    lacking_bricks_map = {}
+    for brick_data in BrickInSetQuantity.objects.filter(brick_set=analyzed_set):
+        q_needed = brick_data.quantity
+        q_collected = all_users_bricks.get(brick_data.brick, 0)
+        if (q_needed > q_collected):
+            lacking_bricks_DTO.append ({
+                'name': brick_data.brick.part_num,
+                'count': q_needed - q_collected,
+                'pic': brick_data.brick.image_link,
+            })
+            lacking_bricks_map[brick_data.brick.part_num] = q_needed - q_collected
+
+    return lacking_bricks_DTO, lacking_bricks_map
+
+def get_useful_bricks_from_set(lacking_bricks_map, users_set : SetInCollectionQuantity):
+    if users_set.in_use == 0:
+        return None
+
+    useful_bricks = {}
+    for brick_data in BrickInSetQuantity.objects.filter(brick_set=users_set.brick_set):
+        if brick_data.brick.part_num in lacking_bricks_map:
+            useful_bricks[brick_data.brick.part_num] = min(brick_data.quantity, lacking_bricks_map[brick_data.brick.part_num])
+
+    result_map = {}
+    if (useful_bricks):
+        result_map[users_set.brick_set.name] = useful_bricks
+    return result_map
+
+def add_bricks(built_set : dict, bonus_bricks = {}):
+    updated_bonus_bricks = copy.deepcopy(bonus_bricks)
+
+    for brick_list in built_set.values():
+        for brick_info in brick_list.items():
+            if(brick_info[0] in updated_bonus_bricks.keys()):
+                updated_bonus_bricks[brick_info[0]] += brick_info[1]
+            else:
+                updated_bonus_bricks[brick_info[0]] = brick_info[1]
+    return updated_bonus_bricks
+
+def check_if_can_build(bonus_bricks : dict, lacking_bricks : dict):
+    for brick_info in lacking_bricks.items():
+        if brick_info[0] not in bonus_bricks.keys():
+            return False
+        if brick_info[1] > bonus_bricks[brick_info[0]]:
+            return False
+    return True
+
+def get_list_of_building_set(useful_built_sets : list, lacking_bricks : dict, depth = 0, bonus_bricks = {}, names = []):
+    if useful_built_sets is None or depth > MAX_DEPTH:
+        return []
+
+    if check_if_can_build(bonus_bricks, lacking_bricks):
+        names.sort()
+        return [names]
+
+    result = []
+
+    for built_set in useful_built_sets:
+        updated_bonus_bricks = add_bricks(built_set, bonus_bricks)
+
+        updated_names = copy.deepcopy(names)
+        updated_names.append(list(built_set.keys())[0])
+
+        updated_built_sets = copy.deepcopy(useful_built_sets)
+        updated_built_sets.remove(built_set)
+
+        print("depth: " + str(depth) + " path: " + str(updated_names))
+        print("updated:" + str(updated_built_sets))
+        print()
+
+        temp_result = get_list_of_building_set(updated_built_sets, lacking_bricks, depth + 1, updated_bonus_bricks, updated_names)
+
+        result += temp_result
+
+    return result
+
+def get_map_of_ways(list_of_ways):
+    result = {}
+    for i in range(MAX_DEPTH + 2):
+        result[i] = []
+
+    for way in list_of_ways:
+        if way not in result[len(way)]:
+            result[len(way)].append(way)
+
+    return result
+
+def remove_covering_options(map_of_ways : dict):
+    result_map_of_ways = copy.deepcopy(map_of_ways)
+
+    for size in map_of_ways.keys():
+        for way in map_of_ways[size]:
+            if size != MAX_DEPTH:
+                for size_checked in range(size + 1, MAX_DEPTH + 1):
+                    for way_checked in map_of_ways[size_checked]:
+                        print(str(way) + "checking: " + str(way_checked))
+                        exists = True
+                        for set in way:
+                            if set not in way_checked:
+                                exists = False
+                                break
+                        print("found? : " + str(exists))
+                        if exists and way_checked in result_map_of_ways[size_checked]:
+                            result_map_of_ways[size_checked].remove(way_checked)
+    return result_map_of_ways
+
+def get_list_of_ways(map_of_ways : dict):
+    result = []
+    for key in map_of_ways.keys():
+        for way in map_of_ways[key]:
+            result.append(way)
+    return result
+
+def get_printable_ways(list_of_ways : list , useful_built_sets : list):
+    if len(list_of_ways) == 0:
+        return None
+
+    ways = []
+    i = 1
+    for way in list_of_ways:
+        sets = []
+        bricks = []
+        for set in way:
+            # looking up right map - TODO
+            right_map = None
+            for map in useful_built_sets:
+                if list(map.keys())[0] == set:
+                    right_map = map
+                    break
+
+            sets.append(set)
+            for bricks_data in right_map.values():
+                sets.append("")
+                for brick_data in bricks_data.items():
+                    bricks.append(str(brick_data[0]) + " x " + str(brick_data[1]))
+
+                sets.append("")
+                bricks.append("")
+
+        ways.append({
+            'number' : i,
+            'sets' : copy.deepcopy(sets),
+            'bricks' : copy.deepcopy(bricks),
+        })
+
+        i += 1
+        sets.clear()
+        bricks.clear()
+    return ways
+
+
+
+def find_ways_of_building_a_set(user: User, brickset_id):
+    if brickset_id == None:
+        return None
+
+    all_users_bricks = {}
+    all_users_bricks = get_dict_of_users_bricks(user, all_users_bricks)
+    analyzed_set = LegoSet.objects.get(id = brickset_id)
+    diff, gdiff = check_set(all_users_bricks, analyzed_set)
+
+    if(diff == gdiff == 0):
+        return None
+
+    # getting list of lacking bricks
+    lacking_bricks_DTO, lacking_bricks_map = get_lacking_bricks(all_users_bricks, analyzed_set)
+
+    # getting a list of maps, where key = set, values = bricks that could be used to built set
+    users_collection = UserCollection.objects.get(user=user)
+    all_users_sets = SetInCollectionQuantity.objects.filter(collection=users_collection)
+
+    useful_built_sets = []
+    for users_set in all_users_sets:
+        useful_bricks_in_set = get_useful_bricks_from_set(lacking_bricks_map, users_set)
+        if (useful_bricks_in_set):
+            useful_built_sets.append(useful_bricks_in_set)
+
+    # getting ways of building set
+    list_of_ways = get_list_of_building_set(useful_built_sets, lacking_bricks_map)
+
+    # filtering way of building set
+    map_of_ways = get_map_of_ways(list_of_ways)
+    print(map_of_ways)
+    map_of_ways = remove_covering_options(map_of_ways)
+    print(map_of_ways)
+    list_of_ways = get_list_of_ways(map_of_ways)
+
+    # formatting to print well
+    print(list_of_ways)
+    print(useful_built_sets)
+    ways_DTO = get_printable_ways(list_of_ways, useful_built_sets)
+
+
+    return {
+        'bricks': lacking_bricks_DTO,
+        'ways' : ways_DTO,
+    }
 
 def get_avg_likes(reviews):
     avg_likes = reviews.aggregate(Avg("likes"))["likes__avg"]
@@ -552,6 +798,8 @@ def filter_collection(request):
     theme = request.POST.get("theme")
     min_quantity = request.POST.get("start_quantity")
     max_quantity = request.POST.get("end_quantity", max_bricks)
+    exclude_built_sets = request.POST.get("exclude_build")
+    analized_set = request.POST.get("disassemble_set")
 
     if request.method == "POST":
         single_diff = maxsize_if_empty(request.POST.get("single_diff"))
@@ -561,10 +809,11 @@ def filter_collection(request):
 
     template = loader.get_template("bsf/filter.html")
     context = base_context(request)
+
+    viable_sets = get_viable_sets(logged_user, single_diff, general_diff, exclude_built_sets)
     context.update(
-        {"viable_sets": get_viable_sets(logged_user, single_diff, general_diff)}
+        {"viable_sets": viable_sets}
     )
-    viable_sets = get_viable_sets(logged_user, single_diff, general_diff)
 
     if theme:
         viable_sets = [set for set in viable_sets if set["lego_set"].theme == theme]
@@ -585,6 +834,10 @@ def filter_collection(request):
         if int(min_quantity) <= set["lego_set"].quantity_of_bricks <= int(max_quantity)
     ]
 
+    set_analysis = find_ways_of_building_a_set(logged_user, analized_set)
+    if (analized_set):
+        analized_set = LegoSet.objects.get(id=analized_set).name
+
     context.update(
         {
             "viable_sets": viable_sets,
@@ -594,10 +847,12 @@ def filter_collection(request):
             "selected_theme": theme,
             "start_quantity": min_quantity,
             "end_quantity": max_quantity,
+            "checked_exclude": exclude_built_sets,
+            "set_analysis" : set_analysis,
+            "analized_set" : analized_set,
         }
     )
     return HttpResponse(template.render(context, request))
-
 
 def index(request):
     return render(request, "bsf/index.html", context=base_context(request))

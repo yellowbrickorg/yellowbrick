@@ -1,0 +1,58 @@
+{% if analized_set %}    
+    <h1>
+        Ways to build {{ analized_set }}:
+    </h1>
+    <span>
+        You'll need following bricks from other sets: <br><br>
+        {% for brick in set_analysis.bricks %}
+            <img class="img-thumbnail me-2" src="{{ brick.pic }}" width="50">
+            {{ brick.name }} x {{ brick.count }}
+            <br>
+        {% endfor %}
+        <br>
+    </span>
+    {% if set_analysis.ways %}
+        <span>
+            You can build it, using bricks from other sets in your colloction, here are some possible ways: <br>
+        <span>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">No</th>
+                    <th scope="col">Names of sets</th>
+                    <th scope="col">Required bricks in this set</th>
+                </tr>
+            </thead>
+            
+
+            <tbody>
+                {% for way in set_analysis.ways %}
+                    <tr>
+                        <td>
+                            {{ way.number }}
+                        </td>
+                        <td>
+                            {% for set in way.sets %}
+                                {{ set }}
+                                <br>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for brick_info in way.bricks %}
+                                {{ brick_info }}
+                                <br>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    {% else %}
+        <span>
+            Sorry, but there seems to be no way for you to build a set using all of your bricks :c <br>
+            Try using out exchange service to look for bricks you're missing! <br>
+        </span>
+    {% endif %}
+    <br>
+{% endif %}
