@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% load bootstrap5 %}
+{% load subtraction %}
+
+{% block page_meta %}
+    <title>Offer details</title>
+{% endblock %}
+
+{% block page_content %}
+    <h1>Offer history</h1>
+    <p class="my-3">
+        All offers related to this exchange with {{other_user}}.
+    </p>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">Author</th>
+            <th scope="col">We offer</th>
+            <th scope="col">We receive</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for offer_context in offers_history %}
+            <tr>
+                <td>
+                    {{offer_context.offer.offer_author}}
+                </td>
+                <td>
+                    <ul class="list-unstyled">
+                        {% for set in offer_context.offered_sets %}
+                            <li><img class="img-thumbnail me-2"
+                                        src="{{ set.legoset.image_link }}"
+                                        width="80">
+                                <a href="{% url 'set_detail' set.legoset.id %}">
+                                    {{ set.legoset.name }}</a>
+                                x {{ set.quantity }}</li>
+                        {% endfor %}
+                        <br>
+                        {% for brick in offer_context.offered_bricks %}
+                            <li><img class="img-thumbnail me-2"
+                                        src="{{ brick.brick.image_link }}"
+                                        width="60">
+                                <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
+                                - {{ brick.brick.color.name }} x
+                                {{ brick.quantity }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <ul class="list-unstyled">
+                        {% for set in offer_context.wanted_sets %}
+                            <li><img class="img-thumbnail me-2"
+                                        src="{{ set.legoset.image_link }}"
+                                        width="80">
+                                <a href="{% url 'set_detail' set.legoset.id %}">
+                                    {{ set.legoset.name }}</a>
+                                x {{ set.quantity }}</li>
+                        {% endfor %}
+                        <br>
+                        {% for brick in offer_context.wanted_bricks %}
+                            <li><img class="img-thumbnail me-2"
+                                        src="{{ brick.brick.image_link }}"
+                                        width="60">
+                                <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
+                                - {{ brick.brick.color.name }} x
+                                {{ brick.quantity }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {% if may_counteroffer %}
+        <h1>Counteroffer</h1>
+        <table class="table" id="counteroffer_form_table">
+            <thead>
+            <tr>
+                <th scope="col">We can offer</th>
+                <th scope="col">We can receive</th>
+            </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <form action="{% url "counteroffer_continue" %}" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="chain_id"
+                            value="{{ chain_id }}">
+                        <td>
+                            <ul class="list-unstyled">
+                                {% for set in possible_offer.set_quantity_offered %}
+                                    <li>
+                                        <img class="img-thumbnail me-2"
+                                            src="{{ set.legoset.image_link }}"
+                                            width="50">
+                                        <a href="{% url 'set_detail' set.legoset.id %}">{{ set.legoset.name }}</a>
+                                    </li>
+                                    <div class="input-group">
+                                        <input type="number"
+                                            name="offer_set_{{ set.legoset.id }}"
+                                            value="{{ set.quantity }}"
+                                            min="0"
+                                            max="{{ set.quantity }}"
+                                            class="form-control">
+                                        <span class="input-group-text">/
+                                            {{ set.quantity }}</span>
+                                    </div>
+                                {% endfor %}
+                                <br>
+                                {% for brick in possible_offer.brick_quantity_offered %}
+                                    <li><img class="img-thumbnail me-2"
+                                            src="{{ brick.brick.image_link }}"
+                                            width="50">
+                                        <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
+                                        - {{ brick.brick.color.name }}
+                                    </li>
+                                    <div class="input-group">
+                                        <input type="number"
+                                            name="offer_brick_{{ brick.brick.brick_id }}"
+                                            value="{{ brick.quantity }}"
+                                            min="0"
+                                            max="{{ brick.quantity }}"
+                                            class="form-control">
+                                        <span class="input-group-text">/{{ brick.quantity }}</span>
+                                    </div>
+                                {% endfor %}
+                            </ul>
+                            <label for="cash">Offered cash (USD):</label>
+                            <input type="number"
+                            name="offered_cash"
+                            value="0"
+                            min="0"
+                            class="form-control">
+                        </td>
+                        <td>
+                            <ul class="list-unstyled">
+                                {% for set in possible_offer.set_quantity_wanted %}
+                                    <li><img class="img-thumbnail me-2"
+                                            src="{{ set.legoset.image_link }}"
+                                            width="50">
+                                        <a href="{% url 'set_detail' set.legoset.id %}">{{ set.legoset.name }}</a>
+                                    </li>
+                                    <div class="input-group">
+                                        <input type="number"
+                                            name="want_set_{{ set.legoset.id }}"
+                                            value="{{ set.quantity }}"
+                                            min="0"
+                                            max="{{ set.quantity }}"
+                                            class="form-control">
+                                        <span class="input-group-text">/
+                                            {{ set.quantity }}</span>
+                                    </div>
+                                {% endfor %}
+                                <br>
+                                {% for brick in possible_offer.brick_quantity_wanted %}
+                                    <li><img class="img-thumbnail me-2"
+                                            src="{{ brick.brick.image_link }}"
+                                            width="50">
+                                        <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>
+                                        - {{ brick.brick.color.name }}</li>
+                                    <div class="input-group">
+                                        <input type="number"
+                                            name="want_brick_{{ brick.brick.brick_id }}"
+                                            value="{{ brick.quantity }}"
+                                            min="0"
+                                            max="{{ brick.quantity }}"
+                                            class="form-control">
+                                        <span class="input-group-text">/{{ brick.quantity }}</span>
+                                    </div>
+                                {% endfor %}
+                            </ul>
+                            <label for="cash">Received cash (USD):</label>
+                            <input type="number"
+                            name="received_cash"
+                            value="0"
+                            min="0"
+                            class="form-control">
+                        </td>
+                        <td>
+                            <button class="btn btn-primary" type="submit">
+                                Submit an offer
+                            </button>
+                        </td>
+                    </form>
+                </tr>
+            </tbody>
+        </table>
+        {% if jump_to_counteroffer %}
+            <script>
+                document.getElementById("counteroffer_form_table").scrollIntoView();
+            </script>
+        {% endif %}
+    {% endif %}
+{% endblock %}

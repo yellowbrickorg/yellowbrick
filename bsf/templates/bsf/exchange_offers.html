@@ -40,6 +40,7 @@
                                         {{ set.legoset.name }}</a>
                                     x {{ set.quantity }}</li>
                             {% endfor %}
+                            <br>
                             {% for brick in offer_context.offered_bricks %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ brick.brick.image_link }}"
@@ -49,7 +50,8 @@
                                     {{ brick.quantity }}</li>
                             {% endfor %}
                             {% if offer_context.offered_cash %}
-                            <li>Cash: {{ offer_context.offered_cash }}</li>
+                            <br>
+                            <li>Cash: {{ offer_context.offered_cash }} USD</li>
                             {% endif %}
                         </ul>
                     </td>
@@ -63,6 +65,7 @@
                                         {{ set.legoset.name }}</a>
                                     x {{ set.quantity }}</li>
                             {% endfor %}
+                            <br>
                             {% for brick in offer_context.wanted_bricks %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ brick.brick.image_link }}"
@@ -72,11 +75,21 @@
                                     {{ brick.quantity }}</li>
                             {% endfor %}
                             {% if offer_context.received_cash %}
+                            <br>
                             <li>Cash: {{ offer_context.received_cash }}</li>
                             {% endif %}
                         </ul>
                     </td>
                     <td>
+                        <form action="{% url "offer_details" %}"
+                                method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="offer_id"
+                                   value={{ offer_context.offer.id }}>
+                            <button class="btn btn-primary" type="submit">
+                                Offer details
+                            </button>
+                        </form>
                         {% if offer_context.button_action %}
                             <form action="{% url "exchange_offer_continue" %}"
                                   method="post">
@@ -141,6 +154,7 @@
                                         {{ set.legoset.name }}</a>
                                     x {{ set.quantity }}</li>
                             {% endfor %}
+                            <br>
                             {% for brick in offer_context.wanted_bricks %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ brick.brick.image_link }}"
@@ -150,6 +164,7 @@
                                     {{ brick.quantity }}</li>
                             {% endfor %}
                             {% if offer_context.received_cash %}
+                            <br>
                             <li>Cash: {{ offer_context.received_cash }}</li>
                             {% endif %}
                         </ul>
@@ -164,6 +179,7 @@
                                         {{ set.legoset.name }}</a>
                                     x {{ set.quantity }}</li>
                             {% endfor %}
+                            <br>
                             {% for brick in offer_context.offered_bricks %}
                                 <li><img class="img-thumbnail me-2"
                                          src="{{ brick.brick.image_link }}"
@@ -173,11 +189,21 @@
                                     {{ brick.quantity }}</li>
                             {% endfor %}
                             {% if offer_context.offered_cash %}
-                            <li>Cash: {{ offer_context.offered_cash }}</li>
+                            <br>
+                            <li>Cash: {{ offer_context.offered_cash }} USD</li>
                             {% endif %}
                         </ul>
                     </td>
                     <td>
+                        <form action="{% url "offer_details" %}"
+                                method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="offer_id"
+                                   value={{ offer_context.offer.id }}>
+                            <button class="btn btn-primary" type="submit">
+                                Offer details
+                            </button>
+                        </form>
                         {% if offer_context.button_action %}
                             <form action="{% url "exchange_offer_continue" %}"
                                   method="post">
@@ -202,6 +228,18 @@
                                 <button class="btn btn-primary" type="submit">
                                     {% if not offer_context.offer.exchanged %}
                                         Refuse
+                                    {% endif %}
+                                </button>
+                            </form>
+                            <form action="{% url "offer_details" %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="offer_id"
+                                       value={{ offer_context.offer.id }}>
+                                <input type="hidden" name="counteroffer"
+                                       value="true">
+                                <button class="btn btn-primary" type="submit">
+                                    {% if not offer_context.offer.exchanged %}
+                                        Counteroffer
                                     {% endif %}
                                 </button>
                             </form>
