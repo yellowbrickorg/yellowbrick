@@ -1,0 +1,11 @@
+{% autoescape off %}
+Hello {{ user }},
+
+{{ author }} has countered your offer!
+
+{% include 'bsf/exchange/offer_details_snippet.txt' with sets=sets_in_offer bricks=bricks_in_offer %}
+In order to accept, refuse or submit a counteroffer, please log in to the platform.
+
+Cheers!
+yellowbrick
+{% endautoescape %}

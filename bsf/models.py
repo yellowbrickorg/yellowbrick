@@ -416,6 +416,12 @@ class ExchangeOffer(models.Model):
                                        on_delete=models.CASCADE)
     which_in_order = models.PositiveIntegerField()
 
+    def offered_cash(self):
+        return max(self.cash, 0)
+
+    def wanted_cash(self):
+        return max(-self.cash, 0)
+
     class Meta:
         constraints = [
             models.CheckConstraint(
