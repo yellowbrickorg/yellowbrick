@@ -48,6 +48,9 @@
                                     - {{ brick.brick.color.name }} x
                                     {{ brick.quantity }}</li>
                             {% endfor %}
+                            {% if offer_context.offered_cash %}
+                            <li>Cash: {{ offer_context.offered_cash }}</li>
+                            {% endif %}
                         </ul>
                     </td>
                     <td>
@@ -68,6 +71,9 @@
                                     - {{ brick.brick.color.name }} x
                                     {{ brick.quantity }}</li>
                             {% endfor %}
+                            {% if offer_context.received_cash %}
+                            <li>Cash: {{ offer_context.received_cash }}</li>
+                            {% endif %}
                         </ul>
                     </td>
                     <td>
@@ -143,6 +149,9 @@
                                     - {{ brick.0.color.name }} x
                                     {{ brick.quantity }}</li>
                             {% endfor %}
+                            {% if offer_context.received_cash %}
+                            <li>Cash: {{ offer_context.received_cash }}</li>
+                            {% endif %}
                         </ul>
                     </td>
                     <td>
@@ -163,6 +172,9 @@
                                     - {{ brick.brick.color.name }} x
                                     {{ brick.quantity }}</li>
                             {% endfor %}
+                            {% if offer_context.offered_cash %}
+                            <li>Cash: {{ offer_context.offered_cash }}</li>
+                            {% endif %}
                         </ul>
                     </td>
                     <td>
