@@ -368,10 +368,6 @@ class ExchangeOffer(models.Model):
     author_state = models.IntegerField(choices=Status.choices, default=Status.ACCEPTED)
     receiver_state = models.IntegerField(choices=Status.choices, default=Status.PENDING)
 
-    # If cash > 0, the author is offering money to the receiver.
-    # Else, the author intends to get money from the receiver.
-    cash = models.IntegerField(default=0)
-
     exchanged = models.BooleanField(default=False)
 
     class Meta:

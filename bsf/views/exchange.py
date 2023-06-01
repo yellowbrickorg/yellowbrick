@@ -1,4 +1,3 @@
-import copy
 from django.db import transaction
 
 from bsf.models import (
@@ -183,96 +182,6 @@ def del_brick_from_wishlist(request, brick_id, side):
         )
     return redirect(request.POST.get("next", "/"))
 
-def get_exchange_filters(request):
-    filter_sets_offers = request.POST.getlist("filter_sets_offers", False)
-    filter_bricks_offers = request.POST.getlist("filter_bricks_offers", False)
-    filter_sets_wishlist = request.POST.getlist("filter_sets_wishlist", False)
-    filter_bricks_wishlist = request.POST.getlist("filter_bricks_wishlist", False)
-
-    if not filter_sets_offers:
-        filter_sets_offers = []
-    if not filter_bricks_offers:
-        filter_bricks_offers = []
-    if not filter_sets_wishlist:
-        filter_sets_wishlist = []
-    if not filter_bricks_wishlist:
-        filter_bricks_wishlist = []
-
-    return {
-        "filter_sets_offers": filter_sets_offers,
-        "filter_bricks_offers": filter_bricks_offers,
-        "filter_sets_wishlist": filter_sets_wishlist,
-        "filter_bricks_wishlist": filter_bricks_wishlist,
-    }
-
-def apply_filter(exchange_filters : dict, possible_offers : list):
-    updated_possible_offers = copy.deepcopy(possible_offers)
-
-    print(possible_offers)
-
-    for offer in possible_offers:
-        missing = False
-
-
-        wanted_sets = offer['set_quantity_wanted']
-        for filtered_wanted_set_id in exchange_filters['filter_sets_wishlist']:
-            present = False
-            
-            for set in wanted_sets:
-                if set['legoset'].pk == int(filtered_wanted_set_id):
-                    present = True
-                    break
-            
-            if not present:
-                missing = True
-                break
-        
-        if not missing:
-            offered_sets = offer['set_quantity_offered']
-            for filtered_offered_set_id in exchange_filters['filter_sets_offers']:
-                present = False
-                
-                for set in offered_sets:
-                    if set['legoset'].pk == int(filtered_offered_set_id):
-                        present = True
-                        break
-                
-                if not present:
-                    missing = True
-                    break
-
-        if not missing:
-            offered_bricks = offer['brick_quantity_offered']
-            for filtered_offered_brick_id in exchange_filters['filter_bricks_offers']:
-                present = False
-                
-                for brick in offered_bricks:
-                    if brick['brick'].pk == int(filtered_offered_brick_id):
-                        present = True
-                        break
-                
-                if not present:
-                    missing = True
-                    break
-        
-        if not missing:
-            wanted_bricks = offer['brick_quantity_wanted']
-            for filtered_wanted_brick_id in exchange_filters['filter_bricks_wishlist']:
-                present = False
-                
-                for brick in wanted_bricks:
-                    if brick['brick'].pk == int(filtered_wanted_brick_id):
-                        present = True
-                        break
-                
-                if not present:
-                    missing = True
-                    break
-        
-        if missing:
-            updated_possible_offers.remove(offer)
-
-    return updated_possible_offers
 
 def exchange(request):
     logged_user = request.user
@@ -281,16 +190,10 @@ def exchange(request):
         return redirect("index")
 
     possible_offers = generate_possible_offers(logged_user)
-
-    exchange_filters = get_exchange_filters(request)
-
-    viable_possible_offers = apply_filter(exchange_filters, possible_offers)
-
-
     context = base_context(request)
     context.update(
         {
-            "possible_offers": viable_possible_offers,
+            "possible_offers": possible_offers,
         }
     )
     return render(
@@ -346,15 +249,12 @@ def exchange_make_offer(request):
         messages.error(request, "You need to be logged in to access brick exchange.")
         return redirect("index")
     other_user = request.POST.get("other_user")
-    offered_cash = int(request.POST.get("offered_cash"))
-    received_cash = int(request.POST.get("received_cash"))
     if other_user is None:
         return redirect("index")
     other_user = User.objects.get(username=other_user)
     possible_offers = generate_possible_offers(logged_user, other_user)
 
-    exchange_offer = ExchangeOffer(offer_author=request.user, offer_receiver=other_user,
-                                   cash=offered_cash-received_cash)
+    exchange_offer = ExchangeOffer(offer_author=request.user, offer_receiver=other_user)
 
     bricks_in_offer, sets_in_offer = form_offered_bricks_and_sets_lists(
         request, exchange_offer, possible_offers
@@ -379,24 +279,21 @@ def exchange_make_offer(request):
 def get_button_action_for(user, offer):
     is_author = offer.offer_author == user
 
-    if offer.author_state == ExchangeOffer.Status.EXCHANGED \
-        and offer.receiver_state == ExchangeOffer.Status.EXCHANGED:
-        return None
-    if offer.author_state == ExchangeOffer.Status.ACCEPTED \
-        and offer.receiver_state == ExchangeOffer.Status.PENDING:
+    match offer.author_state, offer.receiver_state:
+        case ExchangeOffer.Status.EXCHANGED, ExchangeOffer.Status.EXCHANGED:
+            return None
+        case ExchangeOffer.Status.ACCEPTED, ExchangeOffer.Status.PENDING:
             if is_author:
                 return None
             else:
                 return "Accept"
-    if offer.author_state == ExchangeOffer.Status.ACCEPTED \
-         and offer.receiver_state == ExchangeOffer.Status.ACCEPTED:
+        case ExchangeOffer.Status.ACCEPTED, ExchangeOffer.Status.ACCEPTED:
             return "Exchange"
-    if offer.author_state == ExchangeOffer.Status.EXCHANGED \
-         and offer.receiver_state == ExchangeOffer.Status.ACCEPTED:
+        case ExchangeOffer.Status.EXCHANGED, ExchangeOffer.Status.ACCEPTED:
             return None if is_author else "Exchange"
-    if offer.author_state == ExchangeOffer.Status.ACCEPTED \
-         and offer.receiver_state == ExchangeOffer.Status.EXCHANGED:
+        case ExchangeOffer.Status.ACCEPTED, ExchangeOffer.Status.EXCHANGED:
             return None if not is_author else "Exchange"
+
 
 def exchange_offers(request):
     logged_user = request.user
@@ -444,8 +341,6 @@ def create_offers_context(logged_user, offers):
                     offer=offer, side=Side.WANTED
                 ),
                 "button_action": get_button_action_for(logged_user, offer),
-                "offered_cash": max(offer.cash, 0),
-                "received_cash": max(offer.cash * (-1), 0),
             }
         )
     return context
@@ -517,20 +412,20 @@ def exchange_offer_continue(request):
     offer = ExchangeOffer.objects.get(pk=int(offer_id))
     is_author = offer.offer_author == logged_user
 
-    if offer.receiver_state == ExchangeOffer.Status.PENDING:
-        if not is_author:
-            offer.receiver_state = ExchangeOffer.Status.ACCEPTED
-            messages.success(request, "Offer accepted!")
-            notify_about_offer_accepted(offer)
-    elif offer.receiver_state == ExchangeOffer.Status.ACCEPTED:
-        if is_author:
-            offer.author_state = ExchangeOffer.Status.EXCHANGED
-        else:
-            offer.receiver_state = ExchangeOffer.Status.EXCHANGED
-        messages.success(request, "Items marked as exchanged successfully!")
-        notify_about_offer_exchanged(offer, not is_author)
-    elif offer.author_state == ExchangeOffer.Status.ACCEPTED \
-         and offer.receiver_state == ExchangeOffer.Status.EXCHANGED:
+    match offer.author_state, offer.receiver_state:
+        case _, ExchangeOffer.Status.PENDING:
+            if not is_author:
+                offer.receiver_state = ExchangeOffer.Status.ACCEPTED
+                messages.success(request, "Offer accepted!")
+                notify_about_offer_accepted(offer)
+        case _, ExchangeOffer.Status.ACCEPTED:
+            if is_author:
+                offer.author_state = ExchangeOffer.Status.EXCHANGED
+            else:
+                offer.receiver_state = ExchangeOffer.Status.EXCHANGED
+            messages.success(request, "Items marked as exchanged successfully!")
+            notify_about_offer_exchanged(offer, not is_author)
+        case ExchangeOffer.Status.ACCEPTED, ExchangeOffer.Status.EXCHANGED:
             if is_author:
                 offer.author_state = ExchangeOffer.Status.EXCHANGED
                 notify_about_offer_exchanged(offer, not is_author)
@@ -633,7 +528,7 @@ def generate_possible_offers(logged_user, other=None):
         other_sets_wishlist = offers["user"].wishlist_sets.all()
 
         for brick_wish in other_bricks_wishlist:
-            side_disp = "want" if brick_wish.side == Side.OFFERED else "offer"
+            side_disp = "offer" if brick_wish.side == Side.OFFERED else "want"
             opposite_list = (
                 wanted_bricks if brick_wish.side == Side.OFFERED else offered_bricks
             )
@@ -646,7 +541,7 @@ def generate_possible_offers(logged_user, other=None):
                 offers[f"sum_{side_disp}ed"] += bricks_to_trade
 
         for set_wish in other_sets_wishlist:
-            side_disp = "want" if set_wish.side == Side.OFFERED else "offer"
+            side_disp = "offer" if set_wish.side == Side.OFFERED else "want"
             opposite_list = (
                 wanted_sets if set_wish.side == Side.OFFERED else offered_sets
             )

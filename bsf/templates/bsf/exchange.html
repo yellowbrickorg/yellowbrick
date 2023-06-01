@@ -11,91 +11,7 @@
     <p class="my-3">
         Here you can see any offers that align to your wishlist. If your wishes and
         offers align, even partially, with someone else's, you'll both match.
-        You can also view more specific matches using the filter option below. 
     </p>
-    <form action="{% url 'exchange' %}" method="post">
-        {% csrf_token %}
-    <table class="table">
-        <thead>
-        <tr>
-            <th scope="col">Offered sets</th>
-            <th scope="col">Offered bricks</th>
-            <th scope="col">Received sets</th>
-            <th scope="col">Received bricks</th>
-            <th scope="col"></th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <td>
-                {% for set in user_sets_offers %}
-                <input type="checkbox"
-                id="filter_sets_offers{{ set.legoset.id }}"
-                name="filter_sets_offers"
-                value="{{ set.legoset.id }}">
-                <label for="filter_sets_offers{{ set.legoset.id }}">
-                    <img class="img-thumbnail me-2"
-                    src="{{ set.legoset.image_link }}"
-                    width="50">
-                    <a href="{% url 'set_detail' set.legoset.id %}">{{ set.legoset.name }}</a>  
-                </label>
-                <br>
-                {% endfor %}
-            </td>
-            <td>
-                {% for brick in user_bricks_offers %}
-                <input type="checkbox"
-                id="filter_bricks_offers{{ brick.brick.brick_id }}"
-                name="filter_bricks_offers"
-                value="{{ brick.brick.brick_id }}">
-                <label for="filter_bricks_offers{{ brick.brick.brick_id }}">
-                    <img class="img-thumbnail me-2"
-                    src="{{ brick.brick.image_link }}"
-                    width="50">
-                    <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>  
-                </label>
-                <br>
-                {% endfor %}
-            </td>
-            <td>
-                {% for set in user_sets_wishlist %}
-                <input type="checkbox"
-                id="filter_sets_wishlist{{ set.legoset.id }}"
-                name="filter_sets_wishlist"
-                value="{{ set.legoset.id }}">
-                <label for="filter_sets_wishlist{{ set.legoset.id }}">
-                    <img class="img-thumbnail me-2"
-                    src="{{ set.legoset.image_link }}"
-                    width="50">
-                    <a href="{% url 'set_detail' set.legoset.id %}">{{ set.legoset.name }}</a>  
-                </label>
-                <br>
-                {% endfor %}
-            </td>
-            <td>
-                {% for brick in user_bricks_wishlist %}
-                <input type="checkbox"
-                id="filter_bricks_wishlist{{ brick.brick.brick_id }}"
-                name="filter_bricks_wishlist"
-                value="{{ brick.brick.brick_id }}">
-                <label for="filter_bricks_wishlist{{ brick.brick.brick_id }}">
-                    <img class="img-thumbnail me-2"
-                    src="{{ brick.brick.image_link }}"
-                    width="50">
-                    <a href="{% url 'brick_detail' brick.brick.brick_id %}">{{ brick.brick.part_num }}</a>  
-                </label>
-                <br>
-                {% endfor %}
-            </td>
-            <td>
-                <button class="btn btn-primary" type="submit">
-                    Filter
-                </button>
-            </td>
-        </tr>
-        </tbody>
-    </table>
-    </form>
     {% if possible_offers|length > 0 %}
         <table class="table">
             <thead>
@@ -157,12 +73,6 @@
                                     </div>
                                 {% endfor %}
                             </ul>
-                            <label for="cash">Offered cash:</label>
-                            <input type="number"
-                            name="offered_cash"
-                            value="0"
-                            min="0"
-                            class="form-control">
                         </td>
                         <td>
                             Total of {{ po.sum_wanted }} bricks.
@@ -201,12 +111,6 @@
                                     </div>
                                 {% endfor %}
                             </ul>
-                            <label for="cash">Received cash:</label>
-                            <input type="number"
-                            name="received_cash"
-                            value="0"
-                            min="0"
-                            class="form-control">
                         </td>
                         <td>
                             <button class="btn btn-primary" type="submit">Submit an
