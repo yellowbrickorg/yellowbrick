@@ -124,7 +124,12 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Europe/Warsaw"
+
+USE_L10N = False
+TIME_FORMAT = 'G:i'
+DATE_FORMAT = 'N j, Y'
+DATETIME_FORMAT = 'N j, Y, G:i'
 
 USE_I18N = True
 

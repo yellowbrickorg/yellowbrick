@@ -735,6 +735,8 @@ def offer_details(request):
                     "wanted_bricks": BrickInOfferQuantity.objects.filter(
                         offer=offer, side=Side.WANTED
                     ),
+                    "offered_cash": max(offer.cash, 0),
+                    "received_cash": max(offer.cash * (-1), 0),
                 }
             )
         else:
@@ -753,6 +755,8 @@ def offer_details(request):
                     "wanted_bricks": BrickInOfferQuantity.objects.filter(
                         offer=offer, side=Side.OFFERED
                     ),
+                    "offered_cash": max(offer.cash * (-1), 0),
+                    "received_cash": max(offer.cash, 0),
                 }
             )
         authored = not authored

@@ -357,11 +357,12 @@ class ExchangeChain(models.Model):
     )
 
     def get_last_offer(self):
-        offers = ExchangeOffer.objects.filter(exchange_chain = self).order_by("-which_in_order")
+        offers = ExchangeOffer.objects.filter(exchange_chain=self).order_by(
+            "-which_in_order")
         return offers[0]
-    
+
     def get_next_number(self):
-        offers = ExchangeOffer.objects.filter(exchange_chain = self)
+        offers = ExchangeOffer.objects.filter(exchange_chain=self)
         ret = 2
         for offer in offers:
             if offer.which_in_order + 1 > ret:
@@ -370,7 +371,7 @@ class ExchangeChain(models.Model):
 
     def __str__(self):
         return (
-            "ExchangeChain beetwen " + self.initial_author.username + " and " + self.initial_receiver.username
+                "ExchangeChain beetwen " + self.initial_author.username + " and " + self.initial_receiver.username
         )
 
 
@@ -393,6 +394,9 @@ class ExchangeOffer(models.Model):
         User, on_delete=models.CASCADE, related_name="received_offers"
     )
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Status(models.IntegerChoices):
         PENDING = 0, _("Pending")
         ACCEPTED = 1, _("Accepted")
@@ -408,7 +412,8 @@ class ExchangeOffer(models.Model):
 
     exchanged = models.BooleanField(default=False)
 
-    exchange_chain = models.ForeignKey(ExchangeChain, related_name="related_offers", on_delete=models.CASCADE)
+    exchange_chain = models.ForeignKey(ExchangeChain, related_name="related_offers",
+                                       on_delete=models.CASCADE)
     which_in_order = models.PositiveIntegerField()
 
     class Meta:

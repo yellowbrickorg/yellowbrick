@@ -27,9 +27,11 @@
             <tbody>
             {% for offer_context in offers_made %}
                 <tr>
-                    <th scope="row">
+                    <td>
                         {{ offer_context.offer.offer_receiver }}
-                    </th>
+                        <br>
+                        {{ offer_context.offer.created_at }}
+                    </td>
                     <td>
                         <ul class="list-unstyled">
                             {% for set in offer_context.offered_sets %}
@@ -141,9 +143,11 @@
             <tbody>
             {% for offer_context in offers_received %}
                 <tr>
-                    <th scope="row">
+                    <td>
                         {{ offer_context.offer.offer_author }}
-                    </th>
+                        <br>
+                        {{ offer_context.offer.created_at }}
+                    </td>
                     <td>
                         <ul class="list-unstyled">
                             {% for set in offer_context.wanted_sets %}
