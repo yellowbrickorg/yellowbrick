@@ -1,4 +1,6 @@
 import copy
+import sys
+
 from django.db import transaction
 
 from bsf.models import (
@@ -184,19 +186,23 @@ def del_brick_from_wishlist(request, brick_id, side):
         )
     return redirect(request.POST.get("next", "/"))
 
+
 def get_exchange_filters(request):
     filter_sets_offers = request.POST.getlist("filter_sets_offers", [])
     filter_bricks_offers = request.POST.getlist("filter_bricks_offers", [])
     filter_sets_wishlist = request.POST.getlist("filter_sets_wishlist", [])
     filter_bricks_wishlist = request.POST.getlist("filter_bricks_wishlist", [])
-    set_offered_min = int(request.POST.get("set_offered_min", '-1'))
-    set_offered_max = int(request.POST.get("set_offered_max", '-1'))
-    brick_offered_min = int(request.POST.get("brick_offered_min", '-1'))
-    brick_offered_max = int(request.POST.get("brick_offered_max", '-1'))
-    set_wishlist_min = int(request.POST.get("set_wishlist_min", '-1'))
-    set_wishlist_max = int(request.POST.get("set_wishlist_max", '-1'))
-    brick_wishlist_min = int(request.POST.get("brick_wishlist_min", '-1'))
-    brick_wishlist_max = int(request.POST.get("brick_wishlist_max", '-1'))
+    set_offered_min = default_if_empty(request.POST.get("set_offered_min"), 0)
+    set_offered_max = default_if_empty(request.POST.get("set_offered_max"), sys.maxsize)
+    brick_offered_min = default_if_empty(request.POST.get("brick_offered_min"), 0)
+    brick_offered_max = default_if_empty(request.POST.get("brick_offered_max"),
+                                         sys.maxsize)
+    set_wishlist_min = default_if_empty(request.POST.get("set_wishlist_min"), 0)
+    set_wishlist_max = default_if_empty(request.POST.get("set_wishlist_max"),
+                                        sys.maxsize)
+    brick_wishlist_min = default_if_empty(request.POST.get("brick_wishlist_min"), 0)
+    brick_wishlist_max = default_if_empty(request.POST.get("brick_wishlist_max"),
+                                          sys.maxsize)
 
     return {
         "filter_sets_offers": filter_sets_offers,
@@ -213,36 +219,19 @@ def get_exchange_filters(request):
         "brick_wishlist_max": brick_wishlist_max,
     }
 
-def apply_filter(exchange_filters : dict, possible_offers : list):
+
+def apply_filter(exchange_filters: dict, possible_offers: list):
     updated_possible_offers = copy.deepcopy(possible_offers)
 
     for offer in possible_offers:
-        missing = False
-
-        if exchange_filters["set_offered_min"] >= 0 \
-        and offer['sets_offered'] < exchange_filters["set_offered_min"]:
-            missing = True
-        elif exchange_filters["set_offered_max"] >= 0 \
-        and offer['sets_offered'] > exchange_filters["set_offered_max"]:
-            missing = True
-        elif exchange_filters["set_wishlist_min"] >= 0 \
-        and offer['sets_wanted'] < exchange_filters["set_wishlist_min"]:
-            missing = True
-        elif exchange_filters["set_wishlist_max"] >= 0 \
-        and offer['sets_wanted'] > exchange_filters["set_wishlist_max"]:
-            missing = True
-        elif exchange_filters["brick_offered_min"] >= 0 \
-        and offer['bricks_offered'] < exchange_filters["brick_offered_min"]:
-            missing = True
-        elif exchange_filters["brick_offered_max"] >= 0 \
-        and offer['bricks_offered'] > exchange_filters["brick_offered_max"]:
-            missing = True
-        elif exchange_filters["brick_wishlist_min"] >= 0 \
-        and offer['bricks_wanted'] < exchange_filters["brick_wishlist_min"]:
-            missing = True
-        elif exchange_filters["brick_wishlist_max"] >= 0 \
-        and offer['bricks_wanted'] > exchange_filters["brick_wishlist_max"]:
-            missing = True
+        missing = offer['sets_offered'] < exchange_filters["set_offered_min"] or \
+                  offer['sets_offered'] > exchange_filters["set_offered_max"] or \
+                  offer['sets_wanted'] < exchange_filters["set_wishlist_min"] or \
+                  offer['sets_wanted'] > exchange_filters["set_wishlist_max"] or \
+                  offer['bricks_offered'] < exchange_filters["brick_offered_min"] or \
+                  offer['bricks_offered'] > exchange_filters["brick_offered_max"] or \
+                  offer['bricks_wanted'] < exchange_filters["brick_wishlist_min"] or \
+                  offer['bricks_wanted'] > exchange_filters["brick_wishlist_max"]
 
         if not missing:
             wanted_sets = offer['set_quantity_wanted']
@@ -305,6 +294,7 @@ def apply_filter(exchange_filters : dict, possible_offers : list):
 
     return updated_possible_offers
 
+
 def exchange(request):
     logged_user = request.user
     if not logged_user.is_authenticated:
@@ -316,7 +306,6 @@ def exchange(request):
     exchange_filters = get_exchange_filters(request)
 
     viable_possible_offers = apply_filter(exchange_filters, possible_offers)
-
 
     context = base_context(request)
     context.update(
@@ -390,7 +379,8 @@ def exchange_make_offer(request):
     other_user = User.objects.get(username=other_user)
     possible_offers = generate_possible_offers(logged_user, other_user)
 
-    exchange_chain = ExchangeChain(initial_author=request.user, initial_receiver=other_user)
+    exchange_chain = ExchangeChain(initial_author=request.user,
+                                   initial_receiver=other_user)
 
     exchange_offer = ExchangeOffer(
         offer_author=request.user,
@@ -426,23 +416,24 @@ def get_button_action_for(user, offer):
     is_author = offer.offer_author == user
 
     if offer.author_state == ExchangeOffer.Status.EXCHANGED \
-        and offer.receiver_state == ExchangeOffer.Status.EXCHANGED:
+            and offer.receiver_state == ExchangeOffer.Status.EXCHANGED:
         return None
     if offer.author_state == ExchangeOffer.Status.ACCEPTED \
-        and offer.receiver_state == ExchangeOffer.Status.PENDING:
-            if is_author:
-                return None
-            else:
-                return "Accept"
+            and offer.receiver_state == ExchangeOffer.Status.PENDING:
+        if is_author:
+            return None
+        else:
+            return "Accept"
     if offer.author_state == ExchangeOffer.Status.ACCEPTED \
-         and offer.receiver_state == ExchangeOffer.Status.ACCEPTED:
-            return "Exchange"
+            and offer.receiver_state == ExchangeOffer.Status.ACCEPTED:
+        return "Exchange"
     if offer.author_state == ExchangeOffer.Status.EXCHANGED \
-         and offer.receiver_state == ExchangeOffer.Status.ACCEPTED:
-            return None if is_author else "Exchange"
+            and offer.receiver_state == ExchangeOffer.Status.ACCEPTED:
+        return None if is_author else "Exchange"
     if offer.author_state == ExchangeOffer.Status.ACCEPTED \
-         and offer.receiver_state == ExchangeOffer.Status.EXCHANGED:
-            return None if not is_author else "Exchange"
+            and offer.receiver_state == ExchangeOffer.Status.EXCHANGED:
+        return None if not is_author else "Exchange"
+
 
 def exchange_offers(request):
     logged_user = request.user
@@ -575,10 +566,10 @@ def exchange_offer_continue(request):
         messages.success(request, "Items marked as exchanged successfully!")
         notify_about_offer_exchanged(offer, not is_author)
     elif offer.author_state == ExchangeOffer.Status.ACCEPTED \
-         and offer.receiver_state == ExchangeOffer.Status.EXCHANGED:
-            if is_author:
-                offer.author_state = ExchangeOffer.Status.EXCHANGED
-                notify_about_offer_exchanged(offer, not is_author)
+            and offer.receiver_state == ExchangeOffer.Status.EXCHANGED:
+        if is_author:
+            offer.author_state = ExchangeOffer.Status.EXCHANGED
+            notify_about_offer_exchanged(offer, not is_author)
 
     if (offer.author_state, offer.receiver_state) == (
             ExchangeOffer.Status.EXCHANGED,
@@ -720,10 +711,10 @@ def get_related_offers(user):
     offers_received = []
 
     chains = []
-    for chain in ExchangeChain.objects.filter(initial_author = user):
+    for chain in ExchangeChain.objects.filter(initial_author=user):
         chains.append(chain)
 
-    for chain in ExchangeChain.objects.filter(initial_receiver = user):
+    for chain in ExchangeChain.objects.filter(initial_receiver=user):
         chains.append(chain)
 
     for chain in chains:
@@ -748,13 +739,13 @@ def offer_details(request):
         messages.error(request, "Offer not found.")
         return redirect("index")
     offer_clicked = ExchangeOffer.objects.get(id=offer_id)
-    counteroffer_jump = ( request.POST.get("counteroffer") is not None )
+    counteroffer_jump = (request.POST.get("counteroffer") is not None)
     chain = offer_clicked.exchange_chain
     all_offers = chain.related_offers.all()
-    sorted(all_offers, key=lambda offer : offer.which_in_order)
+    sorted(all_offers, key=lambda offer: offer.which_in_order)
 
     all_offers_context = []
-    authored = ( chain.initial_author == logged_user )
+    authored = (chain.initial_author == logged_user)
     for offer in all_offers:
         if authored:
             all_offers_context.append(
@@ -815,12 +806,12 @@ def offer_details(request):
     possible_offer = generate_possible_offers(logged_user, other_user)
 
     context = {
-        "other_user" : other_user,
-        "offers_history" : all_offers_context,
-        "may_counteroffer" : may_counteroffer,
-        "possible_offer" : possible_offer[0],
-        "jump_to_counteroffer" : counteroffer_jump,
-        "chain_id" : chain.id,
+        "other_user": other_user,
+        "offers_history": all_offers_context,
+        "may_counteroffer": may_counteroffer,
+        "possible_offer": possible_offer[0],
+        "jump_to_counteroffer": counteroffer_jump,
+        "chain_id": chain.id,
     }
 
     return render(
@@ -840,7 +831,7 @@ def counteroffer_continue(request):
     if chain_id is None:
         messages.error(request, "Offer not found.")
         return redirect("index")
-    chain = ExchangeChain.objects.get(id = chain_id)
+    chain = ExchangeChain.objects.get(id=chain_id)
 
     offered_cash = request.POST.get("offered_cash")
     received_cash = request.POST.get("received_cash")
