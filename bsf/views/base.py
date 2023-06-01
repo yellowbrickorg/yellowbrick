@@ -385,7 +385,7 @@ def convert(request, id):
     return HttpResponseRedirect(reverse("collection", args=()))
 
 
-def build_set(request, id):
+def build_set_from_bricks(request, id):
     lego_set = get_object_or_404(LegoSet, id=id)
 
     logged_user = request.user

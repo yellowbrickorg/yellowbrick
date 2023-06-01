@@ -16,9 +16,7 @@
                                     {{ brick_set.number }}</a>
                                 {{ brick_set.name }} x
                                 {{ set_in_collection.quantity }}
-                                {{ set_in_collection.quantity }} in inventory, with
-                                {{ set_in_collection.in_use }} currently built.
-                                </a>
+                                ({{ set_in_collection.in_use }} built)
                             </div>
                             <div class="dropdown">
                                 <button class="btn btn-outline-secondary
@@ -36,7 +34,7 @@
                                                 <input type="number" name="quantity"
                                                        value="1"
                                                        id="setquantity{{ brick_set.id }}"
-                                                       min="0"
+                                                       min="1"
                                                        max="{{ 100|subtract:set_in_collection.quantity }}"
                                                        class="form-control">
                                                 <button type="submit"
@@ -54,7 +52,7 @@
                                                 <input type="number" name="quantity"
                                                        value="1"
                                                        id="setdelquantity{{ brick_set.id }}"
-                                                       min="0"
+                                                       min="1"
                                                        max="{{ set_in_collection.quantity }}"
                                                        class="form-control">
                                                 <button type="submit"
@@ -72,7 +70,7 @@
                                                 <input type="number" name="quantity"
                                                        value="1"
                                                        id="convertquantity{{ brick_set.id }}"
-                                                       min="0"
+                                                       min="1"
                                                        max="{{ set_in_collection.quantity }}"
                                                        class="form-control">
                                                 <button type="submit"
@@ -92,7 +90,7 @@
                                                 <input type="number" name="quantity"
                                                        value="1"
                                                        id="setofferedquantity{{ brick_set.id }}"
-                                                       min="0"
+                                                       min="1"
                                                        max="{{ set_in_collection.quantity }}"
                                                        class="form-control">
                                                 <button type="submit"
@@ -109,9 +107,10 @@
                                                 {% csrf_token %}
                                                 <input type="hidden" name="next"
                                                        value="{{ request.path }}">
-                                                <input type="number" name="quantity" value="0"
+                                                <input type="number" name="quantity"
+                                                       value="1"
                                                        id="setbuiltquantity{{ brick_set.id }}"
-                                                       min="0"
+                                                       min="1"
                                                        max="{{ set_in_collection.quantity|subtract:set_in_collection.in_use   }}"
                                                        class="form-control">
                                                 <button type="submit"
@@ -128,9 +127,10 @@
                                                 {% csrf_token %}
                                                 <input type="hidden" name="next"
                                                        value="{{ request.path }}">
-                                                <input type="number" name="quantity" value="0"
+                                                <input type="number" name="quantity"
+                                                       value="1"
                                                        id="setdismantledquantity{{ brick_set.id }}"
-                                                       min="0"
+                                                       min="1"
                                                        max="{{ set_in_collection.in_use }}"
                                                        class="form-control">
                                                 <button type="submit"
