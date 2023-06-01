@@ -23,4 +23,23 @@
             </td>
         </tr>
     {% endfor %}
+    {% if cash > 0 %}
+        <tr>
+            <td>
+                Offered
+            </td>
+            <td>
+                {{ cash }} USD
+            </td>
+        </tr>
+    {% elif cash < 0 %}
+        <tr>
+            <td>
+                Requested
+            </td>
+            <td>
+                {{ cash|cut:"-" }} USD
+            </td>
+        </tr>
+    {% endif %}
 </table>

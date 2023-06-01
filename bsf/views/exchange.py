@@ -386,7 +386,8 @@ def exchange_make_offer(request):
     for sioq in sets_in_offer:
         sioq.save()
 
-    notify_about_new_offer(logged_user, other_user, sets_in_offer, bricks_in_offer)
+    notify_about_new_offer(logged_user, other_user, sets_in_offer, bricks_in_offer,
+                           cash, False)
 
     return redirect("exchange_offers")
 
@@ -789,7 +790,7 @@ def offer_details(request):
     return render(
         request=request,
         context=context,
-        template_name="bsf/exchange/offer_details.html",
+        template_name="bsf/offer_details.html",
     )
 
 
@@ -845,6 +846,7 @@ def counteroffer_continue(request):
     for sioq in sets_in_offer:
         sioq.save()
 
-    notify_about_new_offer(logged_user, other_user, sets_in_offer, bricks_in_offer)
+    notify_about_new_offer(logged_user, other_user, sets_in_offer, bricks_in_offer,
+                           cash, True)
 
     return redirect("exchange_offers")
