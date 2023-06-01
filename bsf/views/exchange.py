@@ -225,10 +225,10 @@ def apply_filter(exchange_filters : dict, possible_offers : list):
         elif exchange_filters["set_offered_max"] >= 0 \
         and offer['sets_offered'] > exchange_filters["set_offered_max"]:
             missing = True
-        elif exchange_filters["set_wanted_min"] >= 0 \
+        elif exchange_filters["set_wishlist_min"] >= 0 \
         and offer['sets_wanted'] < exchange_filters["set_wishlist_min"]:
             missing = True
-        elif exchange_filters["set_wanted_max"] >= 0 \
+        elif exchange_filters["set_wishlist_max"] >= 0 \
         and offer['sets_wanted'] > exchange_filters["set_wishlist_max"]:
             missing = True
         elif exchange_filters["brick_offered_min"] >= 0 \
@@ -237,10 +237,10 @@ def apply_filter(exchange_filters : dict, possible_offers : list):
         elif exchange_filters["brick_offered_max"] >= 0 \
         and offer['bricks_offered'] > exchange_filters["brick_offered_max"]:
             missing = True
-        elif exchange_filters["brick_wanted_min"] >= 0 \
+        elif exchange_filters["brick_wishlist_min"] >= 0 \
         and offer['bricks_wanted'] < exchange_filters["brick_wishlist_min"]:
             missing = True
-        elif exchange_filters["brick_wanted_max"] >= 0 \
+        elif exchange_filters["brick_wishlist_max"] >= 0 \
         and offer['bricks_wanted'] > exchange_filters["brick_wishlist_max"]:
             missing = True
 
