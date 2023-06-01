@@ -185,48 +185,78 @@ def del_brick_from_wishlist(request, brick_id, side):
     return redirect(request.POST.get("next", "/"))
 
 def get_exchange_filters(request):
-    filter_sets_offers = request.POST.getlist("filter_sets_offers", False)
-    filter_bricks_offers = request.POST.getlist("filter_bricks_offers", False)
-    filter_sets_wishlist = request.POST.getlist("filter_sets_wishlist", False)
-    filter_bricks_wishlist = request.POST.getlist("filter_bricks_wishlist", False)
-
-    if not filter_sets_offers:
-        filter_sets_offers = []
-    if not filter_bricks_offers:
-        filter_bricks_offers = []
-    if not filter_sets_wishlist:
-        filter_sets_wishlist = []
-    if not filter_bricks_wishlist:
-        filter_bricks_wishlist = []
+    filter_sets_offers = request.POST.getlist("filter_sets_offers", [])
+    filter_bricks_offers = request.POST.getlist("filter_bricks_offers", [])
+    filter_sets_wishlist = request.POST.getlist("filter_sets_wishlist", [])
+    filter_bricks_wishlist = request.POST.getlist("filter_bricks_wishlist", [])
+    set_offered_min = int(request.POST.get("set_offered_min", '-1'))
+    set_offered_max = int(request.POST.get("set_offered_max", '-1'))
+    brick_offered_min = int(request.POST.get("brick_offered_min", '-1'))
+    brick_offered_max = int(request.POST.get("brick_offered_max", '-1'))
+    set_wishlist_min = int(request.POST.get("set_wishlist_min", '-1'))
+    set_wishlist_max = int(request.POST.get("set_wishlist_max", '-1'))
+    brick_wishlist_min = int(request.POST.get("brick_wishlist_min", '-1'))
+    brick_wishlist_max = int(request.POST.get("brick_wishlist_max", '-1'))
 
     return {
         "filter_sets_offers": filter_sets_offers,
         "filter_bricks_offers": filter_bricks_offers,
         "filter_sets_wishlist": filter_sets_wishlist,
         "filter_bricks_wishlist": filter_bricks_wishlist,
+        "set_offered_min": set_offered_min,
+        "set_offered_max": set_offered_max,
+        "set_wishlist_min": set_wishlist_min,
+        "set_wishlist_max": set_wishlist_max,
+        "brick_offered_min": brick_offered_min,
+        "brick_offered_max": brick_offered_max,
+        "brick_wishlist_min": brick_wishlist_min,
+        "brick_wishlist_max": brick_wishlist_max,
     }
 
 def apply_filter(exchange_filters : dict, possible_offers : list):
     updated_possible_offers = copy.deepcopy(possible_offers)
 
-    print(possible_offers)
-
     for offer in possible_offers:
         missing = False
 
+        if exchange_filters["set_offered_min"] >= 0 \
+        and offer['sets_offered'] < exchange_filters["set_offered_min"]:
+            missing = True
+        elif exchange_filters["set_offered_max"] >= 0 \
+        and offer['sets_offered'] > exchange_filters["set_offered_max"]:
+            missing = True
+        elif exchange_filters["set_wanted_min"] >= 0 \
+        and offer['sets_wanted'] < exchange_filters["set_wishlist_min"]:
+            missing = True
+        elif exchange_filters["set_wanted_max"] >= 0 \
+        and offer['sets_wanted'] > exchange_filters["set_wishlist_max"]:
+            missing = True
+        elif exchange_filters["brick_offered_min"] >= 0 \
+        and offer['bricks_offered'] < exchange_filters["brick_offered_min"]:
+            missing = True
+        elif exchange_filters["brick_offered_max"] >= 0 \
+        and offer['bricks_offered'] > exchange_filters["brick_offered_max"]:
+            missing = True
+        elif exchange_filters["brick_wanted_min"] >= 0 \
+        and offer['bricks_wanted'] < exchange_filters["brick_wishlist_min"]:
+            missing = True
+        elif exchange_filters["brick_wanted_max"] >= 0 \
+        and offer['bricks_wanted'] > exchange_filters["brick_wishlist_max"]:
+            missing = True
 
-        wanted_sets = offer['set_quantity_wanted']
-        for filtered_wanted_set_id in exchange_filters['filter_sets_wishlist']:
-            present = False
+        if not missing:
+            wanted_sets = offer['set_quantity_wanted']
+            for filtered_wanted_set_id in exchange_filters['filter_sets_wishlist']:
+                present = False
 
-            for set in wanted_sets:
-                if set['legoset'].pk == int(filtered_wanted_set_id):
-                    present = True
+                for set in wanted_sets:
+                    if set['legoset'].pk == int(filtered_wanted_set_id):
+                        present = True
+                        break
+
+                if not present:
+                    missing = True
                     break
-
-            if not present:
-                missing = True
-                break
 
         if not missing:
             offered_sets = offer['set_quantity_offered']
@@ -612,6 +642,10 @@ def dict_offer_base(user):
         "set_quantity_wanted": [],
         "sum_offered": 0,
         "sum_wanted": 0,
+        "sets_offered": 0,
+        "sets_wanted": 0,
+        "bricks_offered": 0,
+        "bricks_wanted": 0,
     }
 
 
@@ -650,6 +684,7 @@ def generate_possible_offers(logged_user, other=None):
                     {"brick": brick_wish.brick, "quantity": bricks_to_trade}
                 )
                 offers[f"sum_{side_disp}ed"] += bricks_to_trade
+                offers[f"bricks_{side_disp}ed"] += bricks_to_trade
 
         for set_wish in other_sets_wishlist:
             side_disp = "want" if set_wish.side == Side.OFFERED else "offer"
@@ -665,6 +700,7 @@ def generate_possible_offers(logged_user, other=None):
                 offers[f"sum_{side_disp}ed"] += (
                         sets_to_trade * set_wish.legoset.number_of_bricks()
                 )
+                offers[f"sets_{side_disp}ed"] += sets_to_trade
 
     possible_offers = [
         offers
