@@ -28,6 +28,9 @@
         <tbody>
         <tr>
             <td>
+                {% if not user_sets_offers %}
+                You don't offer any sets.
+                {% endif %}
                 {% for set in user_sets_offers %}
                 <input type="checkbox"
                 id="filter_sets_offers{{ set.legoset.id }}"
@@ -41,8 +44,17 @@
                 </label>
                 <br>
                 {% endfor %}
+                <input type="number" name="set_offered_min" id="set_offered_min"
+                placeholder="Min quantity"
+                class="form-control"><br>
+                <input type="number" name="set_offered_max" id="set_offered_max"
+                placeholder="Max quantity"
+                class="form-control">
             </td>
             <td>
+                {% if not user_bricks_offers %}
+                You don't offer any bricks.
+                {% endif %}
                 {% for brick in user_bricks_offers %}
                 <input type="checkbox"
                 id="filter_bricks_offers{{ brick.brick.brick_id }}"
@@ -56,8 +68,17 @@
                 </label>
                 <br>
                 {% endfor %}
+                <input type="number" name="brick_offered_min" id="brick_offered_min"
+                placeholder="Min quantity"
+                class="form-control"><br>
+                <input type="number" name="brick_offered_max" id="brick_offered_max"
+                placeholder="Max quantity"
+                class="form-control">
             </td>
             <td>
+                {% if not user_sets_wishlist %}
+                You don't have any sets in your wishlist.
+                {% endif %}
                 {% for set in user_sets_wishlist %}
                 <input type="checkbox"
                 id="filter_sets_wishlist{{ set.legoset.id }}"
@@ -71,8 +92,17 @@
                 </label>
                 <br>
                 {% endfor %}
+                <input type="number" name="set_wishlist_min" id="set_wishlist_min"
+                placeholder="Min quantity"
+                class="form-control"><br>
+                <input type="number" name="set_wishlist_max" id="set_wishlist_max"
+                placeholder="Max quantity"
+                class="form-control">
             </td>
             <td>
+                {% if not user_bricks_wishlist %}
+                You don't have any bricks in your wishlist.
+                {% endif %}
                 {% for brick in user_bricks_wishlist %}
                 <input type="checkbox"
                 id="filter_bricks_wishlist{{ brick.brick.brick_id }}"
@@ -86,6 +116,12 @@
                 </label>
                 <br>
                 {% endfor %}
+                <input type="number" name="brick_wishlist_min" id="brick_wishlist_min"
+                placeholder="Min quantity"
+                class="form-control"><br>
+                <input type="number" name="brick_wishlist_max" id="brick_wishlist_max"
+                placeholder="Max quantity"
+                class="form-control">
             </td>
             <td>
                 <button class="btn btn-primary" type="submit">
