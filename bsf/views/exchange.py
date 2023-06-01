@@ -33,7 +33,7 @@ def wishlist(request):
 def add_brick_to_wishlist(request, id, side):
     brick = get_object_or_404(Brick, brick_id=id)
     try:
-        qty = int(request.POST.get("quantity", False))
+        qty = zero_if_empty(request.POST.get("quantity"))
     except:
         return redirect(request.POST.get("next", "/"))
     else:
@@ -78,7 +78,7 @@ def add_brick_to_wishlist(request, id, side):
 def add_set_to_wishlist(request, id, side):
     lego_set = get_object_or_404(LegoSet, id=id)
     try:
-        qty = int(request.POST.get("quantity", False))
+        qty = zero_if_empty(request.POST.get("quantity"))
     except:
         return redirect(request.POST.get("next", "/"))
     else:
@@ -120,7 +120,7 @@ def add_set_to_wishlist(request, id, side):
 def del_set_from_wishlist(request, id, side):
     lego_set = get_object_or_404(LegoSet, id=id)
     try:
-        qty = int(request.POST.get("quantity", False))
+        qty = zero_if_empty(request.POST.get("quantity"))
     except:
         return redirect(request.POST.get("next", "/"))
     else:
@@ -155,7 +155,7 @@ def del_set_from_wishlist(request, id, side):
 
 def del_brick_from_wishlist(request, brick_id, side):
     brick = get_object_or_404(Brick, brick_id=brick_id)
-    qty = int(request.POST.get("quantity", False))
+    qty = zero_if_empty(request.POST.get("quantity"))
     logged_user = request.user
     if qty > 0:
         wishlist = BrickInWishlistQuantity.objects.filter(user=logged_user)
@@ -346,15 +346,15 @@ def exchange_make_offer(request):
         messages.error(request, "You need to be logged in to access brick exchange.")
         return redirect("index")
     other_user = request.POST.get("other_user")
-    offered_cash = int(request.POST.get("offered_cash"))
-    received_cash = int(request.POST.get("received_cash"))
+    offered_cash = zero_if_empty(request.POST.get("offered_cash"))
+    received_cash = zero_if_empty(request.POST.get("received_cash"))
     if other_user is None:
         return redirect("index")
     other_user = User.objects.get(username=other_user)
     possible_offers = generate_possible_offers(logged_user, other_user)
 
     exchange_offer = ExchangeOffer(offer_author=request.user, offer_receiver=other_user,
-                                   cash=offered_cash-received_cash)
+                                   cash=offered_cash - received_cash)
 
     bricks_in_offer, sets_in_offer = form_offered_bricks_and_sets_lists(
         request, exchange_offer, possible_offers
