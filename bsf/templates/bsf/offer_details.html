@@ -27,6 +27,10 @@
                     {{ offer_context.offer.offer_author }}
                     <br>
                     {{ offer_context.offer.created_at }}
+                    {% if offer_context.last_offer %}
+                    <br><br>
+                    <b>Current offer</b>
+                    {% endif %}
                 </td>
                 <td>
                     <ul class="list-unstyled">
