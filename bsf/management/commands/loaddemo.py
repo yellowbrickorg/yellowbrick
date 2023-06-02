@@ -128,12 +128,27 @@ class Command(BaseCommand):
 
         Wishlist.objects.create(user=user2)
 
+        lego_set5 = LegoSet.objects.create(
+            number="Custom Set",
+            name="MINI AT-AT",
+            image_link="https://ideascdn.lego.com/media/generate/lego_ci/3d79a674-18ed-45ac-bd84-c65ad670ee4b/resize:950:633/webp",
+            inventory_id=5,
+            theme="Custom",
+            quantity_of_bricks=101,
+            custom_video_link="//www.youtube.com/embed/HULnqQL_ZQc",
+            author=user1,
+        )
+
+        lego_set5.bricks.add(brick2, through_defaults={"quantity": 25})
+        lego_set5.bricks.add(brick3, through_defaults={"quantity": 15})
+
         stat1 = BrickStats.objects.create(
             user=user1,
             brick_set=lego_set1,
             likes=8,
             min_recommended_age=18,
             build_time=30,
+            instruction_rating=2,
         )
 
         stat2 = BrickStats.objects.create(
@@ -142,6 +157,7 @@ class Command(BaseCommand):
             likes=5,
             min_recommended_age=30,
             build_time=40,
+            instruction_rating=3,
         )
 
         stat2 = BrickStats.objects.create(
@@ -150,6 +166,7 @@ class Command(BaseCommand):
             likes=10,
             min_recommended_age=5,
             build_time=50,
+            instruction_rating=1,
         )
 
         self.stdout.write(self.style.SUCCESS("Successfully created demo database"))

@@ -1,0 +1,10 @@
+{% autoescape off %}
+Hello {{ email_receiver }},
+{{ exchanger }} marked his bricks as exchanged in offer.
+
+If you both swap the contents of the offer, your inventories will be updated to
+match the result of this exchange.
+
+Cheers!
+yellowbrick
+{% endautoescape %}

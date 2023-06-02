@@ -1,16 +1,19 @@
-import sys
+import sys, copy
 
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.http import HttpResponse, HttpResponseRedirect
+from django.forms import formset_factory
+from django.http import HttpResponse, HttpResponseRedirect, QueryDict, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template import loader
 from django.urls import reverse
 from django.db.models import Avg
 from django.db.models import Q
 from django.views.generic import ListView, DetailView
-
+from django import forms
 from django.db.models import Max
+
+from bsf.forms import LegoSetForm, BrickQuantityForm
 from bsf.models import (
     Brick,
     LegoSet,
@@ -19,10 +22,11 @@ from bsf.models import (
     BrickInSetQuantity,
     SetInWishlistQuantity,
     BrickInWishlistQuantity,
-    BrickStats,
+    BrickStats, OwnedLegoSet,
 )
 from bsf.models import UserCollection, User
 
+MAX_DEPTH = 3
 
 def base_context(request):
     logged_user = request.user
@@ -48,6 +52,19 @@ def base_context(request):
     return context
 
 
+def sets_to_build(request):
+    logged_user = request.user
+    if logged_user.is_authenticated:
+        buildable_sets = get_buildable_sets(logged_user)
+        context = base_context(request)
+        context.update({"buildable_sets": buildable_sets})
+        template = loader.get_template("bsf/sets_to_build.html")
+        return HttpResponse(template.render(context, request))
+    else:
+        messages.info(request, "You need to be logged in to access collections.")
+        return redirect("login")
+
+
 def collection(request):
     logged_user = request.user
     if logged_user.is_authenticated:
@@ -56,7 +73,6 @@ def collection(request):
         max_bricks = user_collection.sets.aggregate(
             max_bricks=Max("quantity_of_bricks")
         )["max_bricks"]
-
         if user_collection:
             theme = request.GET.get("theme")
             min_quantity = request.GET.get("start_quantity", 0)
@@ -72,9 +88,9 @@ def collection(request):
             else:
                 max_quantity = int(max_quantity)
 
-            user_sets = user_collection.sets.through.objects.filter(
-                collection=user_collection
-            )
+            user_sets = user_collection.setincollectionquantity_set.all()
+            owned_sets = user_collection.ownedlegoset_set.all()
+
             if theme:
                 user_sets = user_sets.filter(brick_set__theme=theme)
 
@@ -94,12 +110,14 @@ def collection(request):
         context.update(
             {
                 "user_sets": user_sets,
+                "owned_sets": owned_sets,
                 "user_bricks": user_bricks,
                 "logged_user": logged_user,
                 "set_themes": set_themes,
                 "selected_theme": theme,
                 "start_quantity": min_quantity,
                 "end_quantity": max_quantity,
+                "checked_exclude": "off",
             }
         )
         template = loader.get_template("bsf/collection.html")
@@ -123,13 +141,16 @@ def legoset_list(request):
         .all()
     )
 
-    max_bricks = queryset.aggregate(max_bricks=Max("quantity_of_bricks")).get(
-        "max_bricks", 9999999
+    max_bricks = default_if_empty(
+        queryset.aggregate(max_bricks=Max("quantity_of_bricks")).get("max_bricks"),
+        9999999,
     )
-    max_time = int(
-        queryset.aggregate(max_time=Max("avg_time")).get("max_time", 9999999)
+    max_time = default_if_empty(
+        queryset.aggregate(max_time=Max("avg_time")).get("max_time"), 9999999
     )
-    max_age = int(queryset.aggregate(max_age=Max("avg_age")).get("max_age", 9999999))
+    max_age = default_if_empty(
+        queryset.aggregate(max_age=Max("avg_age")).get("max_age"), 9999999
+    )
 
     set_themes = LegoSet.objects.values_list("theme", flat=True).distinct()
 
@@ -153,6 +174,8 @@ def legoset_list(request):
 
     if theme:
         queryset = queryset.filter(theme=theme)
+
+    queryset = queryset.filter(visibility=True)
 
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get("page")
@@ -241,14 +264,52 @@ def del_set(request, id):
             except (KeyError, SetInCollectionQuantity.DoesNotExist):
                 collection.sets.add(lego_set, through_defaults={"quantity": qty})
             else:
-                if set_through.quantity <= qty:
-                    collection.sets.remove(lego_set)
-                else:
-                    set_through.quantity -= qty
-                    set_through.save()
+                set_through.modify_quantity_or_delete(-qty)
         messages.success(
             request,
             f"Removed {qty} set(s) with set number {lego_set.id} from " f"collection.",
+        )
+        return HttpResponseRedirect(reverse("collection", args=()))
+
+def build_set(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    try:
+        qty = int(request.POST.get("quantity", False))
+    except:
+        return HttpResponseRedirect(reverse("collection", args=()))
+    else:
+        logged_user = request.user
+        collection = UserCollection.objects.get(user=logged_user)
+        if qty > 0:
+            set_through = collection.sets.through.objects.get(
+                brick_set_id=id, collection=collection
+            )
+            set_through.modify_in_use(qty)
+
+        messages.success(
+            request,
+            f"Marked sets as built.",
+        )
+        return HttpResponseRedirect(reverse("collection", args=()))
+
+def dismantle_set(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+    try:
+        qty = int(request.POST.get("quantity", False))
+    except:
+        return HttpResponseRedirect(reverse("collection", args=()))
+    else:
+        logged_user = request.user
+        collection = UserCollection.objects.get(user=logged_user)
+        if qty > 0:
+            set_through = collection.sets.through.objects.get(
+                brick_set_id=id, collection=collection
+            )
+            set_through.modify_in_use(-qty)
+
+        messages.success(
+            request,
+            f"Marked sets as dismantled.",
         )
         return HttpResponseRedirect(reverse("collection", args=()))
 
@@ -324,6 +385,22 @@ def convert(request, id):
     return HttpResponseRedirect(reverse("collection", args=()))
 
 
+def build_set_from_bricks(request, id):
+    lego_set = get_object_or_404(LegoSet, id=id)
+
+    logged_user = request.user
+    collection = UserCollection.objects.get(user=logged_user)
+
+    brickinset_through = lego_set.bricks.through.objects.filter(brick_set=lego_set)
+    for brickth in brickinset_through:
+        brick = brickth.brick  # Assuming that brickth.brick is already a Brick instance
+        collection.modify_brick_quantity(brick, -brickth.quantity)
+
+    collection.modify_set_quantity(lego_set, 1)
+
+    return HttpResponseRedirect(reverse("collection", args=()))
+
+
 def check_set(
         all_users_bricks,
         lego_set: LegoSet,
@@ -355,21 +432,44 @@ def get_dict_of_users_bricks(user: User, all_users_bricks=None):
     return all_users_bricks
 
 
-def get_dict_of_users_bricks_from_sets(user: User, all_users_bricks=None):
+def get_dict_of_users_bricks_from_sets(user: User, all_users_bricks=None, exclude_built_sets=""):
     users_collection = UserCollection.objects.get(user=user)
 
     for set_data in SetInCollectionQuantity.objects.filter(collection=users_collection):
         users_set = set_data.brick_set
-        for brick_data in BrickInSetQuantity.objects.filter(brick_set=users_set):
-            q = brick_data.quantity * set_data.quantity
+
+        sets_counted = set_data.quantity
+        if exclude_built_sets == "on":
+            sets_counted -= set_data.in_use
+
+        if sets_counted > 0:
+            for brick_data in BrickInSetQuantity.objects.filter(brick_set=users_set):
+                q = brick_data.quantity * sets_counted
+                if brick_data.brick in all_users_bricks:
+                    all_users_bricks[brick_data.brick] += q
+                else:
+                    all_users_bricks[brick_data.brick] = q
+
+    return all_users_bricks
+
+
+def get_dict_of_users_bricks_from_owned(user: User, all_users_bricks=None):
+    for owned_set in user.usercollection.ownedlegoset_set.all():
+        for brick_data in owned_set.realizes.brickinsetquantity_set.all():
+            q = brick_data.quantity
             if brick_data.brick in all_users_bricks:
                 all_users_bricks[brick_data.brick] += q
             else:
                 all_users_bricks[brick_data.brick] = q
+
+        for brick_data in owned_set.missing_bricks_set():
+            q = brick_data.quantity
+            all_users_bricks[brick_data.brick] -= q
+
     return all_users_bricks
 
 
-def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsize):
+def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsize, exclude_built_sets=""):
     """
     Args:
         user: nazwa uzytkowanika
@@ -387,7 +487,8 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
 
     all_users_bricks = {}
     all_users_bricks = get_dict_of_users_bricks(user, all_users_bricks)
-    all_users_bricks = get_dict_of_users_bricks_from_sets(user, all_users_bricks)
+    all_users_bricks = get_dict_of_users_bricks_from_owned(user, all_users_bricks)
+    all_users_bricks = get_dict_of_users_bricks_from_sets(user, all_users_bricks, exclude_built_sets)
 
     for lego_set in LegoSet.objects.all():
         diff, gdiff = check_set(all_users_bricks, lego_set)
@@ -402,6 +503,218 @@ def get_viable_sets(user: User, single_diff=sys.maxsize, general_diff=sys.maxsiz
 
     return viable_sets
 
+
+def get_buildable_sets(user: User):
+    viable_sets = []
+    all_users_bricks = {}
+    all_users_bricks = get_dict_of_users_bricks(user, all_users_bricks)
+
+    for lego_set in LegoSet.objects.all():
+        diff, gdiff = check_set(all_users_bricks, lego_set)
+        if diff == 0 and gdiff == 0:
+            viable_sets.append(lego_set)
+
+    return viable_sets
+
+def get_lacking_bricks(all_users_bricks, analyzed_set : LegoSet):
+    lacking_bricks_DTO = []
+    lacking_bricks_map = {}
+    for brick_data in BrickInSetQuantity.objects.filter(brick_set=analyzed_set):
+        q_needed = brick_data.quantity
+        q_collected = all_users_bricks.get(brick_data.brick, 0)
+        if (q_needed > q_collected):
+            lacking_bricks_DTO.append ({
+                'name': brick_data.brick.part_num,
+                'count': q_needed - q_collected,
+                'pic': brick_data.brick.image_link,
+            })
+            lacking_bricks_map[brick_data.brick.part_num] = q_needed - q_collected
+
+    return lacking_bricks_DTO, lacking_bricks_map
+
+def get_useful_bricks_from_set(lacking_bricks_map, users_set : SetInCollectionQuantity):
+    if users_set.in_use == 0:
+        return None
+
+    useful_bricks = {}
+    for brick_data in BrickInSetQuantity.objects.filter(brick_set=users_set.brick_set):
+        if brick_data.brick.part_num in lacking_bricks_map:
+            useful_bricks[brick_data.brick.part_num] = min(brick_data.quantity, lacking_bricks_map[brick_data.brick.part_num])
+
+    result_map = {}
+    if (useful_bricks):
+        result_map[users_set.brick_set.name] = useful_bricks
+    return result_map
+
+def add_bricks(built_set : dict, bonus_bricks = {}):
+    updated_bonus_bricks = copy.deepcopy(bonus_bricks)
+
+    for brick_list in built_set.values():
+        for brick_info in brick_list.items():
+            if(brick_info[0] in updated_bonus_bricks.keys()):
+                updated_bonus_bricks[brick_info[0]] += brick_info[1]
+            else:
+                updated_bonus_bricks[brick_info[0]] = brick_info[1]
+    return updated_bonus_bricks
+
+def check_if_can_build(bonus_bricks : dict, lacking_bricks : dict):
+    for brick_info in lacking_bricks.items():
+        if brick_info[0] not in bonus_bricks.keys():
+            return False
+        if brick_info[1] > bonus_bricks[brick_info[0]]:
+            return False
+    return True
+
+def get_list_of_building_set(useful_built_sets : list, lacking_bricks : dict, depth = 0, bonus_bricks = {}, names = []):
+    if useful_built_sets is None or depth > MAX_DEPTH:
+        return []
+
+    if check_if_can_build(bonus_bricks, lacking_bricks):
+        names.sort()
+        return [names]
+
+    result = []
+
+    for built_set in useful_built_sets:
+        updated_bonus_bricks = add_bricks(built_set, bonus_bricks)
+
+        updated_names = copy.deepcopy(names)
+        updated_names.append(list(built_set.keys())[0])
+
+        updated_built_sets = copy.deepcopy(useful_built_sets)
+        updated_built_sets.remove(built_set)
+
+        print("depth: " + str(depth) + " path: " + str(updated_names))
+        print("updated:" + str(updated_built_sets))
+        print()
+
+        temp_result = get_list_of_building_set(updated_built_sets, lacking_bricks, depth + 1, updated_bonus_bricks, updated_names)
+
+        result += temp_result
+
+    return result
+
+def get_map_of_ways(list_of_ways):
+    result = {}
+    for i in range(MAX_DEPTH + 2):
+        result[i] = []
+
+    for way in list_of_ways:
+        if way not in result[len(way)]:
+            result[len(way)].append(way)
+
+    return result
+
+def remove_covering_options(map_of_ways : dict):
+    result_map_of_ways = copy.deepcopy(map_of_ways)
+
+    for size in map_of_ways.keys():
+        for way in map_of_ways[size]:
+            if size != MAX_DEPTH:
+                for size_checked in range(size + 1, MAX_DEPTH + 1):
+                    for way_checked in map_of_ways[size_checked]:
+                        print(str(way) + "checking: " + str(way_checked))
+                        exists = True
+                        for set in way:
+                            if set not in way_checked:
+                                exists = False
+                                break
+                        print("found? : " + str(exists))
+                        if exists and way_checked in result_map_of_ways[size_checked]:
+                            result_map_of_ways[size_checked].remove(way_checked)
+    return result_map_of_ways
+
+def get_list_of_ways(map_of_ways : dict):
+    result = []
+    for key in map_of_ways.keys():
+        for way in map_of_ways[key]:
+            result.append(way)
+    return result
+
+def get_printable_ways(list_of_ways : list , useful_built_sets : list):
+    if len(list_of_ways) == 0:
+        return None
+
+    ways = []
+    i = 1
+    for way in list_of_ways:
+        sets = []
+        bricks = []
+        for set in way:
+            # looking up right map - TODO
+            right_map = None
+            for map in useful_built_sets:
+                if list(map.keys())[0] == set:
+                    right_map = map
+                    break
+
+            sets.append(set)
+            for bricks_data in right_map.values():
+                sets.append("")
+                for brick_data in bricks_data.items():
+                    bricks.append(str(brick_data[0]) + " x " + str(brick_data[1]))
+
+                sets.append("")
+                bricks.append("")
+
+        ways.append({
+            'number' : i,
+            'sets' : copy.deepcopy(sets),
+            'bricks' : copy.deepcopy(bricks),
+        })
+
+        i += 1
+        sets.clear()
+        bricks.clear()
+    return ways
+
+
+
+def find_ways_of_building_a_set(user: User, brickset_id):
+    if brickset_id == None:
+        return None
+
+    all_users_bricks = {}
+    all_users_bricks = get_dict_of_users_bricks(user, all_users_bricks)
+    analyzed_set = LegoSet.objects.get(id = brickset_id)
+    diff, gdiff = check_set(all_users_bricks, analyzed_set)
+
+    if(diff == gdiff == 0):
+        return None
+
+    # getting list of lacking bricks
+    lacking_bricks_DTO, lacking_bricks_map = get_lacking_bricks(all_users_bricks, analyzed_set)
+
+    # getting a list of maps, where key = set, values = bricks that could be used to built set
+    users_collection = UserCollection.objects.get(user=user)
+    all_users_sets = SetInCollectionQuantity.objects.filter(collection=users_collection)
+
+    useful_built_sets = []
+    for users_set in all_users_sets:
+        useful_bricks_in_set = get_useful_bricks_from_set(lacking_bricks_map, users_set)
+        if (useful_bricks_in_set):
+            useful_built_sets.append(useful_bricks_in_set)
+
+    # getting ways of building set
+    list_of_ways = get_list_of_building_set(useful_built_sets, lacking_bricks_map)
+
+    # filtering way of building set
+    map_of_ways = get_map_of_ways(list_of_ways)
+    print(map_of_ways)
+    map_of_ways = remove_covering_options(map_of_ways)
+    print(map_of_ways)
+    list_of_ways = get_list_of_ways(map_of_ways)
+
+    # formatting to print well
+    print(list_of_ways)
+    print(useful_built_sets)
+    ways_DTO = get_printable_ways(list_of_ways, useful_built_sets)
+
+
+    return {
+        'bricks': lacking_bricks_DTO,
+        'ways' : ways_DTO,
+    }
 
 def get_avg_likes(reviews):
     avg_likes = reviews.aggregate(Avg("likes"))["likes__avg"]
@@ -424,17 +737,45 @@ def get_avg_time(reviews):
     return avg_time
 
 
+def get_rating_string(avg_rating):
+    avg_rating = round(avg_rating, 0)
+    match avg_rating:
+        case 0:
+            avg_rating = "Very confusing"
+        case 1:
+            avg_rating = "Somewhat clear"
+        case 2:
+            avg_rating = "Average"
+        case 3:
+            avg_rating = "Mostly clear"
+        case 4:
+            avg_rating = "Extremely clear"
+    return avg_rating
+
+
+def get_avg_rating(reviews):
+    avg_rating = reviews.aggregate(Avg("instruction_rating"))["instruction_rating__avg"]
+    if avg_rating != None:
+        avg_rating = get_rating_string(avg_rating)
+
+    return avg_rating
+
+
 def get_review_exists(brick_set: LegoSet, user: User):
     review = BrickStats.objects.filter(brick_set=brick_set, user=user)
     return review.exists()
 
 
 def get_review_data(brick_set: LegoSet, user: User):
-    return (
+    data = (
         BrickStats.objects.filter(brick_set=brick_set, user=user)
-        .values("likes", "min_recommended_age", "build_time")
+        .values("likes", "min_recommended_age", "build_time", "instruction_rating")
         .first()
     )
+
+    if data and data["instruction_rating"] is not None:
+        data["instruction_rating"] = get_rating_string(data["instruction_rating"])
+    return data
 
 
 def maxsize_if_empty(_str):
@@ -457,6 +798,8 @@ def filter_collection(request):
     theme = request.POST.get("theme")
     min_quantity = request.POST.get("start_quantity")
     max_quantity = request.POST.get("end_quantity", max_bricks)
+    exclude_built_sets = request.POST.get("exclude_build")
+    analized_set = request.POST.get("disassemble_set")
 
     if request.method == "POST":
         single_diff = maxsize_if_empty(request.POST.get("single_diff"))
@@ -466,10 +809,11 @@ def filter_collection(request):
 
     template = loader.get_template("bsf/filter.html")
     context = base_context(request)
+
+    viable_sets = get_viable_sets(logged_user, single_diff, general_diff, exclude_built_sets)
     context.update(
-        {"viable_sets": get_viable_sets(logged_user, single_diff, general_diff)}
+        {"viable_sets": viable_sets}
     )
-    viable_sets = get_viable_sets(logged_user, single_diff, general_diff)
 
     if theme:
         viable_sets = [set for set in viable_sets if set["lego_set"].theme == theme]
@@ -490,6 +834,10 @@ def filter_collection(request):
         if int(min_quantity) <= set["lego_set"].quantity_of_bricks <= int(max_quantity)
     ]
 
+    set_analysis = find_ways_of_building_a_set(logged_user, analized_set)
+    if (analized_set):
+        analized_set = LegoSet.objects.get(id=analized_set).name
+
     context.update(
         {
             "viable_sets": viable_sets,
@@ -499,10 +847,12 @@ def filter_collection(request):
             "selected_theme": theme,
             "start_quantity": min_quantity,
             "end_quantity": max_quantity,
+            "checked_exclude": exclude_built_sets,
+            "set_analysis" : set_analysis,
+            "analized_set" : analized_set,
         }
     )
     return HttpResponse(template.render(context, request))
-
 
 def index(request):
     return render(request, "bsf/index.html", context=base_context(request))
@@ -546,11 +896,6 @@ class BrickListView(ContextListView):
     model = Brick
 
 
-class SetListView(ContextListView):
-    paginate_by = 15
-    model = LegoSet
-
-
 class FilterListView(ContextListView):
     paginate_by = 15
     model = LegoSet
@@ -572,6 +917,8 @@ class SetDetailView(ContextDetailView):
                 "age": get_avg_age(all_reviews),
                 "time": get_avg_time(all_reviews),
                 "review_count": all_reviews.count(),
+                "instruction_rating": get_avg_rating(all_reviews),
+                "reviews": all_reviews,
             }
         )
         if self.request.user.id:
@@ -585,6 +932,198 @@ class SetDetailView(ContextDetailView):
                         "review_likes": review_data["likes"],
                         "review_age": review_data["min_recommended_age"],
                         "review_time": review_data["build_time"],
+                        "review_rating": review_data["instruction_rating"],
                     }
                 )
         return context
+
+
+def convert_to_embed_url(url):
+    # Check if the URL is already an embed URL
+    if "youtube.com/embed" in url:
+        return url
+
+    # If it isn't, convert it
+    try:
+        video_id = url.split("v=")[1]
+        embed_url = f"//www.youtube.com/embed/{video_id}"
+        return embed_url
+    except IndexError:
+        # Handle error in case there's no 'v=' in the URL
+        print("URL could not be converted to YouTube embed format.")
+        return url
+
+
+def add_custom_lego_set(request):
+    logged_user = request.user
+    if not logged_user.is_authenticated:
+        return redirect("login")
+
+    context = base_context(request)
+    BrickQuantityFormSet = formset_factory(BrickQuantityForm, extra=1)
+    if request.method == "POST":
+        lego_set_form = LegoSetForm(request.POST)
+        if lego_set_form.is_valid():
+            lego_set = lego_set_form.save(commit=False)
+
+            # Get the bricks and quantities data
+            bricks_data = dict(QueryDict(request.body).lists())
+            brick_ids = bricks_data.get("form-0-brick", [])
+            quantities = bricks_data.get("form-0-quantity", [])
+
+            lego_set.theme = "Custom"
+            lego_set.inventory_id = 1
+            lego_set.number = "Custom Set"
+            lego_set.quantity_of_bricks = 0
+            lego_set.author = logged_user
+
+            try:
+                lego_set.custom_video_link = convert_to_embed_url(
+                    lego_set.custom_video_link
+                )
+                if not all(brick_ids) or not all(quantities):
+                    raise ValueError("All fields must be filled.")
+            except:
+                messages.error(
+                    request,
+                    f"Failed to add custom set",
+                )
+                return redirect(add_custom_lego_set)
+            else:
+                for quantity in quantities:
+                    lego_set.quantity_of_bricks += int(quantity)
+
+                lego_set.save()
+
+                for brick_id, quantity in zip(brick_ids, quantities):
+                    # Retrieve the Brick instance and add it to the set
+                    brick = Brick.objects.get(pk=brick_id)
+                    lego_set.bricks.add(
+                        brick, through_defaults={"quantity": int(quantity)}
+                    )
+
+                return redirect("sets")
+
+    context.update(
+        {
+            "users_sets": LegoSet.objects.filter(author=logged_user),
+            "lego_set_form": LegoSetForm(),
+            "brick_quantity_formset": BrickQuantityFormSet(),
+        }
+    )
+    return render(request, "bsf/add_custom_lego_set.html", context)
+
+
+def edit_custom_lego_set(request, lego_set_id):
+    logged_user = request.user
+    if not logged_user.is_authenticated:
+        return redirect("login")
+
+    context = base_context(request)
+    lego_set = get_object_or_404(LegoSet, id=lego_set_id)
+    if request.method == "POST":
+        form = LegoSetForm(request.POST, instance=lego_set)
+        if form.is_valid():
+            if lego_set.author == logged_user:
+                lego_set = form.save(commit=False)
+                lego_set.custom_video_link = convert_to_embed_url(
+                    lego_set.custom_video_link
+                )
+                lego_set.save()
+                messages.success(request, "Lego set updated successfully!")
+                return redirect("set_detail", pk=lego_set.id)
+            else:
+                messages.error(request, "You are not authorized to edit this lego set")
+    else:
+        form = LegoSetForm(instance=lego_set)
+
+    context.update({"form": form, "lego_set": lego_set})
+    return render(request, "bsf/edit_lego_set.html", context)
+
+
+def delete_custom_lego_set(request, pk):
+    lego_set = get_object_or_404(LegoSet, pk=pk)
+    if request.user == lego_set.author:
+        lego_set.visibility = False
+        lego_set.save()
+        messages.success(request, "Lego set has been hidden successfully.")
+    else:
+        messages.error(request, "You are not authorized to hide this Lego set.")
+    return redirect(
+        "add_custom_lego_set"
+    )  # Or wherever you want to redirect after hiding
+
+
+def unhide_custom_lego_set(request, pk):
+    lego_set = get_object_or_404(LegoSet, pk=pk)
+    if request.user == lego_set.author:
+        lego_set.visibility = True
+        lego_set.save()
+        messages.success(request, "Lego set has been made public successfully.")
+    else:
+        messages.error(request, "You are not authorized to unhide this Lego set.")
+    return redirect(
+        "add_custom_lego_set"
+    )  # Or wherever you want to redirect after unhiding
+
+
+def get_brick_image(request):
+    brick_id = request.GET.get("brick_id", None)
+    data = {"image_url": ""}
+    if brick_id:
+        try:
+            brick = Brick.objects.get(brick_id=brick_id)
+            data["image_url"] = brick.image_link
+        except Brick.DoesNotExist:
+            pass
+    return JsonResponse(data)
+
+
+def owned_set(request, owned_id):
+    owned = OwnedLegoSet.objects.get(id=owned_id)
+    context = base_context(request)
+    context.update(
+        {
+            "owned": owned,
+            "bricks_in_set": owned.realizes.brickinsetquantity_set.all(),
+            "bricks_missing": owned.missing_bricks_set()
+        })
+    template = loader.get_template("bsf/owned_set.html")
+    return HttpResponse(template.render(context, request))
+
+
+def set_convert_to_owned(request, legoset_id):
+    legoset = LegoSet.objects.get(id=legoset_id)
+    owned = OwnedLegoSet.add_to_collection(legoset, request.user)
+    messages.success(request, "Successfully converted to a set with (possibly) missing "
+                              "bricks.")
+    return HttpResponseRedirect(owned.get_absolute_url())
+
+
+def owned_convert_back(request, owned_id):
+    owned = OwnedLegoSet.objects.get(id=owned_id)
+    owned.convert_back_to_generic_set(request.user)
+    messages.success(request, "Successfully converted to generic set.")
+    return HttpResponseRedirect(reverse("collection", args=()))
+
+
+def _missing_bricks_modifier(request, owned_id, sign):
+    brick_id = request.POST.get('brick_id')
+    brick = Brick.objects.get(brick_id=brick_id)
+    owned = OwnedLegoSet.objects.get(id=owned_id)
+    try:
+        quantity = int(request.POST.get("quantity", False))
+        owned.mark_as_missing(brick, sign * quantity)
+        messages.success(request, "Successfully marked the brick as missing.")
+        return HttpResponseRedirect(owned.get_absolute_url())
+    except KeyError:
+        messages.error(request, "Failed to mark brick as missing.")
+        return HttpResponseRedirect(reverse("collection", args=()))
+
+
+def mark_missing(request, owned_id):
+    return _missing_bricks_modifier(request, owned_id, 1)
+
+
+def mark_found(request, owned_id):
+    return _missing_bricks_modifier(request, owned_id, -1)

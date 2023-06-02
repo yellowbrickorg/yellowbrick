@@ -1,0 +1,40 @@
+<ul class="list-group list-group-flush">
+    {% for brick_in_set in bricks_missing %}
+        {% with brick=brick_in_set.brick %}
+            <li class="list-group-item">
+                <div class="d-flex align-items-center">
+                    <div class="position-relative">
+                        <img class="img-thumbnail" src="{{ brick.image_link }}"
+                             width="80">
+                        <span class="position-absolute top-100 start-100
+                        translate-middle badge rounded-pill bg-dark">?</span>
+                    </div>
+                    <div class="col-auto ms-3 me-auto">
+                        <a href="{% url 'brick_detail' brick.brick_id %}">
+                            {{ brick.part_num }}</a>
+                        - {{ brick.color.name }} x
+                        {{ brick_in_set.quantity }}
+                    </div>
+                    <div class="col-5">
+                        <form action="{% url 'mark_found' owned_id=owned.id %}"
+                              method="post">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <input type="hidden" name="brick_id"
+                                       value="{{ brick.brick_id }}">
+                                <input class="form-control" type="number"
+                                       name="quantity" value="0"
+                                       id="quantity{{ brick.brick_id }}">
+                                <button type="submit"
+                                        class="btn btn-outline-secondary">Mark as found
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </li>
+        {% endwith %}
+    {% empty %}
+        No bricks found.
+    {% endfor %}
+</ul>

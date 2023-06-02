@@ -1,0 +1,9 @@
+{% autoescape off %}
+Hello {{ author }},
+
+Unfortunately, {{ receiver }} has refused your offer, in which you:
+
+{% include 'bsf/exchange/offer_details_snippet.txt' with sets=sets_in_offer bricks=bricks_in_offer %}
+Have a nice day
+yellowbrick
+{% endautoescape %}
