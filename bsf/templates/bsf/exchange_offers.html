@@ -83,43 +83,59 @@
                         </ul>
                     </td>
                     <td>
-                        <form action="{% url "offer_details" %}"
-                              method="post">
-                            {% csrf_token %}
-                            <input type="hidden" name="offer_id"
-                                   value={{ offer_context.offer.id }}>
-                            <button class="btn btn-primary" type="submit">
-                                Offer details
-                            </button>
-                        </form>
                         {% if offer_context.button_action %}
                             <form action="{% url "exchange_offer_continue" %}"
                                   method="post">
                                 {% csrf_token %}
                                 <input type="hidden" name="offer_accepted"
                                        value={{ offer_context.offer.id }}>
-                                <button class="btn btn-primary" type="submit">
+                                <button class="btn btn-outline-secondary" type="submit">
                                     {{ offer_context.button_action }}
                                 </button>
                             </form>
                         {% elif not offer_context.offer.exchanged %}
-                            <span>Waiting for
-                                {{ offer_context.offer.offer_receiver }}</span>
+                            <div class="mb-2">Waiting for
+                                {{ offer_context.offer.offer_receiver }}</div>
                         {% else %}
                             <span>Exchange ended</span>
                         {% endif %}
-                        {% if offer_context.offer.receiver_state == 0 %}
-                            <form action="{% url "delete_offer" %}" method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="offer_id"
-                                       value={{ offer_context.offer.id }}>
-                                <button class="btn btn-primary" type="submit">
-                                    {% if not offer_context.offer.exchanged %}
-                                        Cancel
-                                    {% endif %}
-                                </button>
-                            </form>
-                        {% endif %}
+                        <button class="btn btn-outline-secondary
+                                dropdown-toggle"
+                                type="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            Manage
+                        </button>
+                        <ul class="dropdown-menu p-2">
+                            <li>
+                                <form action="{% url "offer_details" %}"
+                                      method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="offer_id"
+                                           value={{ offer_context.offer.id }}>
+                                    <button class="btn btn-outline-secondary"
+                                            type="submit">
+                                        Offer details
+                                    </button>
+                                </form>
+                            </li>
+                            {% if offer_context.offer.receiver_state == 0 %}
+                                <li>
+
+                                    <form action="{% url "delete_offer" %}"
+                                          method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="offer_id"
+                                               value={{ offer_context.offer.id }}>
+                                        <button class="btn btn-outline-secondary"
+                                                type="submit">
+                                            {% if not offer_context.offer.exchanged %}
+                                                Cancel
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </li>
+                            {% endif %}
+                        </ul>
                     </td>
                 </tr>
             {% endfor %}

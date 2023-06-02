@@ -22,11 +22,15 @@
         </thead>
         <tbody>
         {% for offer_context in offers_history %}
-            <tr>
+            <tr {% if offer_context.last_offer %} class="bg-light" {% endif %}>
                 <td>
                     {{ offer_context.offer.offer_author }}
                     <br>
                     {{ offer_context.offer.created_at }}
+                    {% if offer_context.last_offer %}
+                        <br>
+                        <b>Current offer</b>
+                    {% endif %}
                 </td>
                 <td>
                     <ul class="list-unstyled">

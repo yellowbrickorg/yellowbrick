@@ -746,6 +746,9 @@ def offer_details(request):
 
     all_offers_context = []
     authored = (chain.initial_author == logged_user)
+
+    last_offer = all_offers[len(all_offers) - 1]
+
     for offer in all_offers:
         if authored:
             all_offers_context.append(
@@ -765,6 +768,7 @@ def offer_details(request):
                     ),
                     "offered_cash": max(offer.cash, 0),
                     "received_cash": max(offer.cash * (-1), 0),
+                    "last_offer": offer.id == last_offer.id,
                 }
             )
         else:
@@ -785,20 +789,15 @@ def offer_details(request):
                     ),
                     "offered_cash": max(offer.cash * (-1), 0),
                     "received_cash": max(offer.cash, 0),
+                    "last_offer": offer.id == last_offer.id,
                 }
             )
         authored = not authored
 
-    """
-    sprawdzanie czy mozna robic kontroferte i dodawanie do kontekstu
-    nie wiem 
-    """
-    last_offer = all_offers[len(all_offers) - 1]
     may_counteroffer = False
     if last_offer.offer_author != logged_user and last_offer.receiver_state == ExchangeOffer.Status.PENDING:
         may_counteroffer = True
 
-    other_user = None
     if offer_clicked.offer_author == logged_user:
         other_user = offer_clicked.offer_receiver
     else:
